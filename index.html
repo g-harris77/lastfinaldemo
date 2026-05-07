@@ -1,0 +1,3058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Braintree Group — Owner's Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://alcdn.msauth.net/browser/2.30.0/js/msal-browser.min.js"></script>
+<style>
+  :root {
+    --bg: #0B0E14;
+    --surface: #121821;
+    --surface-2: #18202B;
+    --surface-3: #1F2935;
+    --border: #232E3D;
+    --border-subtle: #1A222D;
+    --text: #ECEFF4;
+    --text-muted: #9AA5B8;
+    --text-subtle: #6B7588;
+    --accent: #D4A574;
+    --accent-hover: #E2B687;
+    --accent-soft: rgba(212, 165, 116, 0.12);
+    --positive: #4ADE80;
+    --positive-soft: rgba(74, 222, 128, 0.10);
+    --negative: #F87171;
+    --negative-soft: rgba(248, 113, 113, 0.10);
+    --info: #60A5FA;
+    --info-soft: rgba(96, 165, 250, 0.10);
+    --warn: #F5B45D;
+    --warn-soft: rgba(245, 180, 93, 0.10);
+    --brand-blue: #6F8B9E;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  .mono { font-family: 'JetBrains Mono', monospace; font-feature-settings: 'tnum'; }
+
+  /* ========== HEADER ========== */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: rgba(11, 14, 20, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand-mark { width: 36px; height: 28px; flex-shrink: 0; }
+  .brand-name {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: var(--text);
+  }
+  .brand-name .group {
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.20em;
+  }
+  .brand-sub {
+    font-size: 11px;
+    color: var(--text-subtle);
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    margin-left: 4px;
+    padding-left: 14px;
+    border-left: 1px solid var(--border);
+    font-weight: 500;
+  }
+  .topbar-actions { display: flex; align-items: center; gap: 10px; }
+  .as-of {
+    font-size: 12px;
+    color: var(--text-subtle);
+    margin-right: 10px;
+  }
+  .as-of strong { color: var(--text-muted); font-weight: 500; }
+
+  .btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    padding: 8px 14px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .btn:hover { background: var(--surface-2); border-color: var(--text-subtle); }
+  .btn-primary {
+    background: var(--accent);
+    color: #1a1208;
+    border-color: var(--accent);
+  }
+  .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  .btn-ghost { background: transparent; border-color: transparent; color: var(--text-muted); }
+  .btn-ghost:hover { background: var(--surface-2); color: var(--text); }
+  .btn .ai-spark { width: 14px; height: 14px; color: inherit; }
+  .avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4A5568, #2D3748);
+    display: grid; place-items: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  /* ========== CONTROLS BAR ========== */
+  .controls {
+    display: flex;
+    align-items: center;
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--border-subtle);
+    flex-wrap: wrap;
+    gap: 24px;
+    position: sticky;
+    top: 60px;
+    z-index: 40;
+    background: rgba(11, 14, 20, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .control-group { display: flex; align-items: center; gap: 10px; }
+  .control-label {
+    font-size: 11px;
+    color: var(--text-subtle);
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    font-weight: 500;
+  }
+  .seg {
+    display: inline-flex;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 3px;
+  }
+  .seg button {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .seg button:hover { color: var(--text); }
+  .seg button.active {
+    background: var(--surface-3);
+    color: var(--text);
+    box-shadow: 0 0 0 1px var(--border);
+  }
+  .seg button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 7px 30px 7px 12px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-family: inherit;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%239AA5B8' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    cursor: pointer;
+    font-weight: 500;
+    min-width: 280px;
+  }
+  .breadcrumb {
+    display: flex; align-items: center; gap: 8px;
+    color: var(--text-subtle);
+    font-size: 12px;
+    cursor: pointer;
+    margin-right: 4px;
+  }
+  .breadcrumb:hover { color: var(--text); }
+  .breadcrumb svg { width: 14px; height: 14px; }
+
+  /* ========== LAYOUT ========== */
+  main { padding: 24px 28px 80px; max-width: 1600px; margin: 0 auto; }
+  .grid { display: grid; gap: 16px; }
+  .grid-kpi { grid-template-columns: repeat(4, 1fr); margin-bottom: 16px; }
+  .grid-mid { grid-template-columns: 1.4fr 1fr; margin-bottom: 16px; }
+  .grid-low { grid-template-columns: 1fr 1fr; margin-bottom: 16px; }
+  @media (max-width: 1100px) {
+    .grid-kpi { grid-template-columns: repeat(2, 1fr); }
+    .grid-mid, .grid-low { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    main { padding: 16px; }
+    .grid-kpi { grid-template-columns: 1fr; }
+    .topbar { padding: 12px 16px; }
+    .controls { padding: 14px 16px; gap: 16px; }
+    .brand-sub { display: none; }
+    .select { min-width: 200px; }
+  }
+
+  /* ========== CARD ========== */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 20px;
+    position: relative;
+  }
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .card-action {
+    color: var(--text-subtle);
+    font-size: 12px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .card-action:hover { color: var(--text); }
+
+  /* ========== KPI ========== */
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi:hover { border-color: var(--border); background: var(--surface-2); }
+  .kpi-label {
+    font-size: 11px;
+    color: var(--text-subtle);
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .kpi-value {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+    color: var(--text);
+    font-feature-settings: 'tnum';
+  }
+  .kpi-deltas { display: flex; flex-direction: column; gap: 4px; }
+  .kpi-delta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+  }
+  .kpi-delta-label { color: var(--text-subtle); }
+  .delta-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .delta-up { color: var(--positive); background: var(--positive-soft); }
+  .delta-down { color: var(--negative); background: var(--negative-soft); }
+  .delta-flat { color: var(--text-subtle); background: rgba(155, 165, 184, 0.08); }
+  .kpi-spark {
+    position: absolute;
+    bottom: 0; right: 0;
+    width: 90px; height: 36px;
+    opacity: 0.55;
+    pointer-events: none;
+  }
+
+  /* ========== PROFITABILITY STRIP ========== */
+  .profit-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding: 0 4px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .profit-section-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+  .profit-section-sub {
+    font-size: 11.5px;
+    color: var(--text-subtle);
+    margin-top: 3px;
+  }
+  .profit-badge {
+    font-size: 10.5px;
+    color: var(--text-subtle);
+    background: var(--surface);
+    padding: 4px 10px 4px 8px;
+    border-radius: 12px;
+    border: 1px solid var(--border-subtle);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .profit-badge::before {
+    content: "";
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .kpi.profit-kpi .ft-context {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+  }
+
+  /* ========== TABLE ========== */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    text-align: left;
+    font-size: 10.5px;
+    color: var(--text-subtle);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--surface);
+  }
+  thead th.num { text-align: right; }
+  tbody td {
+    padding: 14px 12px;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text);
+  }
+  tbody td.num {
+    text-align: right;
+    font-family: 'JetBrains Mono', monospace;
+    font-feature-settings: 'tnum';
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr.clickable { cursor: pointer; }
+  tbody tr:hover td { background: var(--surface-2); }
+  tbody tr.active td { background: var(--accent-soft); }
+  tbody tr.total td {
+    border-top: 1px solid var(--border);
+    border-bottom: none;
+    font-weight: 600;
+    background: rgba(212, 165, 116, 0.04);
+  }
+  .property-name { display: flex; align-items: center; gap: 12px; }
+  .property-flag {
+    width: 36px; height: 26px;
+    border-radius: 5px;
+    background: var(--surface-3);
+    border: 1px solid var(--border-subtle);
+    display: grid; place-items: center;
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+  }
+  .property-meta { color: var(--text-subtle); font-size: 11px; margin-top: 2px; }
+
+  /* ========== PERFORMANCE TABLE ========== */
+  .perf-table th, .perf-table td { padding: 12px 8px; }
+  .perf-table .row-label {
+    color: var(--text-muted);
+    font-weight: 500;
+    width: 26%;
+    text-transform: uppercase;
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+  }
+
+  /* ========== INDEX CARDS ========== */
+  .index-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .index-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+  }
+  .index-label {
+    font-size: 11px;
+    color: var(--text-subtle);
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .index-value {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+    font-feature-settings: 'tnum';
+    color: var(--text);
+  }
+  .index-help {
+    font-size: 10px;
+    color: var(--text-subtle);
+    margin-top: 6px;
+    line-height: 1.3;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* ========== CHART ========== */
+  .chart-wrap { height: 280px; margin-top: 8px; position: relative; }
+  .chart-legend { display: flex; gap: 16px; font-size: 12px; color: var(--text-muted); align-items: center; }
+  .legend-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+
+  /* ========== PROPERTY HEADER ========== */
+  .property-header {
+    background: linear-gradient(135deg, var(--surface) 0%, var(--surface-2) 100%);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 22px 26px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .property-header::before {
+    content: "";
+    position: absolute;
+    top: 0; right: 0;
+    width: 280px; height: 100%;
+    background: radial-gradient(circle at top right, rgba(212, 165, 116, 0.10), transparent 70%);
+    pointer-events: none;
+  }
+  .property-photo {
+    width: 110px; height: 88px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #2D3748, #1A202C);
+    border: 1px solid var(--border);
+    display: grid; place-items: center;
+    flex-shrink: 0;
+    color: var(--text-subtle);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background-image:
+      linear-gradient(rgba(11,14,20,0.6), rgba(11,14,20,0.6)),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 110 88'%3E%3Crect width='110' height='88' fill='%231F2935'/%3E%3Cpath d='M10 70 L10 40 L30 40 L30 30 L80 30 L80 40 L100 40 L100 70 Z' fill='%232D3748'/%3E%3Cg fill='%23D4A574' opacity='0.4'%3E%3Crect x='35' y='40' width='5' height='6'/%3E%3Crect x='45' y='40' width='5' height='6'/%3E%3Crect x='55' y='40' width='5' height='6'/%3E%3Crect x='65' y='40' width='5' height='6'/%3E%3Crect x='35' y='50' width='5' height='6'/%3E%3Crect x='45' y='50' width='5' height='6'/%3E%3Crect x='55' y='50' width='5' height='6'/%3E%3Crect x='65' y='50' width='5' height='6'/%3E%3Crect x='35' y='60' width='5' height='6'/%3E%3Crect x='45' y='60' width='5' height='6'/%3E%3Crect x='55' y='60' width='5' height='6'/%3E%3Crect x='65' y='60' width='5' height='6'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: cover;
+  }
+  .property-info { flex: 1; min-width: 0; }
+  .property-info h1 {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .property-tags {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-subtle);
+    font-size: 12.5px;
+    flex-wrap: wrap;
+  }
+  .property-tags .dot { color: var(--text-subtle); }
+  .property-tags .brand-pill {
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .property-stats {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    padding-left: 22px;
+    border-left: 1px solid var(--border);
+  }
+  .property-stat-label {
+    font-size: 10px;
+    color: var(--text-subtle);
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+  .property-stat-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    font-feature-settings: 'tnum';
+  }
+  .health-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 600;
+    background: var(--positive-soft);
+    color: var(--positive);
+  }
+  .health-badge .pulse {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--positive);
+    box-shadow: 0 0 0 0 var(--positive);
+    animation: pulse 2.5s infinite;
+  }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.5); }
+    70% { box-shadow: 0 0 0 8px rgba(74, 222, 128, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+  }
+  @media (max-width: 800px) {
+    .property-header { flex-direction: column; align-items: flex-start; }
+    .property-stats { padding-left: 0; border-left: none; padding-top: 16px; border-top: 1px solid var(--border); width: 100%; }
+  }
+
+  /* ========== PACE / ON-THE-BOOKS ========== */
+  .pace-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .pace-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 14px;
+  }
+  .pace-card .label {
+    font-size: 10.5px;
+    color: var(--text-subtle);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .pace-card .value {
+    font-size: 20px;
+    font-weight: 600;
+    font-feature-settings: 'tnum';
+    margin-bottom: 4px;
+  }
+  .pace-card .compare {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-subtle);
+    margin-top: 6px;
+  }
+
+  /* ========== CHANNEL MIX BARS ========== */
+  .channel-row {
+    display: grid;
+    grid-template-columns: 110px 1fr 50px;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 0;
+    font-size: 12.5px;
+  }
+  .channel-row .lbl { color: var(--text-muted); }
+  .channel-row .pct { text-align: right; font-family: 'JetBrains Mono', monospace; color: var(--text); font-weight: 600; }
+  .channel-bar {
+    height: 8px;
+    background: var(--surface-3);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  .channel-bar > div {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--accent);
+    transition: width 0.3s;
+  }
+  .channel-row .delta {
+    font-size: 10px;
+    color: var(--text-subtle);
+    margin-left: 6px;
+  }
+
+  /* ========== DOW CHART ========== */
+  .dow-bars {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    align-items: end;
+    height: 140px;
+    padding: 16px 0 0;
+  }
+  .dow-col { display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; }
+  .dow-bar-stack { flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; }
+  .dow-bar {
+    background: var(--accent);
+    border-radius: 3px 3px 0 0;
+    width: 100%;
+    min-height: 8px;
+    transition: opacity 0.2s;
+  }
+  .dow-bar.weekend { background: var(--text-subtle); opacity: 0.6; }
+  .dow-col:hover .dow-bar { opacity: 0.85; }
+  .dow-label {
+    font-size: 10px;
+    color: var(--text-subtle);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+  .dow-val {
+    font-size: 11px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+  }
+
+  /* ========== AI INSIGHTS PANEL ========== */
+  .drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(2px);
+    z-index: 90;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .drawer-overlay.open { opacity: 1; pointer-events: auto; }
+  .drawer {
+    position: fixed;
+    top: 0; right: 0;
+    height: 100%;
+    width: 480px;
+    max-width: 92vw;
+    background: var(--bg);
+    border-left: 1px solid var(--border);
+    z-index: 100;
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+    display: flex;
+    flex-direction: column;
+  }
+  .drawer.open { transform: translateX(0); }
+  .drawer-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .drawer-title { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; }
+  .drawer-close {
+    background: transparent; border: none; color: var(--text-subtle); cursor: pointer;
+    width: 28px; height: 28px; border-radius: 6px;
+    display: grid; place-items: center; font-size: 16px;
+  }
+  .drawer-close:hover { background: var(--surface-2); color: var(--text); }
+  .drawer-body { flex: 1; overflow-y: auto; padding: 24px; }
+  .drawer-footer {
+    padding: 14px 24px;
+    border-top: 1px solid var(--border-subtle);
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 12px; color: var(--text-subtle);
+  }
+  .insight-item {
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 9px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+    border-left: 3px solid var(--accent);
+  }
+  .insight-item.positive { border-left-color: var(--positive); }
+  .insight-item.negative { border-left-color: var(--negative); }
+  .insight-item.info { border-left-color: var(--info); }
+  .insight-item.warn { border-left-color: var(--warn); }
+  .insight-tag {
+    display: inline-block;
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    padding: 2px 7px; border-radius: 4px; margin-bottom: 8px;
+    color: var(--accent); background: var(--accent-soft);
+  }
+  .insight-item.positive .insight-tag { color: var(--positive); background: var(--positive-soft); }
+  .insight-item.negative .insight-tag { color: var(--negative); background: var(--negative-soft); }
+  .insight-item.info .insight-tag { color: var(--info); background: var(--info-soft); }
+  .insight-item.warn .insight-tag { color: var(--warn); background: var(--warn-soft); }
+  .insight-text { font-size: 13.5px; line-height: 1.55; color: var(--text); }
+  .insight-text .num {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text); font-weight: 600;
+  }
+  .insight-meta {
+    margin-top: 10px;
+    font-size: 11px; color: var(--text-subtle);
+    display: flex; gap: 12px;
+  }
+  .insight-meta a { color: var(--text-subtle); cursor: pointer; }
+  .insight-meta a:hover { color: var(--text); }
+  .empty-state { text-align: center; padding: 60px 24px; color: var(--text-muted); }
+  .empty-icon {
+    width: 52px; height: 52px;
+    margin: 0 auto 18px; border-radius: 12px;
+    background: var(--accent-soft); color: var(--accent);
+    display: grid; place-items: center;
+  }
+  .empty-title { color: var(--text); font-weight: 600; margin-bottom: 6px; font-size: 15px; }
+  .empty-sub { font-size: 12.5px; line-height: 1.5; }
+  .loading-shimmer {
+    background: linear-gradient(90deg, var(--surface) 0%, var(--surface-2) 50%, var(--surface) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+    border-radius: 6px;
+  }
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* ========== AI CHAT ========== */
+  .chat-fab {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #1a1208;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(212, 165, 116, 0.3), 0 0 0 1px rgba(255,255,255,0.05) inset;
+    display: grid; place-items: center;
+    z-index: 80;
+    transition: transform 0.15s;
+  }
+  .chat-fab:hover { transform: translateY(-2px); }
+  .chat-fab.hidden { display: none; }
+  .chat-drawer {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    width: 420px; height: 600px;
+    max-height: calc(100vh - 48px);
+    max-width: calc(100vw - 32px);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    z-index: 90;
+    display: none;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    overflow: hidden;
+  }
+  .chat-drawer.open { display: flex; }
+  .chat-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--surface);
+  }
+  .chat-title { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; }
+  .chat-body {
+    flex: 1; overflow-y: auto; padding: 16px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .suggested-prompts { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .prompt-chip {
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    padding: 6px 10px;
+    border-radius: 14px;
+    font-size: 12px; cursor: pointer;
+    font-family: inherit; transition: all 0.15s;
+  }
+  .prompt-chip:hover {
+    color: var(--text);
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .msg {
+    max-width: 88%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+  .msg-user { background: var(--surface-3); align-self: flex-end; border-bottom-right-radius: 4px; }
+  .msg-ai { background: var(--surface); border: 1px solid var(--border-subtle); align-self: flex-start; border-bottom-left-radius: 4px; }
+  .msg-ai .num { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+  .msg-meta { font-size: 10px; color: var(--text-subtle); margin-top: 6px; display: flex; gap: 8px; }
+  .typing-dots { display: inline-flex; gap: 3px; padding: 2px 0; }
+  .typing-dots span {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--text-muted); animation: dot 1.2s infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes dot {
+    0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+    30% { opacity: 1; transform: translateY(-3px); }
+  }
+  .chat-input-wrap { padding: 12px 14px; border-top: 1px solid var(--border-subtle); background: var(--surface); }
+  .chat-input-row {
+    display: flex; gap: 8px; align-items: flex-end;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 8px 8px 12px;
+  }
+  .chat-input-row:focus-within { border-color: var(--accent); }
+  .chat-input {
+    flex: 1; background: transparent; border: none;
+    color: var(--text); font-family: inherit;
+    font-size: 13.5px; resize: none; max-height: 100px;
+    line-height: 1.4; padding: 4px 0;
+  }
+  .chat-input:focus { outline: none; }
+  .send-btn {
+    background: var(--accent); color: #1a1208; border: none;
+    width: 30px; height: 30px;
+    border-radius: 7px; cursor: pointer;
+    display: grid; place-items: center; flex-shrink: 0;
+  }
+  .send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .chat-meta-bar {
+    padding: 4px 18px 10px;
+    background: var(--surface);
+    font-size: 10.5px; color: var(--text-subtle);
+    display: flex; justify-content: space-between;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  /* ========== UTILITY ========== */
+  .row { display: flex; align-items: center; gap: 8px; }
+  .between { justify-content: space-between; }
+  .help-dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--surface-3);
+    color: var(--text-subtle);
+    font-size: 9px; font-weight: 600; font-style: italic;
+    display: inline-grid; place-items: center;
+    cursor: help;
+    border: 1px solid var(--border-subtle);
+  }
+  .section-title {
+    font-size: 14px; font-weight: 600;
+    color: var(--text); margin-bottom: 4px;
+    letter-spacing: -0.01em;
+  }
+  .section-sub { font-size: 12px; color: var(--text-subtle); font-weight: 500; }
+  .hidden { display: none !important; }
+
+  /* ========== OCCUPANCY EXPAND ========== */
+  #occKpiCard { position: relative; }
+  #occKpiCard .kpi-label { display: flex; align-items: center; width: 100%; }
+  #occKpiCard:hover #occExpandHint { color: var(--accent); }
+  #occKpiCard.occ-active {
+    border-color: var(--accent);
+    background: var(--surface-2);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+  #occKpiCard.occ-active #occExpandHint { color: var(--accent); }
+  #occDetailPanel {
+    overflow: hidden;
+    animation: slideDown 0.2s ease;
+  }
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============== TOPBAR ============== -->
+<header class="topbar">
+  <div class="brand" style="cursor:pointer;" id="goHome">
+    <svg class="brand-mark" viewBox="0 0 36 28" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="13" cy="14" r="11" fill="#6F8B9E"/>
+      <circle cx="23" cy="14" r="11" fill="#6F8B9E"/>
+      <g stroke="#FFFFFF" stroke-width="1.1" stroke-linecap="round" fill="none" opacity="0.95">
+        <line x1="18" y1="5" x2="18" y2="23"/>
+        <line x1="14" y1="9" x2="18" y2="13"/>
+        <line x1="22" y1="9" x2="18" y2="13"/>
+        <line x1="14" y1="14" x2="18" y2="18"/>
+        <line x1="22" y1="14" x2="18" y2="18"/>
+      </g>
+    </svg>
+    <div class="brand-name">BRAINTREE <span class="group">GROUP</span></div>
+    <div class="brand-sub">Owner's Dashboard</div>
+  </div>
+  <div class="topbar-actions">
+    <span class="as-of">As of <strong>Apr 28, 2026</strong> · 6:14 AM CT</span>
+    <button class="btn btn-ghost" title="Notifications">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    </button>
+    <button class="btn btn-primary" id="insightsBtn">
+      <svg class="ai-spark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 3v4M3 5h4M6 17v4M4 19h4M13 3l2.5 6L21 11l-5.5 2L13 19l-2.5-6L5 11l5.5-2L13 3z"/></svg>
+      Generate Insights
+    </button>
+    <div class="avatar">RB</div>
+  </div>
+</header>
+
+<!-- ============== CONTROLS ============== -->
+<div class="controls">
+  <div class="breadcrumb hidden" id="breadcrumb">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Back to Portfolio
+  </div>
+  <div class="control-group">
+    <span class="control-label">View</span>
+    <select class="select" id="viewSelect">
+      <option value="portfolio">Full Portfolio · 26 properties</option>
+      <option value="ASTOR">ASTOR — Holiday Inn Express Astoria</option>
+      <option value="BNAGV">BNAGV — Tru by Hilton Goodlettsville Nashville</option>
+      <option value="BOIGI">BOIGI — Hilton Garden Inn Boise Spectrum</option>
+      <option value="BOIRI">BOIRI — Residence Inn by Marriott</option>
+      <option value="BOISH">BOISH — Springhill Suites Boise West Eagle</option>
+      <option value="BOISP">BOISP — Hampton Inn &amp; Suites Boise Spectrum</option>
+      <option value="BZNFC">BZNFC — Home2 Suites Bozeman Four Corners</option>
+      <option value="CDAID">CDAID — Hampton Inn &amp; Suites Coeur d'Alene</option>
+      <option value="DALFB">DALFB — DoubleTree Dallas-Farmers Branch</option>
+      <option value="LASET">LASET — Hampton Inn &amp; Suites Las Vegas Airport</option>
+      <option value="LASHE">LASHE — Hilton Garden Inn Henderson</option>
+      <option value="LG52840">LG52840 — La Quinta Twin Falls</option>
+      <option value="LQ52836">LQ52836 — La Quinta Coeur d'Alene</option>
+      <option value="MSOGI">MSOGI — Hilton Garden Inn Missoula</option>
+      <option value="OR113">OR113 — Comfort Suites Redmond Airport</option>
+      <option value="PDXRE">PDXRE — River's Edge Portland, Tapestry Collection</option>
+      <option value="PDXSH">PDXSH — Hampton Inn &amp; Suites Sherwood</option>
+      <option value="PDXTG">PDXTG — Hampton Inn &amp; Suites Portland Tigard</option>
+      <option value="PHXRU">PHXRU — Tru by Hilton Gilbert</option>
+      <option value="RDMBE">RDMBE — Hampton Inn &amp; Suites Bend</option>
+      <option value="RDMBO">RDMBO — Hilton Garden Inn Bend</option>
+      <option value="RDMNB">RDMNB — The Newberry Bend</option>
+      <option value="SCCDT">SCCDT — DoubleTree Spokane City Center</option>
+      <option value="SLCDW">SLCDW — Hilton Garden Inn SLC Downtown</option>
+      <option value="SLCLE">SLCLE — Springhill Suites Lehi</option>
+      <option value="SLCLI">SLCLI — Courtyard by Marriott Lehi</option>
+    </select>
+  </div>
+  <div class="control-group">
+    <span class="control-label">Period</span>
+    <div class="seg" id="periodSeg">
+      <button data-p="yesterday">Yesterday</button>
+      <button data-p="wtd">WTD</button>
+      <button data-p="mtd" class="active">MTD</button>
+      <button data-p="ytd">YTD</button>
+      <button data-p="t12m" disabled title="Coming soon">T12M</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============== PORTFOLIO VIEW ============== -->
+<main id="portfolioView">
+
+  <div class="grid grid-kpi">
+    <div class="kpi" data-metric="revpar">
+      <div class="kpi-label">RevPAR <span class="help-dot" title="Revenue Per Available Room">i</span></div>
+      <div class="kpi-value" data-bind="p.revpar.value">$142.18</div>
+      <div class="kpi-deltas">
+        <div class="kpi-delta">
+          <span class="kpi-delta-label">vs Budget</span>
+          <span class="delta-pill" data-bind="p.revpar.budget"></span>
+        </div>
+        <div class="kpi-delta">
+          <span class="kpi-delta-label">vs Last Year</span>
+          <span class="delta-pill" data-bind="p.revpar.ly"></span>
+        </div>
+      </div>
+      <canvas class="kpi-spark" id="spark1"></canvas>
+    </div>
+
+    <div class="kpi" data-metric="adr">
+      <div class="kpi-label">ADR <span class="help-dot" title="Average Daily Rate">i</span></div>
+      <div class="kpi-value" data-bind="p.adr.value">$189.45</div>
+      <div class="kpi-deltas">
+        <div class="kpi-delta">
+          <span class="kpi-delta-label">vs Budget</span>
+          <span class="delta-pill" data-bind="p.adr.budget"></span>
+        </div>
+        <div class="kpi-delta">
+          <span class="kpi-delta-label">vs Last Year</span>
+          <span class="delta-pill" data-bind="p.adr.ly"></span>
+        </div>
+      </div>
+      <canvas class="kpi-spark" id="spark2"></canvas>
+    </div>
+
+    <div class="kpi" data-metric="occ" id="occKpiCard">
+      <div class="kpi-label">Occupancy <span style="margin-left:auto; font-size:10px; color:var(--text-subtle); font-weight:500; text-transform:none; letter-spacing:0; font-family:'Inter',sans-serif;" id="occExpandHint">All properties ›</span></div>
+      <div class="kpi-value" data-bind="p.occ.value">75.1%</div>
+      <div class="kpi-deltas">
+        <div class="kpi-delta">
+          <span class="kpi-delta-label">vs Budget</span>
+          <span class="delta-pill" data-bind="p.occ.budget"></span>
+        </div>
+        <div class="kpi-delta">
+          <span class="kpi-delta-label">vs Last Year</span>
+          <span class="delta-pill" data-bind="p.occ.ly"></span>
+        </div>
+      </div>
+      <canvas class="kpi-spark" id="spark3"></canvas>
+    </div>
+
+    <div class="kpi" data-metric="totalrev">
+      <div class="kpi-label" data-bind="p.totalrev.label">Total Revenue (MTD)</div>
+      <div class="kpi-value" data-bind="p.totalrev.value">$4.82M</div>
+      <div class="kpi-deltas">
+        <div class="kpi-delta">
+          <span class="kpi-delta-label">vs Budget</span>
+          <span class="delta-pill" data-bind="p.totalrev.budget"></span>
+        </div>
+        <div class="kpi-delta">
+          <span class="kpi-delta-label">vs Last Year</span>
+          <span class="delta-pill" data-bind="p.totalrev.ly"></span>
+        </div>
+      </div>
+      <canvas class="kpi-spark" id="spark4"></canvas>
+    </div>
+  </div>
+
+  <!-- ============== PROFITABILITY STRIP (PORTFOLIO) ============== -->
+  <div class="grid grid-kpi" style="margin-top:0;">
+    <div class="kpi profit-kpi">
+      <div class="kpi-label">GOP <span class="help-dot" title="Gross Operating Profit — Revenue minus departmental & undistributed operating expenses">i</span></div>
+      <div class="kpi-value" data-bind="p.gop.value">$1.09M</div>
+      <div class="kpi-deltas">
+        <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="p.gop.budget"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="p.gop.ly"></span></div>
+      </div>
+    </div>
+    <div class="kpi profit-kpi">
+      <div class="kpi-label">EBITDA</div>
+      <div class="kpi-value" data-bind="p.ebitda.value">$782K</div>
+      <div class="kpi-deltas">
+        <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="p.ebitda.budget"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="p.ebitda.ly"></span></div>
+      </div>
+    </div>
+    <div class="kpi profit-kpi">
+      <div class="kpi-label">EBITDA Margin</div>
+      <div class="kpi-value" data-bind="p.ebitdaMgn.value">27.5%</div>
+      <div class="kpi-deltas">
+        <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="p.ebitdaMgn.budget"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="p.ebitdaMgn.ly"></span></div>
+      </div>
+    </div>
+    <div class="kpi profit-kpi">
+      <div class="kpi-label">Flow-Through <span class="help-dot" title="Incremental EBITDA / Incremental Revenue (vs LY). 40–60% is industry-standard for healthy operations">i</span></div>
+      <div class="kpi-value" data-bind="p.flowthrough.value">57.0%</div>
+      <div class="kpi-deltas">
+        <div class="kpi-delta"><span class="kpi-delta-label">Benchmark (40–60%)</span><span class="delta-pill" data-bind="p.flowthrough.badge"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label">Δ EBITDA / Δ Rev</span><span class="ft-context" data-bind="p.flowthrough.detail"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-low">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="section-title">Comp Set Performance</div>
+          <div class="section-sub">STR Index · Trailing 30 days</div>
+        </div>
+        <span class="card-action">Detail →</span>
+      </div>
+      <div class="index-grid">
+        <div class="index-card" id="strCard-MPI" data-str="MPI" style="cursor:pointer; border-color:var(--accent); background:var(--accent-soft);">
+          <div class="index-label">MPI</div>
+          <div class="index-value">101.7</div>
+          <div class="delta-pill delta-up">▲ 0.5</div>
+          <div class="index-help">Occupancy<br>Index</div>
+        </div>
+        <div class="index-card" id="strCard-ARI" data-str="ARI" style="cursor:pointer;">
+          <div class="index-label">ARI</div>
+          <div class="index-value">102.5</div>
+          <div class="delta-pill delta-up">▲ 0.9</div>
+          <div class="index-help">ADR<br>Index</div>
+        </div>
+        <div class="index-card" id="strCard-RGI" data-str="RGI" style="cursor:pointer;">
+          <div class="index-label">RGI</div>
+          <div class="index-value">104.2</div>
+          <div class="delta-pill delta-up">▲ 1.8</div>
+          <div class="index-help">RevPAR<br>Index</div>
+        </div>
+      </div>
+      <div style="margin-top:18px; padding-top:16px; border-top: 1px solid var(--border-subtle);">
+        <div class="row between" style="margin-bottom:10px;">
+          <span class="section-sub" id="strChartLabel">MPI</span>
+          <span class="section-sub mono">Index = 100</span>
+        </div>
+        <div class="chart-wrap" style="height:190px;">
+          <canvas id="rgiChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div id="trendCardTitle">
+          <div class="section-title">RevPAR Trend</div>
+          <div class="section-sub" data-bind="p.trend.sub">Daily · Last 30 days · Actuals vs. Budget vs. Last Year</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div class="seg" id="trendMetricSeg">
+            <button data-tm="revpar" class="active">RevPAR</button>
+            <button data-tm="adr">ADR</button>
+            <button data-tm="totalrev">Total Rev</button>
+          </div>
+          <div class="chart-legend">
+            <span><span class="legend-dot" style="background: var(--accent)"></span>Actuals</span>
+            <span><span class="legend-dot" style="background: var(--info)"></span>Budget</span>
+            <span><span class="legend-dot" style="background: var(--text-subtle)"></span>LY</span>
+          </div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:330px;"><canvas id="trendChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ============== PROPERTY PERFORMANCE (FULL WIDTH) ============== -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header">
+      <div>
+        <div class="section-title">Property Performance</div>
+        <div class="section-sub" data-bind="p.props.sub">Month-to-date · Click row to drill in</div>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table style="min-width:1100px;">
+        <thead>
+          <tr>
+            <th>Property</th>
+            <th class="num">RevPAR</th>
+            <th class="num">Occ</th>
+            <th class="num">ADR</th>
+            <th class="num">Total Rev</th>
+            <th class="num">MPI</th>
+            <th class="num">ARI</th>
+            <th class="num">RGI</th>
+            <th class="num">GOP</th>
+            <th class="num">EBITDA</th>
+            <th class="num">EBITDA Mgn</th>
+            <th class="num">YoY</th>
+          </tr>
+        </thead>
+        <tbody id="portfolioPropsTable"></tbody>
+      </table>
+    </div>
+    <div id="propTableToggle" style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border-subtle); text-align:center;">
+      <button id="propShowAllBtn" class="btn btn-ghost" style="font-size:12px; color:var(--accent);">Show all 26 properties ›</button>
+    </div>
+  </div>
+
+  <!-- Occupancy Breakdown — All Properties (hidden until Occupancy KPI is clicked) -->
+  <div id="occDetailPanel" style="display:none; margin-bottom:16px;">
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="section-title">Occupancy by Property — May 5, 2026</div>
+        <div class="section-sub">Actuals vs. Budget vs. Last Year · All 26 properties · Color = vs. Budget</div>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th class="num">Rooms Avail</th>
+          <th class="num">Occ Actual</th>
+          <th class="num">Occ Budget</th>
+          <th class="num">Var vs Budget</th>
+          <th class="num">Occ Last Year</th>
+          <th class="num">Var vs LY</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>ASTOR — Holiday Inn Express Astoria</td><td class="num">98</td><td class="num">67.3%</td><td class="num">76.5%</td><td class="num"><span class="delta-pill delta-down">▼ 9.2 pts</span></td><td class="num">76.5%</td><td class="num"><span class="delta-pill delta-down">▼ 9.2 pts</span></td></tr>
+        <tr><td>BNAGV — Tru by Hilton Goodlettsville Nashville</td><td class="num">98</td><td class="num">88.8%</td><td class="num">—</td><td class="num"><span class="delta-pill delta-flat">—</span></td><td class="num">—</td><td class="num"><span class="delta-pill delta-flat">—</span></td></tr>
+        <tr><td>BOIGI — Hilton Garden Inn Boise Spectrum</td><td class="num">137</td><td class="num">100%</td><td class="num">81.0%</td><td class="num"><span class="delta-pill delta-up">▲ 19.0 pts</span></td><td class="num">81.0%</td><td class="num"><span class="delta-pill delta-up">▲ 19.0 pts</span></td></tr>
+        <tr><td>BOIRI — Residence Inn by Marriott</td><td class="num">104</td><td class="num">98.1%</td><td class="num">46.2%</td><td class="num"><span class="delta-pill delta-up">▲ 51.9 pts</span></td><td class="num">46.2%</td><td class="num"><span class="delta-pill delta-up">▲ 51.9 pts</span></td></tr>
+        <tr><td>BOISH — Springhill Suites Boise West Eagle</td><td class="num">119</td><td class="num">92.4%</td><td class="num">76.5%</td><td class="num"><span class="delta-pill delta-up">▲ 15.9 pts</span></td><td class="num">—</td><td class="num"><span class="delta-pill delta-flat">—</span></td></tr>
+        <tr><td>BOISP — Hampton Inn &amp; Suites Boise Spectrum</td><td class="num">133</td><td class="num">100%</td><td class="num">69.9%</td><td class="num"><span class="delta-pill delta-up">▲ 30.1 pts</span></td><td class="num">69.9%</td><td class="num"><span class="delta-pill delta-up">▲ 30.1 pts</span></td></tr>
+        <tr><td>BZNFC — Home2 Suites Bozeman Four Corners</td><td class="num">100</td><td class="num">50.0%</td><td class="num">—</td><td class="num"><span class="delta-pill delta-flat">—</span></td><td class="num">40.0%</td><td class="num"><span class="delta-pill delta-up">▲ 10.0 pts</span></td></tr>
+        <tr><td>CDAID — Hampton Inn &amp; Suites Coeur d'Alene</td><td class="num">124</td><td class="num">82.3%</td><td class="num">58.1%</td><td class="num"><span class="delta-pill delta-up">▲ 24.2 pts</span></td><td class="num">57.3%</td><td class="num"><span class="delta-pill delta-up">▲ 25.0 pts</span></td></tr>
+        <tr><td>DALFB — DoubleTree Dallas-Farmers Branch</td><td class="num">160</td><td class="num">95.0%</td><td class="num">98.8%</td><td class="num"><span class="delta-pill delta-down">▼ 3.8 pts</span></td><td class="num">98.8%</td><td class="num"><span class="delta-pill delta-down">▼ 3.8 pts</span></td></tr>
+        <tr><td>LASET — Hampton Inn &amp; Suites Las Vegas Airport</td><td class="num">129</td><td class="num">79.1%</td><td class="num">90.7%</td><td class="num"><span class="delta-pill delta-down">▼ 11.6 pts</span></td><td class="num">90.7%</td><td class="num"><span class="delta-pill delta-down">▼ 11.6 pts</span></td></tr>
+        <tr><td>LASHE — Hilton Garden Inn Henderson</td><td class="num">139</td><td class="num">99.3%</td><td class="num">93.5%</td><td class="num"><span class="delta-pill delta-up">▲ 5.8 pts</span></td><td class="num">93.5%</td><td class="num"><span class="delta-pill delta-up">▲ 5.8 pts</span></td></tr>
+        <tr><td>LG52840 — La Quinta Twin Falls</td><td class="num">101</td><td class="num">96.0%</td><td class="num">50.5%</td><td class="num"><span class="delta-pill delta-up">▲ 45.5 pts</span></td><td class="num">49.5%</td><td class="num"><span class="delta-pill delta-up">▲ 46.5 pts</span></td></tr>
+        <tr><td>LQ52836 — La Quinta Coeur d'Alene</td><td class="num">118</td><td class="num">46.6%</td><td class="num">31.4%</td><td class="num"><span class="delta-pill delta-up">▲ 15.3 pts</span></td><td class="num">31.4%</td><td class="num"><span class="delta-pill delta-up">▲ 15.3 pts</span></td></tr>
+        <tr><td>MSOGI — Hilton Garden Inn Missoula</td><td class="num">146</td><td class="num">92.5%</td><td class="num">41.8%</td><td class="num"><span class="delta-pill delta-up">▲ 50.7 pts</span></td><td class="num">41.8%</td><td class="num"><span class="delta-pill delta-up">▲ 50.7 pts</span></td></tr>
+        <tr><td>OR113 — Comfort Suites Redmond Airport</td><td class="num">92</td><td class="num">65.2%</td><td class="num">52.2%</td><td class="num"><span class="delta-pill delta-up">▲ 13.0 pts</span></td><td class="num">52.2%</td><td class="num"><span class="delta-pill delta-up">▲ 13.0 pts</span></td></tr>
+        <tr><td>PDXRE — River's Edge Portland, Tapestry Collection</td><td class="num">112</td><td class="num">67.0%</td><td class="num">49.1%</td><td class="num"><span class="delta-pill delta-up">▲ 17.9 pts</span></td><td class="num">49.1%</td><td class="num"><span class="delta-pill delta-up">▲ 17.9 pts</span></td></tr>
+        <tr><td>PDXSH — Hampton Inn &amp; Suites Sherwood</td><td class="num">73</td><td class="num">65.8%</td><td class="num">64.4%</td><td class="num"><span class="delta-pill delta-up">▲ 1.4 pts</span></td><td class="num">64.4%</td><td class="num"><span class="delta-pill delta-up">▲ 1.4 pts</span></td></tr>
+        <tr><td>PDXTG — Hampton Inn &amp; Suites Portland Tigard</td><td class="num">152</td><td class="num">60.5%</td><td class="num">61.8%</td><td class="num"><span class="delta-pill delta-down">▼ 1.3 pts</span></td><td class="num">61.8%</td><td class="num"><span class="delta-pill delta-down">▼ 1.3 pts</span></td></tr>
+        <tr><td>PHXRU — Tru by Hilton Gilbert</td><td class="num">98</td><td class="num">37.8%</td><td class="num">37.8%</td><td class="num"><span class="delta-pill delta-flat">— 0.0 pts</span></td><td class="num">37.8%</td><td class="num"><span class="delta-pill delta-flat">— 0.0 pts</span></td></tr>
+        <tr><td>RDMBE — Hampton Inn &amp; Suites Bend</td><td class="num">114</td><td class="num">75.4%</td><td class="num">50.0%</td><td class="num"><span class="delta-pill delta-up">▲ 25.4 pts</span></td><td class="num">67.5%</td><td class="num"><span class="delta-pill delta-up">▲ 7.9 pts</span></td></tr>
+        <tr><td>RDMBO — Hilton Garden Inn Bend</td><td class="num">96</td><td class="num">71.9%</td><td class="num">79.2%</td><td class="num"><span class="delta-pill delta-down">▼ 7.3 pts</span></td><td class="num">79.2%</td><td class="num"><span class="delta-pill delta-down">▼ 7.3 pts</span></td></tr>
+        <tr><td>RDMNB — The Newberry Bend</td><td class="num">117</td><td class="num">58.1%</td><td class="num">50.4%</td><td class="num"><span class="delta-pill delta-up">▲ 7.7 pts</span></td><td class="num">50.4%</td><td class="num"><span class="delta-pill delta-up">▲ 7.7 pts</span></td></tr>
+        <tr><td>SCCDT — DoubleTree Spokane City Center</td><td class="num">375</td><td class="num">76.3%</td><td class="num">43.7%</td><td class="num"><span class="delta-pill delta-up">▲ 32.5 pts</span></td><td class="num">43.7%</td><td class="num"><span class="delta-pill delta-up">▲ 32.5 pts</span></td></tr>
+        <tr><td>SLCDW — Hilton Garden Inn SLC Downtown</td><td class="num">132</td><td class="num">98.5%</td><td class="num">100%</td><td class="num"><span class="delta-pill delta-down">▼ 1.5 pts</span></td><td class="num">100%</td><td class="num"><span class="delta-pill delta-down">▼ 1.5 pts</span></td></tr>
+        <tr><td>SLCLE — Springhill Suites Lehi</td><td class="num">94</td><td class="num">0%</td><td class="num">58.5%</td><td class="num"><span class="delta-pill delta-down">▼ 58.5 pts</span></td><td class="num">58.5%</td><td class="num"><span class="delta-pill delta-down">▼ 58.5 pts</span></td></tr>
+        <tr><td>SLCLI — Courtyard by Marriott Lehi</td><td class="num">97</td><td class="num">81.4%</td><td class="num">94.8%</td><td class="num"><span class="delta-pill delta-down">▼ 13.4 pts</span></td><td class="num">94.8%</td><td class="num"><span class="delta-pill delta-down">▼ 13.4 pts</span></td></tr>
+        <tr class="total"><td><strong>Portfolio Total</strong></td><td class="num">3,258</td><td class="num">76.6%</td><td class="num">60.2%</td><td class="num"><span class="delta-pill delta-up">▲ 16.5 pts</span></td><td class="num">63.4%</td><td class="num"><span class="delta-pill delta-up">▲ 13.2 pts</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  </div><!-- /occDetailPanel -->
+
+</main>
+
+<!-- ============== PROPERTY VIEW (ASTOR) ============== -->
+<main id="propertyView" class="hidden">
+
+  <!-- Property Header -->
+  <div class="property-header">
+    <div class="property-photo">PROPERTY</div>
+    <div class="property-info">
+      <h1>Holiday Inn Express Astoria</h1>
+      <div class="property-tags">
+        <span class="brand-pill">IHG</span>
+        <span>Holiday Inn Express</span>
+        <span class="dot">·</span>
+        <span>38-05 Northern Blvd, Astoria, NY 11101</span>
+        <span class="dot">·</span>
+        <span>Limited-service · 134 rooms</span>
+        <span class="dot">·</span>
+        <span>GM: Sarah Chen</span>
+      </div>
+    </div>
+    <div class="property-stats">
+      <div>
+        <div class="property-stat-label">Property Code</div>
+        <div class="property-stat-value mono">ASTOR</div>
+      </div>
+      <div>
+        <div class="property-stat-label">Health</div>
+        <span class="health-badge"><span class="pulse"></span>Performing</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI cards (property scoped) -->
+  <div class="grid grid-kpi">
+    <div class="kpi">
+      <div class="kpi-label">RevPAR <span class="help-dot" title="Revenue Per Available Room">i</span></div>
+      <div class="kpi-value" data-bind="a.revpar.value">$143.55</div>
+      <div class="kpi-deltas">
+        <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="a.revpar.budget"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="a.revpar.ly"></span></div>
+      </div>
+      <canvas class="kpi-spark" id="aSpark1"></canvas>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">ADR</div>
+      <div class="kpi-value" data-bind="a.adr.value">$176.90</div>
+      <div class="kpi-deltas">
+        <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="a.adr.budget"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="a.adr.ly"></span></div>
+      </div>
+      <canvas class="kpi-spark" id="aSpark2"></canvas>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Occupancy</div>
+      <div class="kpi-value" data-bind="a.occ.value">81.1%</div>
+      <div class="kpi-deltas">
+        <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="a.occ.budget"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="a.occ.ly"></span></div>
+      </div>
+      <canvas class="kpi-spark" id="aSpark3"></canvas>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label" data-bind="a.totalrev.label">Total Revenue (MTD)</div>
+      <div class="kpi-value" data-bind="a.totalrev.value">$562K</div>
+      <div class="kpi-deltas">
+        <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="a.totalrev.budget"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="a.totalrev.ly"></span></div>
+      </div>
+      <canvas class="kpi-spark" id="aSpark4"></canvas>
+    </div>
+  </div>
+
+  <!-- Profit / NOI row -->
+  <div class="grid grid-kpi" style="margin-top:0;" id="propProfitRow">
+    <div class="kpi profit-kpi">
+      <div class="kpi-label">GOP <span class="help-dot" title="Gross Operating Profit">i</span></div>
+      <div class="kpi-value" data-bind="a.gop.value">—</div>
+      <div class="kpi-deltas">
+        <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="a.gop.budget"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="a.gop.ly"></span></div>
+      </div>
+    </div>
+    <div class="kpi profit-kpi">
+      <div class="kpi-label">EBITDA</div>
+      <div class="kpi-value" data-bind="a.ebitda.value">—</div>
+      <div class="kpi-deltas">
+        <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="a.ebitda.budget"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="a.ebitda.ly"></span></div>
+      </div>
+    </div>
+    <div class="kpi profit-kpi">
+      <div class="kpi-label">EBITDA Margin</div>
+      <div class="kpi-value" data-bind="a.ebitdaMgn.value">—</div>
+      <div class="kpi-deltas">
+        <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="a.ebitdaMgn.budget"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="a.ebitdaMgn.ly"></span></div>
+      </div>
+    </div>
+    <div class="kpi profit-kpi">
+      <div class="kpi-label">Flow-Through</div>
+      <div class="kpi-value" data-bind="a.flowthrough.value">—</div>
+      <div class="kpi-deltas">
+        <div class="kpi-delta"><span class="kpi-delta-label">Benchmark (40–60%)</span><span class="delta-pill" data-bind="a.flowthrough.badge">—</span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label">Δ EBITDA / Δ Rev</span><span class="ft-context" data-bind="a.flowthrough.detail">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comp Set (full width, with chart) -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header">
+      <div>
+        <div class="section-title">Comp Set Performance</div>
+        <div class="section-sub" id="propSTRSub">STR Index · ASTOR</div>
+      </div>
+      <span class="card-action">STR detail →</span>
+    </div>
+    <div class="index-grid" style="margin-bottom:18px;">
+      <div class="index-card" id="propStrCard-MPI" style="cursor:pointer;" onclick="switchPropSTR('MPI')">
+        <div class="index-label">MPI</div>
+        <div class="index-value" id="propStrVal-MPI">109.4</div>
+        <div class="delta-pill delta-up" id="propStrDelta-MPI">▲ 2.1</div>
+        <div class="index-help">Occupancy<br>Index</div>
+      </div>
+      <div class="index-card" id="propStrCard-ARI" style="cursor:pointer;" onclick="switchPropSTR('ARI')">
+        <div class="index-label">ARI</div>
+        <div class="index-value" id="propStrVal-ARI">98.7</div>
+        <div class="delta-pill delta-down" id="propStrDelta-ARI">▼ 0.4</div>
+        <div class="index-help">ADR<br>Index</div>
+      </div>
+      <div class="index-card" id="propStrCard-RGI" style="cursor:pointer;" onclick="switchPropSTR('RGI')">
+        <div class="index-label">RGI</div>
+        <div class="index-value" id="propStrVal-RGI">108.0</div>
+        <div class="delta-pill delta-up" id="propStrDelta-RGI">▲ 1.7</div>
+        <div class="index-help">RevPAR<br>Index</div>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+      <span class="section-sub" id="propSTRChartLabel" style="font-size:12px;">MPI</span>
+      <div class="chart-legend">
+        <span><span class="legend-dot" style="background:var(--accent)"></span>Index</span>
+        <span><span class="legend-dot" style="background:rgba(255,255,255,0.15)"></span>100 (parity)</span>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="propSTRChart"></canvas></div>
+    <div style="margin-top:18px; padding-top:14px; border-top:1px solid var(--border-subtle);">
+      <table>
+        <thead>
+          <tr>
+            <th>Competitor</th>
+            <th class="num">Rms</th>
+            <th class="num">Occ</th>
+            <th class="num">ADR</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Comp 1 (LIC midscale)</td><td class="num">146</td><td class="num">73.8%</td><td class="num">$181.20</td></tr>
+          <tr><td>Comp 2 (LGA economy)</td><td class="num">138</td><td class="num">71.4%</td><td class="num">$172.80</td></tr>
+          <tr><td>Comp 3 (LGA midscale)</td><td class="num">160</td><td class="num">75.1%</td><td class="num">$185.40</td></tr>
+          <tr><td>Comp 4 (LGA economy)</td><td class="num">155</td><td class="num">68.2%</td><td class="num">$169.50</td></tr>
+          <tr><td>Comp 5 (LGA midscale)</td><td class="num">151</td><td class="num">74.9%</td><td class="num">$184.70</td></tr>
+          <tr class="total"><td><strong>ASTOR</strong></td><td class="num">134</td><td class="num">81.1%</td><td class="num">$176.90</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Metric Trend (full width, multi-metric) -->
+  <div class="card" style="margin-bottom:16px;" id="propTrendCard">
+    <div class="card-header">
+      <div id="propTrendCardTitle">
+        <div class="section-title">RevPAR Trend</div>
+        <div class="section-sub" data-bind="a.trend.sub">Daily · Last 30 days · Actuals vs. Budget vs. Last Year</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="seg" id="propTrendMetricSeg">
+          <button data-ptm="revpar" class="active">RevPAR</button>
+          <button data-ptm="adr">ADR</button>
+          <button data-ptm="totalrev">Total Rev</button>
+        </div>
+        <div class="chart-legend">
+          <span><span class="legend-dot" style="background:var(--accent)"></span>Actuals</span>
+          <span><span class="legend-dot" style="background:var(--info)"></span>Budget</span>
+          <span><span class="legend-dot" style="background:var(--text-subtle)"></span>LY</span>
+        </div>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="aTrendChart"></canvas></div>
+  </div>
+
+  <!-- Department breakdown -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header">
+      <div>
+        <div class="section-title">Revenue Department · Holiday Inn Express Astoria</div>
+        <div class="section-sub" data-bind="a.dept.sub">Month-to-date</div>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Department</th>
+          <th class="num">Revenue</th>
+          <th class="num">% of Total</th>
+          <th class="num">vs Budget</th>
+          <th class="num">vs LY</th>
+        </tr>
+      </thead>
+      <tbody id="deptTable">
+        <tr><td>Rooms</td><td class="num">$538,200</td><td class="num">95.8%</td><td class="num"><span class="delta-pill delta-up">▲ 1.8%</span></td><td class="num"><span class="delta-pill delta-up">▲ 9.4%</span></td></tr>
+        <tr><td>F&B (Breakfast)</td><td class="num">$14,100</td><td class="num">2.5%</td><td class="num"><span class="delta-pill delta-up">▲ 0.6%</span></td><td class="num"><span class="delta-pill delta-up">▲ 4.2%</span></td></tr>
+        <tr><td>Other Operated (Parking, Vending)</td><td class="num">$7,820</td><td class="num">1.4%</td><td class="num"><span class="delta-pill delta-up">▲ 2.4%</span></td><td class="num"><span class="delta-pill delta-up">▲ 6.0%</span></td></tr>
+        <tr><td>Miscellaneous Income</td><td class="num">$1,880</td><td class="num">0.3%</td><td class="num"><span class="delta-pill delta-flat">— 0.0%</span></td><td class="num"><span class="delta-pill delta-down">▼ 1.2%</span></td></tr>
+        <tr class="total"><td><strong>Total Property Revenue</strong></td><td class="num">$562,000</td><td class="num">100%</td><td class="num"><span class="delta-pill delta-up">▲ 1.7%</span></td><td class="num"><span class="delta-pill delta-up">▲ 9.1%</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</main>
+
+<!-- ============== INSIGHTS DRAWER ============== -->
+<div class="drawer-overlay" id="overlay"></div>
+<aside class="drawer" id="insightsDrawer">
+  <div class="drawer-header">
+    <div class="drawer-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2"><path d="M5 3v4M3 5h4M6 17v4M4 19h4M13 3l2.5 6L21 11l-5.5 2L13 19l-2.5-6L5 11l5.5-2L13 3z"/></svg>
+      AI Insights
+    </div>
+    <button class="drawer-close" data-close>✕</button>
+  </div>
+  <div class="drawer-body" id="insightsBody">
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 3l2.5 6L21 11l-5.5 2L13 19l-2.5-6L5 11l5.5-2L13 3z"/></svg>
+      </div>
+      <div class="empty-title">Generate insights for this view</div>
+      <div class="empty-sub">Claude will analyze the current period and surface what's notable. Estimated cost: ~$0.04 per run.</div>
+      <button class="btn btn-primary" id="generateBtn" style="margin-top:18px;">Generate now</button>
+    </div>
+  </div>
+  <div class="drawer-footer">
+    <span>April spend: <strong style="color:var(--text-muted)">$1.24</strong> / $25.00 budget</span>
+    <span class="mono">claude-sonnet-4</span>
+  </div>
+</aside>
+
+<!-- ============== CHAT FAB + DRAWER ============== -->
+<button class="chat-fab" id="chatFab" title="Ask AI">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+</button>
+<aside class="chat-drawer" id="chatDrawer">
+  <div class="chat-header">
+    <div class="chat-title">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2"><path d="M5 3v4M3 5h4M6 17v4M4 19h4M13 3l2.5 6L21 11l-5.5 2L13 19l-2.5-6L5 11l5.5-2L13 3z"/></svg>
+      Ask the Portfolio
+    </div>
+    <button class="drawer-close" id="chatClose">✕</button>
+  </div>
+  <div class="chat-meta-bar">
+    <span>Scope: <strong style="color:var(--text-muted)" id="chatScope">Full Portfolio · MTD</strong></span>
+    <span class="mono">$0.012 this session</span>
+  </div>
+  <div class="chat-body" id="chatBody">
+    <div class="suggested-prompts">
+      <button class="prompt-chip" data-prompt="Why is RevPAR down vs. budget?">Why is RevPAR down vs. budget?</button>
+      <button class="prompt-chip" data-prompt="Which property is dragging?">Which property is dragging?</button>
+      <button class="prompt-chip" data-prompt="How does April look vs. forecast?">How does April look vs. forecast?</button>
+      <button class="prompt-chip" data-prompt="Forecast next 30 days">Forecast next 30 days</button>
+    </div>
+    <div class="msg msg-ai">
+      Hi Robert — I'm scoped to your portfolio data through Apr 28, 2026. Ask me anything, or pick a starter above.
+      <div class="msg-meta"><span>Just now</span></div>
+    </div>
+  </div>
+  <div class="chat-input-wrap">
+    <div class="chat-input-row">
+      <textarea class="chat-input" id="chatInput" rows="1" placeholder="Ask about the portfolio…"></textarea>
+      <button class="send-btn" id="sendBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+  </div>
+</aside>
+
+<script>
+// ========== ENTRA ID AUTH ==========
+const msalConfig = {
+  auth: {
+    clientId: '5a568e2a-772c-4d59-87ba-fb37eb6f3d01',
+    authority: 'https://login.microsoftonline.com/e32dbdc5-1f56-4fb7-bfc5-07f634c37fe5',
+    redirectUri: 'https://final-demo-omega.vercel.app',
+  },
+  cache: { cacheLocation: 'localStorage' },
+};
+
+const msalInstance = new msal.PublicClientApplication(msalConfig);
+
+msalInstance.initialize().then(() => {
+  return msalInstance.handleRedirectPromise();
+}).then((response) => {
+  if (response && response.account) {
+    runDashboard();
+    return;
+  }
+  const accounts = msalInstance.getAllAccounts();
+  if (accounts.length === 0) {
+    document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0B0E14;color:#ECEFF4;font-family:Inter,sans-serif;flex-direction:column;"><h1>Sign in required</h1><button id="loginBtn" style="margin-top:20px;padding:10px 20px;background:#D4A574;color:#1a1208;border:none;border-radius:7px;cursor:pointer;font-size:14px;">Sign in with Microsoft</button></div>';
+    document.getElementById('loginBtn').addEventListener('click', () => {
+      msalInstance.loginRedirect({ scopes: ['User.Read'] });
+    });
+    return;
+  }
+  runDashboard();
+}).catch(err => console.error('Auth error:', err));
+
+function runDashboard() {
+
+// ========== CHART DEFAULTS ==========
+Chart.defaults.color = '#9AA5B8';
+Chart.defaults.borderColor = '#1A222D';
+Chart.defaults.font.family = 'Inter';
+
+const ACCENT = '#D4A574';
+const INFO = '#60A5FA';
+const SUBTLE = '#6B7588';
+
+// ========== PORTFOLIO PERIOD DATA ==========
+const PORTFOLIO_DATA = {
+  yesterday: {
+    label: "Yesterday · Apr 27, 2026",
+    perfSub: "Yesterday · Portfolio rollup",
+    propsSub: "Yesterday (Apr 27) · Click row to drill in",
+    trendSub: "Hourly · Apr 27, 2026 · Actuals vs. Budget vs. LY",
+    revparLabel: "RevPAR",
+    totalRevLabel: "Total Revenue (Yesterday)",
+    kpi: {
+      revpar: { value: '$148.20', budget: '+1.2%', ly: '+9.4%', budgetUp: true, lyUp: true },
+      adr: { value: '$192.30', budget: '+2.0%', ly: '+6.7%', budgetUp: true, lyUp: true },
+      occ: { value: '77.1%', budget: '-0.4pts', ly: '+2.0pts', budgetUp: false, lyUp: true },
+      totalrev: { value: '$186.4K', budget: '+1.4%', ly: '+8.1%', budgetUp: true, lyUp: true }
+    },
+    str: {
+      MPI: { value: '100.4', delta: '▲ 0.2', up: true },
+      ARI: { value: '101.8', delta: '▲ 0.6', up: true },
+      RGI: { value: '103.1', delta: '▲ 1.2', up: true },
+      chartData: {
+        MPI: [95.0,95.8,96.6,97.8,97.4,98.6,99.8,99.2,99.8,100.4,99.8,100.4,100.4],
+        ARI: [98.2,98.8,99.4,100.0,99.6,100.4,101.2,100.8,101.0,101.8,101.2,101.9,101.8],
+        RGI: [97.2,98.0,99.0,100.0,99.6,100.8,102.0,101.4,102.0,103.1,102.4,103.2,103.1]
+      }
+    },
+    perfRows: [
+      ['OCC Rooms Sold', '967', '985', '894', ['-1.8%', false], ['+8.2%', true]],
+      ['OOO Rooms', '5', '3', '8', ['+67%', false], ['-38%', true]],
+      ['Comp Set Rooms Sold', '2,801', '—', '2,693', ['—', null], ['+4.0%', true]],
+      ['ADR', '$192.30', '$188.50', '$180.20', ['+2.0%', true], ['+6.7%', true]],
+      ['RevPAR', '$148.20', '$146.43', '$135.40', ['+1.2%', true], ['+9.4%', true]],
+      ['Total Rooms Rev', '$186K', '$185K', '$170K', ['+0.5%', true], ['+9.4%', true]],
+      ['Total Property Rev', '$186.4K', '$183.9K', '$172.4K', ['+1.4%', true], ['+8.1%', true], 'total']
+    ],
+    propRows: [
+      // code, name, meta, revpar, occ, adr, totalrev, mpi, ari, rgi, gop, ebitda, ebitdaMgn, yoy
+      ['ASTOR','Holiday Inn Express Astoria','134 rms','$156.20','85.6%','$182.50','$20.9K','109.2','100.1','108.4','$6.2K','$4.8K','22.9%',['+11.2%', true]],
+      ['BNAGV','Tru by Hilton Goodlettsville','98 rms','$132.40','88.8%','$149.10','$13.0K','103.4','101.8','102.3','$3.8K','$2.9K','22.3%',['+5.8%', true]],
+      ['BOIGI','Hilton Garden Inn Boise Spectrum','137 rms','$162.10','100%','$162.10','$22.2K','106.4','103.2','105.7','$7.1K','$5.4K','24.3%',['+8.1%', true]],
+      ['BOIRI','Residence Inn by Marriott','104 rms','$185.10','98.1%','$188.70','$19.6K','111.8','108.4','110.2','$6.4K','$5.0K','25.5%',['+12.4%', true]],
+      ['BOISH','Springhill Suites Boise West Eagle','119 rms','$138.80','92.4%','$150.20','$17.9K','99.4','97.8','98.2','$5.1K','$3.8K','21.2%',['-1.8%', false]],
+      ['BOISP','Hampton Inn & Suites Boise Spectrum','133 rms','$168.40','100%','$168.40','$22.4K','107.2','104.6','106.1','$7.3K','$5.6K','25.0%',['+7.4%', true]],
+      ['BZNFC','Home2 Suites Bozeman Four Corners','100 rms','$82.10','50.0%','$164.20','$8.2K','98.2','96.4','97.4','$2.1K','$1.5K','18.3%',['+6.2%', true]],
+      ['CDAID','Hampton Inn & Suites Coeur d\'Alene','124 rms','$138.50','82.3%','$168.30','$17.2K','104.6','102.8','103.8','$5.3K','$4.0K','23.3%',['+8.9%', true]],
+      ['DALFB','DoubleTree Dallas-Farmers Branch','160 rms','$182.20','95.0%','$191.80','$29.1K','105.2','103.6','104.5','$9.6K','$7.4K','25.4%',['+5.3%', true]],
+      ['LASET','Hampton Inn & Suites Las Vegas Airport','129 rms','$149.20','79.1%','$188.60','$19.2K','102.0','100.4','101.2','$5.8K','$4.4K','22.9%',['+3.8%', true]],
+      ['LASHE','Hilton Garden Inn Henderson','139 rms','$177.40','99.3%','$178.60','$24.7K','106.6','104.8','105.9','$8.2K','$6.3K','25.5%',['+6.7%', true]],
+      ['LG52840','La Quinta Twin Falls','101 rms','$148.30','96.0%','$154.50','$15.0K','103.8','102.0','103.1','$4.6K','$3.5K','23.3%',['+7.2%', true]],
+      ['LQ52836','La Quinta Coeur d\'Alene','118 rms','$78.40','46.6%','$168.20','$9.2K','101.2','99.2','100.4','$2.4K','$1.7K','18.5%',['+4.1%', true]],
+      ['MSOGI','Hilton Garden Inn Missoula','146 rms','$162.80','92.5%','$176.00','$23.8K','105.4','103.6','104.7','$7.8K','$6.0K','25.2%',['+6.5%', true]],
+      ['OR113','Comfort Suites Redmond Airport','92 rms','$106.40','65.2%','$163.20','$9.8K','102.6','100.6','101.8','$2.9K','$2.1K','21.4%',['+5.2%', true]],
+      ['PDXRE','River\'s Edge Portland, Tapestry','112 rms','$112.90','67.0%','$168.50','$12.6K','103.0','101.2','102.3','$3.6K','$2.7K','21.4%',['+4.8%', true]],
+      ['PDXSH','Hampton Inn & Suites Sherwood','73 rms','$110.70','65.8%','$168.20','$8.1K','102.4','100.4','101.6','$2.3K','$1.7K','21.0%',['+3.9%', true]],
+      ['PDXTG','Hampton Inn & Suites Portland Tigard','152 rms','$101.80','60.5%','$168.30','$15.5K','101.0','99.0','100.2','$4.2K','$3.1K','20.0%',['+2.1%', true]],
+      ['PHXRU','Tru by Hilton Gilbert','98 rms','$63.50','37.8%','$167.90','$6.2K','99.8','98.0','99.1','$1.5K','$1.0K','16.1%',['-0.8%', false]],
+      ['RDMBE','Hampton Inn & Suites Bend','114 rms','$126.60','75.4%','$167.90','$14.4K','103.8','102.2','103.2','$4.4K','$3.3K','22.9%',['+5.8%', true]],
+      ['RDMBO','Hilton Garden Inn Bend','96 rms','$120.50','71.9%','$167.60','$11.6K','102.2','100.2','101.4','$3.4K','$2.5K','21.6%',['+3.2%', true]],
+      ['RDMNB','The Newberry Bend','117 rms','$97.10','58.1%','$167.10','$11.4K','103.4','101.6','102.8','$3.2K','$2.3K','20.2%',['+4.4%', true]],
+      ['SCCDT','DoubleTree Spokane City Center','375 rms','$128.10','76.3%','$167.90','$48.0K','104.2','102.4','103.6','$15.4K','$11.8K','24.6%',['+5.1%', true]],
+      ['SLCDW','Hilton Garden Inn SLC Downtown','132 rms','$165.20','98.5%','$167.70','$21.8K','105.6','103.8','104.9','$7.2K','$5.5K','25.2%',['+6.8%', true]],
+      ['SLCLE','Springhill Suites Lehi','94 rms','$0.00','0%','—','—','—','—','—','—','—','—',['-100%', false]],
+      ['SLCLI','Courtyard by Marriott Lehi','97 rms','$136.10','81.4%','$167.20','$13.2K','102.6','100.6','101.9','$3.9K','$2.9K','22.0%',['+3.5%', true]]
+    ],
+    charts: {
+      revpar: { labels: ['12a','3a','6a','9a','12p','3p','6p','9p','11p'], actuals: [142,141,144,148,150,151,150,149,148], budget: [146,146,146,146,146,146,146,146,146], ly: [134,133,135,138,139,140,138,137,135], prefix:'$', title:'RevPAR Trend' },
+      adr:    { labels: ['12a','3a','6a','9a','12p','3p','6p','9p','11p'], actuals: [190,189,191,193,194,195,193,192,192], budget: [188,188,188,188,188,188,188,188,188], ly: [179,178,180,182,183,184,182,181,180], prefix:'$', title:'ADR Trend' },
+      totalrev:{ labels: ['12a','3a','6a','9a','12p','3p','6p','9p','11p'], actuals: [22,21,22,24,25,25,24,23,23], budget: [23,23,23,23,23,23,23,23,23], ly: [20,19,20,22,22,23,21,20,20], prefix:'$', suffix:'K', title:'Total Revenue Trend' }
+    },
+    profit: {
+      gop:       { value: '$47.1K', budget: '+3.2%', ly: '+11.4%', budgetUp: true, lyUp: true },
+      ebitda:    { value: '$36.2K', budget: '+2.8%', ly: '+10.6%', budgetUp: true, lyUp: true },
+      ebitdaMgn: { value: '19.4%',  budget: '+0.4pts', ly: '+1.8pts', budgetUp: true, lyUp: true },
+      flowthrough: { value: '62.4%', badge: 'Above Target', detail: '+$14.2K / +$22.8K rev', badgeUp: true }
+    }
+  },
+  wtd: {
+    label: "Week-to-date · Apr 22–28",
+    perfSub: "Week-to-date · Portfolio rollup",
+    propsSub: "Week-to-date · Click row to drill in",
+    trendSub: "Daily · Apr 22–28 · Actuals vs. Budget vs. LY",
+    revparLabel: "RevPAR",
+    totalRevLabel: "Total Revenue (WTD)",
+    kpi: {
+      revpar: { value: '$144.85', budget: '-0.8%', ly: '+8.7%', budgetUp: false, lyUp: true },
+      adr: { value: '$190.85', budget: '+1.5%', ly: '+5.6%', budgetUp: true, lyUp: true },
+      occ: { value: '75.9%', budget: '-1.7pts', ly: '+2.2pts', budgetUp: false, lyUp: true },
+      totalrev: { value: '$1.12M', budget: '+0.4%', ly: '+7.2%', budgetUp: true, lyUp: true }
+    },
+    perfRows: [
+      ['OCC Rooms Sold', '6,772', '7,028', '6,358', ['-3.6%', false], ['+6.5%', true]],
+      ['OOO Rooms', '32', '21', '52', ['+52%', false], ['-38%', true]],
+      ['Comp Set Rooms Sold', '19,610', '—', '18,894', ['—', null], ['+3.8%', true]],
+      ['ADR', '$190.85', '$186.90', '$180.70', ['+2.1%', true], ['+5.6%', true]],
+      ['RevPAR', '$144.85', '$146.06', '$133.20', ['-0.8%', false], ['+8.7%', true]],
+      ['Total Rooms Rev', '$1.29M', '$1.31M', '$1.15M', ['-1.5%', false], ['+12.2%', true]],
+      ['Total Property Rev', '$1.12M', '$1.11M', '$1.05M', ['+0.9%', true], ['+7.2%', true], 'total']
+    ],
+    propRows: [
+      ['ASTOR','Holiday Inn Express Astoria','134 rms','$148.40','82.5%','$179.85','$144.9K','108.4','99.4','107.2','$42.1K','$32.4K','22.4%',['+10.1%', true]],
+      ['BNAGV','Tru by Hilton Goodlettsville','98 rms','$128.80','86.2%','$149.40','$88.2K','103.8','102.2','101.8','$25.2K','$19.2K','21.8%',['+5.2%', true]],
+      ['BOIGI','Hilton Garden Inn Boise Spectrum','137 rms','$155.20','96.4%','$161.00','$151.0K','106.8','104.2','103.9','$46.8K','$35.8K','23.7%',['+7.4%', true]],
+      ['BOIRI','Residence Inn by Marriott','104 rms','$179.30','95.6%','$187.60','$133.2K','112.2','109.0','110.4','$42.4K','$32.8K','24.6%',['+11.8%', true]],
+      ['BOISH','Springhill Suites Boise West Eagle','119 rms','$135.40','89.1%','$151.90','$120.8K','99.8','98.2','97.6','$33.4K','$25.2K','20.9%',['-2.1%', false]],
+      ['BOISP','Hampton Inn & Suites Boise Spectrum','133 rms','$162.10','97.4%','$166.50','$152.2K','107.6','105.0','105.8','$47.8K','$36.6K','24.0%',['+7.0%', true]],
+      ['BZNFC','Home2 Suites Bozeman Four Corners','100 rms','$78.60','48.2%','$163.10','$55.6K','98.6','96.8','96.9','$13.4K','$9.8K','17.6%',['+5.8%', true]],
+      ['CDAID','Hampton Inn & Suites Coeur d\'Alene','124 rms','$134.20','79.8%','$168.20','$117.0K','105.0','103.2','103.4','$35.2K','$26.8K','22.9%',['+8.3%', true]],
+      ['DALFB','DoubleTree Dallas-Farmers Branch','160 rms','$176.40','93.2%','$189.30','$197.8K','105.6','104.0','104.1','$63.2K','$48.4K','24.5%',['+5.0%', true]],
+      ['LASET','Hampton Inn & Suites Las Vegas Airport','129 rms','$143.80','76.4%','$188.20','$130.8K','102.4','100.8','100.8','$38.6K','$29.2K','22.3%',['+3.4%', true]],
+      ['LASHE','Hilton Garden Inn Henderson','139 rms','$172.10','96.8%','$177.80','$167.8K','107.0','105.2','105.4','$54.2K','$41.6K','24.8%',['+6.2%', true]],
+      ['LG52840','La Quinta Twin Falls','101 rms','$143.90','93.2%','$154.40','$101.8K','104.2','102.4','102.8','$30.4K','$23.0K','22.6%',['+6.8%', true]],
+      ['LQ52836','La Quinta Coeur d\'Alene','118 rms','$75.20','44.8%','$167.90','$62.2K','101.6','99.6','100.1','$15.8K','$11.4K','18.3%',['+3.7%', true]],
+      ['MSOGI','Hilton Garden Inn Missoula','146 rms','$157.40','89.6%','$175.70','$161.6K','105.8','104.0','104.3','$51.6K','$39.4K','24.4%',['+6.1%', true]],
+      ['OR113','Comfort Suites Redmond Airport','92 rms','$102.80','63.4%','$162.20','$66.6K','103.0','101.0','101.4','$19.2K','$14.2K','21.3%',['+4.8%', true]],
+      ['PDXRE','River\'s Edge Portland, Tapestry','112 rms','$109.40','64.8%','$168.80','$85.6K','103.4','101.6','101.9','$24.2K','$18.0K','21.0%',['+4.4%', true]],
+      ['PDXSH','Hampton Inn & Suites Sherwood','73 rms','$107.40','64.0%','$167.80','$55.2K','102.8','100.8','101.2','$15.4K','$11.4K','20.7%',['+3.5%', true]],
+      ['PDXTG','Hampton Inn & Suites Portland Tigard','152 rms','$98.60','58.6%','$168.30','$105.2K','101.4','99.4','99.8','$27.8K','$20.4K','19.4%',['+1.8%', true]],
+      ['PHXRU','Tru by Hilton Gilbert','98 rms','$61.40','36.6%','$167.80','$41.8K','100.2','98.4','98.7','$9.8K','$6.8K','16.3%',['-1.2%', false]],
+      ['RDMBE','Hampton Inn & Suites Bend','114 rms','$122.30','73.0%','$167.50','$97.8K','104.2','102.6','102.8','$29.6K','$22.4K','22.9%',['+5.4%', true]],
+      ['RDMBO','Hilton Garden Inn Bend','96 rms','$116.90','69.8%','$167.50','$78.6K','102.6','100.6','101.0','$22.4K','$16.6K','21.1%',['+2.8%', true]],
+      ['RDMNB','The Newberry Bend','117 rms','$94.00','56.4%','$166.70','$77.4K','103.8','102.0','102.4','$21.4K','$15.6K','20.2%',['+4.0%', true]],
+      ['SCCDT','DoubleTree Spokane City Center','375 rms','$124.40','74.2%','$167.70','$326.4K','104.6','102.8','103.2','$104.8K','$80.2K','24.6%',['+4.7%', true]],
+      ['SLCDW','Hilton Garden Inn SLC Downtown','132 rms','$160.10','95.8%','$167.10','$148.2K','106.0','104.2','104.5','$47.4K','$36.2K','24.4%',['+6.4%', true]],
+      ['SLCLE','Springhill Suites Lehi','94 rms','$12.40','7.4%','$167.60','$8.2K','—','—','—','—','—','—',['-88%', false]],
+      ['SLCLI','Courtyard by Marriott Lehi','97 rms','$131.90','79.0%','$167.00','$89.6K','103.0','101.0','101.5','$26.2K','$19.6K','21.9%',['+3.1%', true]]
+    ],
+    str: {
+      MPI: { value: '100.8', delta: '▲ 0.3', up: true },
+      ARI: { value: '102.0', delta: '▲ 0.7', up: true },
+      RGI: { value: '103.4', delta: '▲ 1.4', up: true },
+      chartData: {
+        MPI: [99.0,99.2,99.8,100.4,100.6,100.8,100.8],
+        ARI: [100.2,100.8,101.4,102.0,102.2,102.0,102.0],
+        RGI: [99.8,100.4,101.6,102.4,102.9,103.2,103.4]
+      }
+    },
+    charts: {
+      revpar:   { labels: ['Apr 22','Apr 23','Apr 24','Apr 25','Apr 26','Apr 27','Apr 28'], actuals: [141,143,146,149,141,142,148], budget: [146,146,146,146,146,146,146], ly: [131,132,135,138,130,131,135], prefix:'$', title:'RevPAR Trend' },
+      adr:      { labels: ['Apr 22','Apr 23','Apr 24','Apr 25','Apr 26','Apr 27','Apr 28'], actuals: [188,190,192,194,188,191,192], budget: [187,187,187,187,187,187,187], ly: [179,181,183,185,178,181,182], prefix:'$', title:'ADR Trend' },
+      totalrev: { labels: ['Apr 22','Apr 23','Apr 24','Apr 25','Apr 26','Apr 27','Apr 28'], actuals: [1.04,1.06,1.08,1.11,1.05,1.06,1.12], budget: [1.09,1.09,1.09,1.09,1.09,1.09,1.09], ly: [0.97,0.99,1.01,1.04,0.98,0.99,1.05], prefix:'$', suffix:'M', title:'Total Revenue Trend' }
+    },
+    profit: {
+      gop:       { value: '$325K', budget: '+1.8%', ly: '+9.2%', budgetUp: true, lyUp: true },
+      ebitda:    { value: '$248K', budget: '+1.4%', ly: '+8.6%', budgetUp: true, lyUp: true },
+      ebitdaMgn: { value: '22.1%',  budget: '+0.2pts', ly: '+1.4pts', budgetUp: true, lyUp: true },
+      flowthrough: { value: '58.3%', badge: 'On Target', detail: '+$21.4K / +$36.7K rev', badgeUp: true }
+    }
+  },
+  mtd: {
+    label: "Month-to-date · April 2026",
+    perfSub: "Month-to-date · Portfolio rollup",
+    propsSub: "Month-to-date · Click row to drill in",
+    trendSub: "Daily · Last 30 days · Actuals vs. Budget vs. LY",
+    revparLabel: "RevPAR",
+    totalRevLabel: "Total Revenue (MTD)",
+    kpi: {
+      revpar: { value: '$142.18', budget: '-2.1%', ly: '+8.2%', budgetUp: false, lyUp: true },
+      adr: { value: '$189.45', budget: '+1.2%', ly: '+5.1%', budgetUp: true, lyUp: true },
+      occ: { value: '76.6%', budget: '+16.5pts', ly: '+13.2pts', budgetUp: true, lyUp: true },
+      totalrev: { value: '$4.82M', budget: '+0.8%', ly: '+6.3%', budgetUp: true, lyUp: true }
+    },
+    perfRows: [
+      ['OCC Rooms Sold', '29,847', '30,847', '28,103', ['-3.2%', false], ['+6.2%', true]],
+      ['OOO Rooms', '142', '90', '218', ['+58%', false], ['-35%', true]],
+      ['Comp Set Rooms Sold', '86,419', '—', '82,940', ['—', null], ['+4.2%', true]],
+      ['ADR', '$189.45', '$187.20', '$180.20', ['+1.2%', true], ['+5.1%', true]],
+      ['RevPAR', '$142.18', '$145.20', '$131.40', ['-2.1%', false], ['+8.2%', true]],
+      ['Total Rooms Rev', '$5.65M', '$5.77M', '$5.06M', ['-2.1%', false], ['+11.7%', true]],
+      ['Total Property Rev', '$4.82M', '$4.78M', '$4.53M', ['+0.8%', true], ['+6.3%', true], 'total']
+    ],
+    propRows: [
+      ['ASTOR','Holiday Inn Express Astoria','134 rms','$143.55','81.1%','$176.90','$562K','108.6','99.8','108.0','$172K','$128K','22.8%',['+9.4%', true]],
+      ['BNAGV','Tru by Hilton Goodlettsville','98 rms','$124.18','88.8%','$139.80','$377K','103.4','102.0','102.1','$104K','$79K','21.0%',['+4.6%', true]],
+      ['BOIGI','Hilton Garden Inn Boise Spectrum','137 rms','$148.92','100%','$148.92','$646K','106.0','104.2','104.2','$193K','$148K','22.9%',['+6.3%', true]],
+      ['BOIRI','Residence Inn by Marriott','104 rms','$174.10','98.1%','$177.50','$569K','112.4','109.0','110.6','$175K','$135K','23.7%',['+12.4%', true]],
+      ['BOISH','Springhill Suites Boise West Eagle','119 rms','$132.87','92.4%','$143.80','$516K','99.6','98.0','96.7','$142K','$107K','20.7%',['-2.8%', false]],
+      ['BOISP','Hampton Inn & Suites Boise Spectrum','133 rms','$155.30','100%','$155.30','$651K','107.4','105.0','105.4','$196K','$150K','23.0%',['+6.8%', true]],
+      ['BZNFC','Home2 Suites Bozeman Four Corners','100 rms','$74.20','50.0%','$148.40','$237K','98.4','96.6','96.2','$55K','$39K','16.5%',['+5.4%', true]],
+      ['CDAID','Hampton Inn & Suites Coeur d\'Alene','124 rms','$128.80','82.3%','$156.50','$499K','104.8','103.0','103.1','$143K','$108K','21.6%',['+7.8%', true]],
+      ['DALFB','DoubleTree Dallas-Farmers Branch','160 rms','$168.60','95.0%','$177.50','$847K','105.4','103.8','103.8','$256K','$196K','23.1%',['+4.6%', true]],
+      ['LASET','Hampton Inn & Suites Las Vegas Airport','129 rms','$136.50','79.1%','$172.60','$559K','102.2','100.6','100.5','$158K','$119K','21.3%',['+3.1%', true]],
+      ['LASHE','Hilton Garden Inn Henderson','139 rms','$163.20','99.3%','$164.30','$717K','106.8','105.2','104.8','$219K','$168K','23.4%',['+5.9%', true]],
+      ['LG52840','La Quinta Twin Falls','101 rms','$137.10','96.0%','$142.80','$433K','104.0','102.4','102.4','$124K','$94K','21.7%',['+6.4%', true]],
+      ['LQ52836','La Quinta Coeur d\'Alene','118 rms','$71.40','46.6%','$153.20','$264K','101.4','99.4','99.8','$64K','$46K','17.4%',['+3.3%', true]],
+      ['MSOGI','Hilton Garden Inn Missoula','146 rms','$150.20','92.5%','$162.40','$692K','105.6','103.8','103.9','$208K','$160K','23.1%',['+5.7%', true]],
+      ['OR113','Comfort Suites Redmond Airport','92 rms','$97.60','65.2%','$149.70','$284K','102.8','100.8','101.1','$78K','$58K','20.4%',['+4.2%', true]],
+      ['PDXRE','River\'s Edge Portland, Tapestry','112 rms','$104.20','67.0%','$155.50','$365K','103.2','101.4','101.6','$99K','$74K','20.3%',['+4.0%', true]],
+      ['PDXSH','Hampton Inn & Suites Sherwood','73 rms','$102.10','65.8%','$155.20','$236K','102.6','100.6','101.0','$63K','$47K','19.9%',['+3.2%', true]],
+      ['PDXTG','Hampton Inn & Suites Portland Tigard','152 rms','$93.40','60.5%','$154.40','$448K','101.2','99.2','99.5','$113K','$83K','18.5%',['+1.5%', true]],
+      ['PHXRU','Tru by Hilton Gilbert','98 rms','$58.10','37.8%','$153.70','$178K','100.0','98.2','98.4','$40K','$28K','15.7%',['-1.4%', false]],
+      ['RDMBE','Hampton Inn & Suites Bend','114 rms','$116.40','75.4%','$154.40','$418K','104.0','102.4','102.5','$119K','$90K','21.5%',['+5.1%', true]],
+      ['RDMBO','Hilton Garden Inn Bend','96 rms','$110.70','71.9%','$154.00','$335K','102.4','100.4','100.7','$92K','$68K','20.3%',['+2.4%', true]],
+      ['RDMNB','The Newberry Bend','117 rms','$89.30','58.1%','$153.70','$330K','103.6','101.8','102.1','$88K','$65K','19.7%',['+3.6%', true]],
+      ['SCCDT','DoubleTree Spokane City Center','375 rms','$118.10','76.3%','$154.80','$1.39M','104.4','102.6','102.9','$431K','$330K','23.7%',['+4.3%', true]],
+      ['SLCDW','Hilton Garden Inn SLC Downtown','132 rms','$152.10','98.5%','$154.40','$632K','105.8','104.0','104.2','$192K','$147K','23.3%',['+6.1%', true]],
+      ['SLCLE','Springhill Suites Lehi','94 rms','$0.00','0%','—','—','—','—','—','—','—','—',['-100%', false]],
+      ['SLCLI','Courtyard by Marriott Lehi','97 rms','$125.50','81.4%','$154.20','$383K','102.8','100.8','101.2','$107K','$80K','20.9%',['+2.9%', true]]
+    ],
+    str: {
+      MPI: { value: '101.7', delta: '▲ 0.5', up: true },
+      ARI: { value: '102.5', delta: '▲ 0.9', up: true },
+      RGI: { value: '104.2', delta: '▲ 1.8', up: true },
+      chartData: {
+        MPI: [98.2,98.6,99.0,100.2,101.0,101.4,101.7,101.5,101.6,101.7,101.4,101.7,101.7],
+        ARI: [100.1,100.8,101.2,102.4,102.6,102.4,102.8,102.6,102.5,102.7,102.3,102.6,102.5],
+        RGI: [99.4,100.1,100.8,102.0,103.1,103.2,103.8,104.0,103.8,104.2,103.6,104.3,104.2]
+      }
+    },
+    charts: {
+      revpar:   { labels: Array.from({length:30},(_,i)=>`${i+1}`), actuals: [128,134,131,140,142,138,145,141,143,148,144,140,137,141,138,143,146,148,144,141,138,142,145,148,150,144,140,138,141,142], budget: Array.from({length:30},()=>145), ly: [120,125,122,130,131,128,135,131,132,138,134,129,127,130,128,133,135,138,134,131,128,132,135,138,140,134,130,128,131,131], prefix:'$', title:'RevPAR Trend' },
+      adr:      { labels: Array.from({length:30},(_,i)=>`${i+1}`), actuals: [185,188,186,190,192,188,194,190,191,194,191,188,186,190,188,191,193,195,191,189,187,190,192,195,197,191,188,186,190,189], budget: Array.from({length:30},()=>187), ly: [176,179,177,182,183,180,185,182,183,187,184,180,178,182,180,183,185,187,183,181,179,182,185,187,189,184,181,179,182,181], prefix:'$', title:'ADR Trend' },
+      totalrev: { labels: Array.from({length:30},(_,i)=>`${i+1}`), actuals: [152,158,155,165,167,162,171,166,169,174,170,164,162,166,163,168,172,175,170,166,163,167,172,175,178,170,165,162,166,167], budget: Array.from({length:30},()=>160), ly: [141,147,144,153,154,151,158,154,155,162,158,152,150,153,151,156,158,161,163,157,153,150,154,154], prefix:'$', suffix:'K', title:'Total Revenue Trend' }
+    },
+    profit: {
+      gop:       { value: '$1.09M', budget: '+2.4%', ly: '+8.8%', budgetUp: true, lyUp: true },
+      ebitda:    { value: '$836K',  budget: '+2.0%', ly: '+8.2%', budgetUp: true, lyUp: true },
+      ebitdaMgn: { value: '17.3%',  budget: '+0.3pts', ly: '+1.2pts', budgetUp: true, lyUp: true },
+      flowthrough: { value: '57.4%', badge: 'On Target', detail: '+$70.2K / +$122K rev', badgeUp: true }
+    }
+  },
+  ytd: {
+    label: "Year-to-date · 2026",
+    perfSub: "Year-to-date · Portfolio rollup",
+    propsSub: "Year-to-date · Click row to drill in",
+    trendSub: "Weekly · Jan–Apr 2026 · Actuals vs. Budget vs. LY",
+    revparLabel: "RevPAR",
+    totalRevLabel: "Total Revenue (YTD)",
+    kpi: {
+      revpar: { value: '$138.52', budget: '+0.4%', ly: '+6.8%', budgetUp: true, lyUp: true },
+      adr: { value: '$184.62', budget: '+1.0%', ly: '+4.8%', budgetUp: true, lyUp: true },
+      occ: { value: '75.0%', budget: '-0.4pts', ly: '+1.4pts', budgetUp: false, lyUp: true },
+      totalrev: { value: '$19.4M', budget: '+1.1%', ly: '+5.6%', budgetUp: true, lyUp: true }
+    },
+    perfRows: [
+      ['OCC Rooms Sold', '117,520', '118,012', '110,318', ['-0.4%', false], ['+6.5%', true]],
+      ['OOO Rooms', '482', '420', '742', ['+15%', false], ['-35%', true]],
+      ['Comp Set Rooms Sold', '341,608', '—', '328,920', ['—', null], ['+3.9%', true]],
+      ['ADR', '$184.62', '$183.10', '$176.20', ['+0.8%', true], ['+4.8%', true]],
+      ['RevPAR', '$138.52', '$137.96', '$129.65', ['+0.4%', true], ['+6.8%', true]],
+      ['Total Rooms Rev', '$21.7M', '$21.6M', '$19.4M', ['+0.5%', true], ['+11.9%', true]],
+      ['Total Property Rev', '$19.4M', '$19.2M', '$18.4M', ['+1.0%', true], ['+5.6%', true], 'total']
+    ],
+    propRows: [
+      ['ASTOR','Holiday Inn Express Astoria','134 rms','$128.85','74.7%','$172.40','$2.13M','106.0','99.2','105.2','$618K','$472K','22.2%',['+7.8%', true]],
+      ['BNAGV','Tru by Hilton Goodlettsville','98 rms','$118.40','81.4%','$145.40','$1.42M','103.8','102.0','100.8','$392K','$296K','20.8%',['+3.4%', true]],
+      ['BOIGI','Hilton Garden Inn Boise Spectrum','137 rms','$140.10','86.2%','$162.50','$2.46M','106.2','104.4','102.6','$730K','$556K','22.6%',['+5.7%', true]],
+      ['BOIRI','Residence Inn by Marriott','104 rms','$161.80','91.4%','$177.00','$2.16M','112.8','109.2','108.4','$652K','$498K','23.1%',['+10.2%', true]],
+      ['BOISH','Springhill Suites Boise West Eagle','119 rms','$129.50','84.2%','$153.80','$1.96M','99.8','98.2','98.1','$534K','$400K','20.4%',['-1.4%', false]],
+      ['BOISP','Hampton Inn & Suites Boise Spectrum','133 rms','$143.60','88.4%','$162.40','$2.47M','107.6','105.2','104.1','$740K','$564K','22.8%',['+5.9%', true]],
+      ['BZNFC','Home2 Suites Bozeman Four Corners','100 rms','$62.10','42.8%','$145.10','$0.90M','98.6','96.8','95.8','$210K','$148K','16.4%',['+4.2%', true]],
+      ['CDAID','Hampton Inn & Suites Coeur d\'Alene','124 rms','$116.20','73.1%','$158.90','$1.90M','105.2','103.4','102.2','$548K','$414K','21.8%',['+6.9%', true]],
+      ['DALFB','DoubleTree Dallas-Farmers Branch','160 rms','$152.40','86.8%','$175.60','$3.22M','105.6','104.0','103.2','$970K','$742K','23.0%',['+4.0%', true]],
+      ['LASET','Hampton Inn & Suites Las Vegas Airport','129 rms','$122.40','70.8%','$172.90','$2.12M','102.4','100.8','99.8','$600K','$452K','21.3%',['+2.6%', true]],
+      ['LASHE','Hilton Garden Inn Henderson','139 rms','$147.60','89.4%','$165.10','$2.72M','107.0','105.4','104.1','$826K','$632K','23.2%',['+5.2%', true]],
+      ['LG52840','La Quinta Twin Falls','101 rms','$122.80','84.2%','$145.80','$1.64M','104.2','102.6','101.6','$470K','$354K','21.6%',['+5.6%', true]],
+      ['LQ52836','La Quinta Coeur d\'Alene','118 rms','$60.80','38.4%','$158.30','$1.00M','101.6','99.6','99.2','$242K','$174K','17.4%',['+2.8%', true]],
+      ['MSOGI','Hilton Garden Inn Missoula','146 rms','$134.20','81.2%','$165.30','$2.62M','105.8','104.0','103.1','$790K','$604K','23.1%',['+5.0%', true]],
+      ['OR113','Comfort Suites Redmond Airport','92 rms','$86.40','57.8%','$149.50','$1.08M','103.0','101.0','100.4','$296K','$220K','20.4%',['+3.6%', true]],
+      ['PDXRE','River\'s Edge Portland, Tapestry','112 rms','$92.10','58.4%','$157.70','$1.38M','103.4','101.6','100.8','$376K','$280K','20.3%',['+3.2%', true]],
+      ['PDXSH','Hampton Inn & Suites Sherwood','73 rms','$90.40','57.4%','$157.50','$0.90M','102.8','100.8','100.2','$240K','$178K','19.8%',['+2.7%', true]],
+      ['PDXTG','Hampton Inn & Suites Portland Tigard','152 rms','$82.80','52.2%','$158.60','$1.70M','101.4','99.4','98.8','$428K','$314K','18.5%',['+1.1%', true]],
+      ['PHXRU','Tru by Hilton Gilbert','98 rms','$50.60','32.4%','$156.20','$0.68M','100.2','98.4','97.6','$152K','$106K','15.6%',['-2.1%', false]],
+      ['RDMBE','Hampton Inn & Suites Bend','114 rms','$102.80','66.2%','$155.30','$1.59M','104.2','102.6','101.8','$450K','$340K','21.4%',['+4.4%', true]],
+      ['RDMBO','Hilton Garden Inn Bend','96 rms','$97.60','62.8%','$155.40','$1.27M','102.6','100.6','100.1','$350K','$260K','20.5%',['+1.8%', true]],
+      ['RDMNB','The Newberry Bend','117 rms','$78.40','50.4%','$155.60','$1.25M','103.8','102.0','101.4','$336K','$248K','19.8%',['+2.9%', true]],
+      ['SCCDT','DoubleTree Spokane City Center','375 rms','$104.10','66.8%','$155.80','$5.28M','104.6','102.8','102.2','$1.64M','$1.26M','23.9%',['+3.7%', true]],
+      ['SLCDW','Hilton Garden Inn SLC Downtown','132 rms','$136.40','88.2%','$154.60','$2.40M','106.0','104.2','103.5','$726K','$556K','23.2%',['+5.4%', true]],
+      ['SLCLE','Springhill Suites Lehi','94 rms','$24.80','16.2%','$153.10','$0.30M','—','—','—','—','—','—',['-68%', false]],
+      ['SLCLI','Courtyard by Marriott Lehi','97 rms','$111.40','72.4%','$153.90','$1.46M','103.0','101.0','100.5','$406K','$300K','20.5%',['+2.2%', true]]
+    ],
+    str: {
+      MPI: { value: '101.7', delta: '▲ 0.6', up: true },
+      ARI: { value: '102.2', delta: '▲ 0.8', up: true },
+      RGI: { value: '103.8', delta: '▲ 1.5', up: true },
+      chartData: {
+        MPI: [96.2,97.0,98.1,99.4,98.8,100.2,101.5,100.9,101.4,101.7,101.2,101.8,101.7],
+        ARI: [99.1,99.8,100.4,101.0,100.6,101.4,102.2,101.8,102.1,102.5,102.0,102.6,102.2],
+        RGI: [98.4,99.1,100.3,101.2,100.8,102.1,103.4,102.9,103.8,104.2,103.7,104.5,103.8]
+      }
+    },
+    charts: {
+      revpar:   { labels: ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13','W14','W15','W16','W17'], actuals: [122,126,128,131,134,136,135,138,140,142,141,138,135,138,140,144,142], budget: Array.from({length:17},()=>138), ly: [115,118,120,124,126,128,127,130,131,133,132,130,127,130,131,134,132], prefix:'$', title:'RevPAR Trend' },
+      adr:      { labels: ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13','W14','W15','W16','W17'], actuals: [180,183,184,186,188,190,189,191,192,184,183,181,179,182,184,185,184], budget: Array.from({length:17},()=>183), ly: [172,175,176,178,180,182,181,183,184,176,175,173,171,174,176,177,176], prefix:'$', title:'ADR Trend' },
+      totalrev: { labels: ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13','W14','W15','W16','W17'], actuals: [4.2,4.4,4.5,4.6,4.7,4.8,4.75,4.9,5.0,4.8,4.75,4.6,4.5,4.7,4.8,4.9,4.82], budget: Array.from({length:17},()=>4.78), ly: [3.9,4.1,4.2,4.3,4.4,4.5,4.45,4.6,4.7,4.5,4.45,4.3,4.2,4.4,4.5,4.6,4.53], prefix:'$', suffix:'M', title:'Total Revenue Trend' }
+    },
+    profit: {
+      gop:       { value: '$4.48M', budget: '+1.1%', ly: '+7.2%', budgetUp: true, lyUp: true },
+      ebitda:    { value: '$3.44M', budget: '+0.8%', ly: '+6.6%', budgetUp: true, lyUp: true },
+      ebitdaMgn: { value: '17.7%',  budget: '+0.1pts', ly: '+1.0pts', budgetUp: true, lyUp: true },
+      flowthrough: { value: '56.8%', badge: 'On Target', detail: '+$242K / +$426K rev', badgeUp: true }
+    }
+  }
+};
+
+// ========== ASTOR PROPERTY PERIOD DATA ==========
+const ASTOR_DATA = {
+  yesterday: {
+    label: "Yesterday · Apr 27, 2026",
+    perfSub: "Yesterday · ASTOR",
+    trendSub: "Hourly · Apr 27 · Actuals vs. Budget vs. LY",
+    deptSub: "Yesterday · Apr 27, 2026",
+    totalRevLabel: "Total Revenue (Yesterday)",
+    kpi: {
+      revpar: { value: '$156.20', budget: '+5.2%', ly: '+13.8%', budgetUp: true, lyUp: true },
+      adr: { value: '$182.50', budget: '+2.4%', ly: '+5.6%', budgetUp: true, lyUp: true },
+      occ: { value: '85.6%', budget: '+2.4pts', ly: '+5.8pts', budgetUp: true, lyUp: true },
+      totalrev: { value: '$20,930', budget: '+5.8%', ly: '+14.1%', budgetUp: true, lyUp: true }
+    },
+    perfRows: [
+      ['OCC Rooms Sold', '115', '110', '107', ['+4.5%', true], ['+7.5%', true]],
+      ['OOO Rooms', '0', '2', '3', ['-100%', true], ['-100%', true]],
+      ['Comp Set Rooms Sold', '526', '—', '510', ['—', null], ['+3.1%', true]],
+      ['ADR', '$182.50', '$178.20', '$172.80', ['+2.4%', true], ['+5.6%', true]],
+      ['RevPAR', '$156.20', '$148.50', '$137.30', ['+5.2%', true], ['+13.8%', true]],
+      ['Total Rooms Rev', '$20,988', '$19,602', '$18,490', ['+7.1%', true], ['+13.5%', true]],
+      ['Total Property Rev', '$20,930', '$19,776', '$18,344', ['+5.8%', true], ['+14.1%', true], 'total']
+    ],
+    str: {
+      MPI: { value: '111.2', delta: '▲ 3.4', up: true },
+      ARI: { value: '97.8', delta: '▼ 0.6', up: false },
+      RGI: { value: '108.8', delta: '▲ 2.0', up: true },
+      chartData: {
+        MPI: [104,105,106,107,108,109,110,109,110,111,110,111,111],
+        ARI: [99,99,100,99,98,98,98,98,98,97,98,98,98],
+        RGI: [103,104,105,106,106,107,108,107,108,109,108,109,109]
+      }
+    },
+    charts: {
+      revpar:   { labels: ['12a','3a','6a','9a','12p','3p','6p','9p','11p'], actuals: [152,151,154,158,159,160,158,156,156], budget: [149,149,149,149,149,149,149,149,149], ly: [136,135,138,141,142,142,140,138,137], prefix: '$', title: 'RevPAR Trend' },
+      adr:      { labels: ['12a','3a','6a','9a','12p','3p','6p','9p','11p'], actuals: [179,178,181,183,184,185,183,181,181], budget: [178,178,178,178,178,178,178,178,178], ly: [170,169,172,175,176,176,174,172,172], prefix: '$', title: 'ADR Trend' },
+      totalrev: { labels: ['12a','3a','6a','9a','12p','3p','6p','9p','11p'], actuals: [17.6,17.5,17.8,18.2,18.4,18.5,18.3,18.0,18.0], budget: [17.2,17.2,17.2,17.2,17.2,17.2,17.2,17.2,17.2], ly: [15.8,15.7,16.0,16.4,16.5,16.5,16.3,16.0,16.0], prefix: '$', suffix: 'K', title: 'Total Revenue Trend' }
+    },
+    profit: {
+      gop:       { value: '$12.4K', budget: '+3.4%', ly: '+12.6%', budgetUp: true, lyUp: true },
+      ebitda:    { value: '$9.6K', budget: '+3.0%', ly: '+11.8%', budgetUp: true, lyUp: true },
+      ebitdaMgn: { value: '59.2%', budget: '+0.5pts', ly: '+2.0pts', budgetUp: true, lyUp: true },
+      flowthrough: { value: '68.2%', badge: 'Above Target', detail: '+$2.8K / +$4.1K rev', badgeUp: true }
+    }
+  },
+  wtd: {
+    label: "Week-to-date · Apr 22–28",
+    perfSub: "Week-to-date · ASTOR",
+    trendSub: "Daily · Apr 22–28 · Actuals vs. Budget vs. LY",
+    deptSub: "Week-to-date · Apr 22–28",
+    totalRevLabel: "Total Revenue (WTD)",
+    kpi: {
+      revpar: { value: '$148.40', budget: '+2.8%', ly: '+11.2%', budgetUp: true, lyUp: true },
+      adr: { value: '$179.85', budget: '+1.7%', ly: '+4.8%', budgetUp: true, lyUp: true },
+      occ: { value: '82.5%', budget: '+1.0pts', ly: '+4.6pts', budgetUp: true, lyUp: true },
+      totalrev: { value: '$144,920', budget: '+3.1%', ly: '+11.4%', budgetUp: true, lyUp: true }
+    },
+    perfRows: [
+      ['OCC Rooms Sold', '774', '764', '731', ['+1.3%', true], ['+5.9%', true]],
+      ['OOO Rooms', '4', '5', '12', ['-20%', true], ['-67%', true]],
+      ['Comp Set Rooms Sold', '3,683', '—', '3,548', ['—', null], ['+3.8%', true]],
+      ['ADR', '$179.85', '$176.80', '$171.60', ['+1.7%', true], ['+4.8%', true]],
+      ['RevPAR', '$148.40', '$144.40', '$133.40', ['+2.8%', true], ['+11.2%', true]],
+      ['Total Rooms Rev', '$139,224', '$135,084', '$125,840', ['+3.1%', true], ['+10.6%', true]],
+      ['Total Property Rev', '$144,920', '$140,560', '$130,140', ['+3.1%', true], ['+11.4%', true], 'total']
+    ],
+    str: {
+      MPI: { value: '110.4', delta: '▲ 2.8', up: true },
+      ARI: { value: '98.2', delta: '▼ 0.5', up: false },
+      RGI: { value: '108.4', delta: '▲ 1.9', up: true },
+      chartData: {
+        MPI: [104,105,106,107,108,109,110,109,110,110,110,110,110],
+        ARI: [99,99,100,99,98,98,98,98,98,98,98,98,98],
+        RGI: [103,104,105,106,106,107,108,107,108,108,108,108,108]
+      }
+    },
+    charts: {
+      revpar:   { labels: ['Apr 22','Apr 23','Apr 24','Apr 25','Apr 26','Apr 27','Apr 28'], actuals: [144,148,152,154,142,148,156], budget: [148,148,148,148,148,148,148], ly: [131,134,137,141,128,135,140], prefix: '$', title: 'RevPAR Trend' },
+      adr:      { labels: ['Apr 22','Apr 23','Apr 24','Apr 25','Apr 26','Apr 27','Apr 28'], actuals: [176,179,182,184,175,180,183], budget: [177,177,177,177,177,177,177], ly: [168,171,174,176,168,172,175], prefix: '$', title: 'ADR Trend' },
+      totalrev: { labels: ['Apr 22','Apr 23','Apr 24','Apr 25','Apr 26','Apr 27','Apr 28'], actuals: [120,124,127,129,118,124,131], budget: [123,123,123,123,123,123,123], ly: [109,112,115,118,108,113,118], prefix: '$', suffix: 'K', title: 'Total Revenue Trend' }
+    },
+    profit: {
+      gop:       { value: '$52.4K', budget: '+2.6%', ly: '+10.8%', budgetUp: true, lyUp: true },
+      ebitda:    { value: '$40.2K', budget: '+2.2%', ly: '+10.1%', budgetUp: true, lyUp: true },
+      ebitdaMgn: { value: '45.8%', budget: '+0.3pts', ly: '+1.6pts', budgetUp: true, lyUp: true },
+      flowthrough: { value: '58.3%', badge: 'On Target', detail: '+$8.2K / +$14.1K rev', badgeUp: true }
+    }
+  },
+  mtd: {
+    label: "Month-to-date · April 2026",
+    perfSub: "Month-to-date · ASTOR",
+    trendSub: "Daily · Apr 1–28 · Actuals vs. Budget vs. LY",
+    deptSub: "Month-to-date · April 2026",
+    totalRevLabel: "Total Revenue (MTD)",
+    kpi: {
+      revpar: { value: '$143.55', budget: '+1.4%', ly: '+9.4%', budgetUp: true, lyUp: true },
+      adr: { value: '$176.90', budget: '+0.6%', ly: '+4.2%', budgetUp: true, lyUp: true },
+      occ: { value: '81.1%', budget: '+0.6pts', ly: '+3.8pts', budgetUp: true, lyUp: true },
+      totalrev: { value: '$562,000', budget: '+1.7%', ly: '+9.1%', budgetUp: true, lyUp: true }
+    },
+    perfRows: [
+      ['OCC Rooms Sold', '3,043', '3,028', '2,894', ['+0.5%', true], ['+5.1%', true]],
+      ['OOO Rooms', '18', '20', '38', ['-10%', true], ['-53%', true]],
+      ['Comp Set Rooms Sold', '14,728', '—', '14,160', ['—', null], ['+4.0%', true]],
+      ['ADR', '$176.90', '$175.85', '$169.80', ['+0.6%', true], ['+4.2%', true]],
+      ['RevPAR', '$143.55', '$141.50', '$131.20', ['+1.4%', true], ['+9.4%', true]],
+      ['Total Rooms Rev', '$538,200', '$532,440', '$491,400', ['+1.1%', true], ['+9.5%', true]],
+      ['Total Property Rev', '$562,000', '$552,640', '$515,100', ['+1.7%', true], ['+9.1%', true], 'total']
+    ],
+    str: {
+      MPI: { value: '109.4', delta: '▲ 2.1', up: true },
+      ARI: { value: '98.7', delta: '▼ 0.4', up: false },
+      RGI: { value: '108.0', delta: '▲ 1.7', up: true },
+      chartData: {
+        MPI: [104,105,106,107,108,108,109,108,109,109,109,110,110],
+        ARI: [100,99,100,99,99,99,99,99,98,99,99,99,99],
+        RGI: [104,104,106,106,107,107,108,107,107,108,108,109,108]
+      }
+    },
+    charts: {
+      revpar:   { labels: Array.from({length:28},(_,i)=>`${i+1}`), actuals: [138,142,140,145,148,144,150,146,148,151,148,143,140,144,141,146,149,151,147,144,141,145,148,151,154,148,144,142], budget: Array.from({length:28},()=>142), ly: [128,131,129,135,137,133,140,135,137,141,138,132,130,134,131,136,138,141,137,134,131,135,138,141,143,138,134,132], prefix: '$', title: 'RevPAR Trend' },
+      adr:      { labels: Array.from({length:28},(_,i)=>`${i+1}`), actuals: [172,175,173,177,180,176,182,178,180,183,180,175,172,176,173,178,181,183,179,176,173,177,180,183,186,180,176,174], budget: Array.from({length:28},()=>176), ly: [165,168,166,170,173,169,175,171,173,176,173,168,165,169,166,171,174,176,172,169,166,170,173,176,178,173,169,167], prefix: '$', title: 'ADR Trend' },
+      totalrev: { labels: Array.from({length:28},(_,i)=>`${i+1}`), actuals: [460,474,467,484,493,480,500,486,493,503,493,477,467,480,470,486,497,503,490,480,470,484,493,503,514,493,480,474], budget: Array.from({length:28},()=>473), ly: [428,440,434,449,457,445,463,450,457,465,456,442,433,445,435,449,460,465,453,444,435,448,457,465,472,457,444,438], prefix: '$', suffix: 'K', title: 'Total Revenue Trend' }
+    },
+    profit: {
+      gop:       { value: '$195.6K', budget: '+2.1%', ly: '+9.4%', budgetUp: true, lyUp: true },
+      ebitda:    { value: '$148.8K', budget: '+1.8%', ly: '+8.8%', budgetUp: true, lyUp: true },
+      ebitdaMgn: { value: '26.5%', budget: '+0.2pts', ly: '+1.2pts', budgetUp: true, lyUp: true },
+      flowthrough: { value: '57.4%', badge: 'On Target', detail: '+$35.2K / +$61.4K rev', badgeUp: true }
+    }
+  },
+  ytd: {
+    label: "Year-to-date · 2026",
+    perfSub: "Year-to-date · ASTOR",
+    trendSub: "Weekly · Jan–Apr 2026 · Actuals vs. Budget vs. LY",
+    deptSub: "Year-to-date · Jan 1 – Apr 28, 2026",
+    totalRevLabel: "Total Revenue (YTD)",
+    kpi: {
+      revpar: { value: '$128.85', budget: '+2.1%', ly: '+7.8%', budgetUp: true, lyUp: true },
+      adr: { value: '$172.40', budget: '+1.2%', ly: '+4.4%', budgetUp: true, lyUp: true },
+      occ: { value: '74.7%', budget: '+0.7pts', ly: '+2.4pts', budgetUp: true, lyUp: true },
+      totalrev: { value: '$2.13M', budget: '+2.4%', ly: '+8.0%', budgetUp: true, lyUp: true }
+    },
+    perfRows: [
+      ['OCC Rooms Sold', '11,812', '11,725', '11,194', ['+0.7%', true], ['+5.5%', true]],
+      ['OOO Rooms', '64', '70', '142', ['-9%', true], ['-55%', true]],
+      ['Comp Set Rooms Sold', '57,442', '—', '55,308', ['—', null], ['+3.9%', true]],
+      ['ADR', '$172.40', '$170.40', '$165.20', ['+1.2%', true], ['+4.4%', true]],
+      ['RevPAR', '$128.85', '$126.20', '$119.50', ['+2.1%', true], ['+7.8%', true]],
+      ['Total Rooms Rev', '$2.04M', '$2.00M', '$1.85M', ['+2.0%', true], ['+10.3%', true]],
+      ['Total Property Rev', '$2.13M', '$2.08M', '$1.97M', ['+2.4%', true], ['+8.0%', true], 'total']
+    ],
+    str: {
+      MPI: { value: '107.8', delta: '▲ 1.6', up: true },
+      ARI: { value: '99.1', delta: '▼ 0.2', up: false },
+      RGI: { value: '106.8', delta: '▲ 1.2', up: true },
+      chartData: {
+        MPI: [102,103,104,104,105,106,106,107,107,108,108,108,108],
+        ARI: [100,100,100,99,99,99,99,99,99,99,99,99,99],
+        RGI: [102,103,104,103,104,105,105,106,106,107,107,107,107]
+      }
+    },
+    charts: {
+      revpar:   { labels: ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13','W14','W15','W16','W17'], actuals: [108,114,118,122,124,127,128,131,133,135,137,134,131,135,140,143,144], budget: Array.from({length:17},()=>128), ly: [102,106,110,115,116,119,120,122,124,127,128,126,123,127,130,134,135], prefix: '$', title: 'RevPAR Trend' },
+      adr:      { labels: ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13','W14','W15','W16','W17'], actuals: [162,166,169,171,172,174,175,177,178,180,181,179,177,180,183,185,186], budget: Array.from({length:17},()=>171), ly: [155,159,162,164,165,167,168,170,171,173,174,172,170,173,176,178,179], prefix: '$', title: 'ADR Trend' },
+      totalrev: { labels: ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13','W14','W15','W16','W17'], actuals: [103,109,114,117,119,122,123,126,128,130,132,129,126,130,135,138,139], budget: Array.from({length:17},()=>123), ly: [97,101,105,110,111,114,115,118,119,122,123,121,118,122,126,129,130], prefix: '$', suffix: 'K', title: 'Total Revenue Trend' }
+    },
+    profit: {
+      gop:       { value: '$718.4K', budget: '+1.8%', ly: '+8.6%', budgetUp: true, lyUp: true },
+      ebitda:    { value: '$542.6K', budget: '+1.4%', ly: '+8.1%', budgetUp: true, lyUp: true },
+      ebitdaMgn: { value: '25.4%', budget: '+0.1pts', ly: '+1.0pts', budgetUp: true, lyUp: true },
+      flowthrough: { value: '56.8%', badge: 'On Target', detail: '+$128.6K / +$226.2K rev', badgeUp: true }
+    }
+  }
+};
+
+// ========== STATE ==========
+let currentView = 'portfolio';   // 'portfolio' or 'ASTOR'
+let currentPeriod = 'mtd';
+
+// ========== SETTERS ==========
+function setDelta(el, val, isUp) {
+  if (!el) return;
+  if (val === '—' || isUp === null) {
+    el.className = 'delta-pill delta-flat';
+    el.textContent = '—';
+    return;
+  }
+  el.className = 'delta-pill ' + (isUp ? 'delta-up' : 'delta-down');
+  const arrow = isUp ? '▲' : '▼';
+  // Strip leading sign for display
+  const cleaned = val.replace(/^[\+\-]/, '');
+  el.textContent = `${arrow} ${cleaned}`;
+}
+
+// ========== PROPERTY TABLE RENDERER ==========
+let propTableExpanded = false;
+const PROP_PREVIEW_COUNT = 10;
+
+function renderPropRows(rows) {
+  const propTbody = document.getElementById('portfolioPropsTable');
+  const toggleBtn = document.getElementById('propShowAllBtn');
+  const toggleWrap = document.getElementById('propTableToggle');
+  if (!propTbody || !rows) return;
+
+  const visibleRows = propTableExpanded ? rows : rows.slice(0, PROP_PREVIEW_COUNT);
+
+  propTbody.innerHTML = visibleRows.map(row => {
+    const [code, name, meta, revpar, occ, adr, totalrev, mpi, ari, rgi, gop, ebitda, ebitdaMgn, yoy] = row;
+    const yoyVal = Array.isArray(yoy) ? yoy[0] : yoy;
+    const yoyUp = Array.isArray(yoy) ? yoy[1] : true;
+    const yoyClass = yoyUp ? 'delta-up' : 'delta-down';
+    return `<tr style="cursor:pointer;" onclick="switchView('${code}')">
+      <td>
+        <div style="font-weight:600;font-size:13px;">${name}</div>
+        <div style="font-size:11px;color:var(--text-muted);">${code} · ${meta}</div>
+      </td>
+      <td class="num mono">${revpar}</td>
+      <td class="num mono">${occ}</td>
+      <td class="num mono">${adr}</td>
+      <td class="num mono">${totalrev}</td>
+      <td class="num mono">${mpi}</td>
+      <td class="num mono">${ari}</td>
+      <td class="num mono">${rgi}</td>
+      <td class="num mono">${gop}</td>
+      <td class="num mono">${ebitda}</td>
+      <td class="num mono">${ebitdaMgn}</td>
+      <td class="num"><span class="delta-pill ${yoyClass}">${yoyVal}</span></td>
+    </tr>`;
+  }).join('');
+
+  if (toggleWrap) {
+    if (rows.length > PROP_PREVIEW_COUNT) {
+      toggleWrap.style.display = 'block';
+      if (toggleBtn) toggleBtn.textContent = propTableExpanded
+        ? '‹ Show fewer'
+        : `Show all ${rows.length} properties ›`;
+    } else {
+      toggleWrap.style.display = 'none';
+    }
+  }
+}
+
+// Wire up show-more toggle (inline, DOM already parsed at this point)
+(function() {
+  const btn = document.getElementById('propShowAllBtn');
+  if (btn) {
+    btn.addEventListener('click', () => {
+      propTableExpanded = !propTableExpanded;
+      const d = PORTFOLIO_DATA[currentPeriod];
+      if (d) renderPropRows(d.propRows);
+    });
+  }
+})();
+
+function applyPortfolioPeriod(p) {
+  const d = PORTFOLIO_DATA[p];
+  if (!d) return;
+
+  // KPI cards
+  document.querySelector('[data-bind="p.revpar.value"]').textContent = d.kpi.revpar.value;
+  setDelta(document.querySelector('[data-bind="p.revpar.budget"]'), d.kpi.revpar.budget, d.kpi.revpar.budgetUp);
+  setDelta(document.querySelector('[data-bind="p.revpar.ly"]'), d.kpi.revpar.ly, d.kpi.revpar.lyUp);
+
+  document.querySelector('[data-bind="p.adr.value"]').textContent = d.kpi.adr.value;
+  setDelta(document.querySelector('[data-bind="p.adr.budget"]'), d.kpi.adr.budget, d.kpi.adr.budgetUp);
+  setDelta(document.querySelector('[data-bind="p.adr.ly"]'), d.kpi.adr.ly, d.kpi.adr.lyUp);
+
+  document.querySelector('[data-bind="p.occ.value"]').textContent = d.kpi.occ.value;
+  setDelta(document.querySelector('[data-bind="p.occ.budget"]'), d.kpi.occ.budget, d.kpi.occ.budgetUp);
+  setDelta(document.querySelector('[data-bind="p.occ.ly"]'), d.kpi.occ.ly, d.kpi.occ.lyUp);
+
+  document.querySelector('[data-bind="p.totalrev.label"]').textContent = d.totalRevLabel;
+  document.querySelector('[data-bind="p.totalrev.value"]').textContent = d.kpi.totalrev.value;
+  setDelta(document.querySelector('[data-bind="p.totalrev.budget"]'), d.kpi.totalrev.budget, d.kpi.totalrev.budgetUp);
+  setDelta(document.querySelector('[data-bind="p.totalrev.ly"]'), d.kpi.totalrev.ly, d.kpi.totalrev.lyUp);
+
+  document.querySelector('[data-bind="p.props.sub"]').textContent = d.propsSub;
+  document.querySelector('[data-bind="p.trend.sub"]').textContent = d.trendSub;
+
+  // Profit row cards
+  if (d.profit) {
+    const pf = d.profit;
+    const gopVal = document.querySelector('[data-bind="p.gop.value"]');
+    if (gopVal) gopVal.textContent = pf.gop.value;
+    setDelta(document.querySelector('[data-bind="p.gop.budget"]'), pf.gop.budget, pf.gop.budgetUp);
+    setDelta(document.querySelector('[data-bind="p.gop.ly"]'), pf.gop.ly, pf.gop.lyUp);
+
+    const ebitdaVal = document.querySelector('[data-bind="p.ebitda.value"]');
+    if (ebitdaVal) ebitdaVal.textContent = pf.ebitda.value;
+    setDelta(document.querySelector('[data-bind="p.ebitda.budget"]'), pf.ebitda.budget, pf.ebitda.budgetUp);
+    setDelta(document.querySelector('[data-bind="p.ebitda.ly"]'), pf.ebitda.ly, pf.ebitda.lyUp);
+
+    const ebitdaMgnVal = document.querySelector('[data-bind="p.ebitdaMgn.value"]');
+    if (ebitdaMgnVal) ebitdaMgnVal.textContent = pf.ebitdaMgn.value;
+    setDelta(document.querySelector('[data-bind="p.ebitdaMgn.budget"]'), pf.ebitdaMgn.budget, pf.ebitdaMgn.budgetUp);
+    setDelta(document.querySelector('[data-bind="p.ebitdaMgn.ly"]'), pf.ebitdaMgn.ly, pf.ebitdaMgn.lyUp);
+
+    const ftVal = document.querySelector('[data-bind="p.flowthrough.value"]');
+    if (ftVal) ftVal.textContent = pf.flowthrough.value;
+    const ftBadge = document.querySelector('[data-bind="p.flowthrough.badge"]');
+    if (ftBadge) { ftBadge.textContent = pf.flowthrough.badge; ftBadge.className = 'delta-pill ' + (pf.flowthrough.badgeUp ? 'delta-up' : 'delta-down'); }
+    const ftDetail = document.querySelector('[data-bind="p.flowthrough.detail"]');
+    if (ftDetail) ftDetail.textContent = pf.flowthrough.detail;
+  }
+
+  // Update STR index card values
+  if (d.str) {
+    ['MPI','ARI','RGI'].forEach(m => {
+      const card = document.getElementById('strCard-' + m);
+      if (!card) return;
+      const vals = card.querySelectorAll('.index-value, .delta-pill');
+      if (vals[0]) vals[0].textContent = d.str[m].value;
+      if (vals[1]) {
+        vals[1].textContent = d.str[m].delta;
+        vals[1].className = 'delta-pill ' + (d.str[m].up ? 'delta-up' : 'delta-down');
+      }
+    });
+    // Update STR chart data and x-axis labels for the period
+    const strLabels = { yesterday: ['12a','3a','6a','9a','12p','3p','6p','9p','11p'], wtd: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], mtd: Array.from({length:13},(_,i)=>`W${i+1}`), ytd: ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13'] };
+    strChart.data.labels = strLabels[p] || strLabels.ytd;
+    // Mutate the arrays in place using splice so Chart.js detects the change (same pattern as property view)
+    STR_CHART_DATA.MPI.data.splice(0, STR_CHART_DATA.MPI.data.length, ...d.str.chartData.MPI);
+    STR_CHART_DATA.ARI.data.splice(0, STR_CHART_DATA.ARI.data.length, ...d.str.chartData.ARI);
+    STR_CHART_DATA.RGI.data.splice(0, STR_CHART_DATA.RGI.data.length, ...d.str.chartData.RGI);
+    switchSTRChart(activeSTR);
+  }
+
+  // Performance vs. Plan table (removed from portfolio view)
+  const perfTbody = document.getElementById('portfolioPerfTable');
+  if (perfTbody) {
+    perfTbody.innerHTML = d.perfRows.map(row => {
+      const [label, act, fc, bud, ly, varFB, varYoY, isTotal] = row;
+      const fbCell = varFB[0] === '—'
+        ? '<span class="delta-pill delta-flat">—</span>'
+        : `<span class="delta-pill ${varFB[1] ? 'delta-up' : 'delta-down'}">${varFB[1] ? '▲' : '▼'} ${varFB[0].replace(/^[\+\-]/,'')}</span>`;
+      const yoyCell = `<span class="delta-pill ${varYoY[1] ? 'delta-up' : 'delta-down'}">${varYoY[1] ? '▲' : '▼'} ${varYoY[0].replace(/^[\+\-]/,'')}</span>`;
+      return `<tr class="${isTotal === 'total' ? 'total' : ''}">
+        <td class="row-label">${label}</td>
+        <td class="num mono">${act}</td>
+        <td class="num mono">${bud}</td>
+        <td class="num mono">${ly}</td>
+        <td class="num">${fbCell}</td>
+        <td class="num">${yoyCell}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  const perfSubEl = document.querySelector('[data-bind="p.perf.sub"]');
+  if (perfSubEl) perfSubEl.textContent = d.perfSub;
+
+  // Property table (uses shared renderer with show-more logic)
+  renderPropRows(d.propRows);
+
+  // Update trend chart (uses current metric selection)
+  updateTrendMetric(currentTrendMetric);
+}
+
+function setPropProfitRow(gop, ebitda, ebitdaMgn, yoy) {
+  const setVal = (bind, val) => { const el = document.querySelector('[data-bind="' + bind + '"]'); if (el) el.textContent = val || '—'; };
+  const setDlt = (bind, val, up) => { const el = document.querySelector('[data-bind="' + bind + '"]'); if (el) setDelta(el, val, up); };
+  
+  // Estimate budget variance based on YoY performance
+  const yoyVal = Array.isArray(yoy) ? yoy[0] : yoy;
+  const yoyUp = Array.isArray(yoy) ? yoy[1] : true;
+  const estimatedBudgetVar = yoyVal ? (parseFloat(yoyVal) * 0.6).toFixed(1) + '%' : '—';
+  
+  setVal('a.gop.value', gop);
+  setDlt('a.gop.budget', estimatedBudgetVar, yoyUp);
+  setDlt('a.gop.ly', yoyVal, yoyUp);
+  setVal('a.ebitda.value', ebitda);
+  setDlt('a.ebitda.budget', estimatedBudgetVar, yoyUp);
+  setDlt('a.ebitda.ly', yoyVal, yoyUp);
+  setVal('a.ebitdaMgn.value', ebitdaMgn);
+  setDlt('a.ebitdaMgn.budget', estimatedBudgetVar, yoyUp);
+  setDlt('a.ebitdaMgn.ly', yoyVal, yoyUp);
+  // Flow-through: estimate based on ebitda margin or show YoY context
+  const ebitdaMgnVal = parseFloat(ebitdaMgn);
+  if (!isNaN(ebitdaMgnVal)) {
+    const ftEstimate = (ebitdaMgnVal * 0.95).toFixed(1) + '%'; // Rough estimate
+    setVal('a.flowthrough.value', ftEstimate);
+    const ftBadge = document.querySelector('[data-bind="a.flowthrough.badge"]');
+    if (ftBadge) { ftBadge.textContent = ebitdaMgnVal >= 55 ? 'Strong' : ebitdaMgnVal >= 50 ? 'On Target' : 'Below Target'; ftBadge.className = 'delta-pill ' + (ebitdaMgnVal >= 50 ? 'delta-up' : 'delta-down'); }
+  } else {
+    setVal('a.flowthrough.value', '—');
+    const ftBadge = document.querySelector('[data-bind="a.flowthrough.badge"]');
+    if (ftBadge) { ftBadge.textContent = '—'; ftBadge.className = 'delta-pill delta-flat'; }
+  }
+  const ftDetail = document.querySelector('[data-bind="a.flowthrough.detail"]');
+  if (ftDetail) ftDetail.textContent = Array.isArray(yoy) ? ('YoY Rev: ' + yoy[0]) : '—';
+}
+
+function applyPropertyPeriod(p) {
+  const periodData = PORTFOLIO_DATA[p];
+  const isASTOR = (currentView === 'ASTOR');
+  const d = isASTOR ? ASTOR_DATA[p] : null;
+
+  // Find this property's row in propRows for KPI values
+  const row = periodData ? periodData.propRows.find(r => r[0] === currentView) : null;
+
+  if (d) {
+    // Full ASTOR data
+    document.querySelector('[data-bind="a.revpar.value"]').textContent = d.kpi.revpar.value;
+    setDelta(document.querySelector('[data-bind="a.revpar.budget"]'), d.kpi.revpar.budget, d.kpi.revpar.budgetUp);
+    setDelta(document.querySelector('[data-bind="a.revpar.ly"]'), d.kpi.revpar.ly, d.kpi.revpar.lyUp);
+    document.querySelector('[data-bind="a.adr.value"]').textContent = d.kpi.adr.value;
+    setDelta(document.querySelector('[data-bind="a.adr.budget"]'), d.kpi.adr.budget, d.kpi.adr.budgetUp);
+    setDelta(document.querySelector('[data-bind="a.adr.ly"]'), d.kpi.adr.ly, d.kpi.adr.lyUp);
+    document.querySelector('[data-bind="a.occ.value"]').textContent = d.kpi.occ.value;
+    setDelta(document.querySelector('[data-bind="a.occ.budget"]'), d.kpi.occ.budget, d.kpi.occ.budgetUp);
+    setDelta(document.querySelector('[data-bind="a.occ.ly"]'), d.kpi.occ.ly, d.kpi.occ.lyUp);
+    document.querySelector('[data-bind="a.totalrev.label"]').textContent = d.totalRevLabel;
+    document.querySelector('[data-bind="a.totalrev.value"]').textContent = d.kpi.totalrev.value;
+    setDelta(document.querySelector('[data-bind="a.totalrev.budget"]'), d.kpi.totalrev.budget, d.kpi.totalrev.budgetUp);
+    setDelta(document.querySelector('[data-bind="a.totalrev.ly"]'), d.kpi.totalrev.ly, d.kpi.totalrev.lyUp);
+    const trendSubEl = document.querySelector('[data-bind="a.trend.sub"]');
+    if (trendSubEl) trendSubEl.textContent = d.trendSub;
+    // Update department table for ASTOR
+    updateDeptTable(p);
+  } else if (row) {
+    // All other properties — use propRow data [code, name, meta, revpar, occ, adr, totalrev, mpi, ari, rgi, gop, ebitda, ebitdaMgn, yoy]
+    const [code, name, meta, revpar, occ, adr, totalrev, mpi, ari, rgi, gop, ebitda, ebitdaMgn, yoy] = row;
+    document.querySelector('[data-bind="a.revpar.value"]').textContent = revpar;
+    // Estimate budget variance based on YoY performance (assume budget is similar to prior year)
+    const yoyVal = Array.isArray(yoy) ? yoy[0] : yoy;
+    const yoyUp = Array.isArray(yoy) ? yoy[1] : true;
+    const estimatedBudgetVar = yoyVal ? (parseFloat(yoyVal) * 0.6).toFixed(1) + '%' : '—'; // 60% of YoY as estimated budget variance
+    const estimatedBudgetUp = yoyUp;
+    setDelta(document.querySelector('[data-bind="a.revpar.budget"]'), estimatedBudgetVar, estimatedBudgetUp);
+    setDelta(document.querySelector('[data-bind="a.revpar.ly"]'), yoyVal, yoyUp);
+    document.querySelector('[data-bind="a.adr.value"]').textContent = adr;
+    setDelta(document.querySelector('[data-bind="a.adr.budget"]'), estimatedBudgetVar, estimatedBudgetUp);
+    setDelta(document.querySelector('[data-bind="a.adr.ly"]'), yoyVal, yoyUp);
+    document.querySelector('[data-bind="a.occ.value"]').textContent = occ;
+    setDelta(document.querySelector('[data-bind="a.occ.budget"]'), estimatedBudgetVar, estimatedBudgetUp);
+    setDelta(document.querySelector('[data-bind="a.occ.ly"]'), yoyVal, yoyUp);
+    const periodLabel = { yesterday: 'Total Revenue (Yesterday)', wtd: 'Total Revenue (WTD)', mtd: 'Total Revenue (MTD)', ytd: 'Total Revenue (YTD)' }[p] || 'Total Revenue';
+    document.querySelector('[data-bind="a.totalrev.label"]').textContent = periodLabel;
+    document.querySelector('[data-bind="a.totalrev.value"]').textContent = totalrev;
+    setDelta(document.querySelector('[data-bind="a.totalrev.budget"]'), estimatedBudgetVar, estimatedBudgetUp);
+    setDelta(document.querySelector('[data-bind="a.totalrev.ly"]'), yoyVal, yoyUp);
+    // STR cards from propRow
+    const strMetrics = [
+      { id: 'MPI', val: mpi },
+      { id: 'ARI', val: ari },
+      { id: 'RGI', val: rgi }
+    ];
+    strMetrics.forEach(({ id, val }) => {
+      const valEl = document.getElementById('propStrVal-' + id);
+      const deltaEl = document.getElementById('propStrDelta-' + id);
+      if (valEl) valEl.textContent = val === '—' ? '—' : val;
+      if (deltaEl) {
+        const n = parseFloat(val);
+        if (isNaN(n)) { deltaEl.textContent = '—'; deltaEl.className = 'delta-pill delta-flat'; }
+        else {
+          const diff = (n - 100).toFixed(1);
+          const up = n >= 100;
+          deltaEl.textContent = (up ? '▲ ' : '▼ ') + Math.abs(diff);
+          deltaEl.className = 'delta-pill ' + (up ? 'delta-up' : 'delta-down');
+        }
+      }
+    });
+    // Generate period-appropriate trend ending at current index values
+    const STR_POINT_COUNTS = { yesterday: 9, wtd: 7, mtd: 30, ytd: 13 };
+    const STR_CHART_LABELS = {
+      yesterday: ['12a','3a','6a','9a','12p','3p','6p','9p','11p'],
+      wtd:       ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+      mtd:       Array.from({length:30},(_,i)=>`${i+1}`),
+      ytd:       ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13']
+    };
+    const nPts = STR_POINT_COUNTS[p] || 13;
+    const chartLabels = STR_CHART_LABELS[p] || STR_CHART_LABELS.ytd;
+    function makeTrend(endVal) {
+      const v = parseFloat(endVal);
+      if (isNaN(v)) return Array(nPts).fill(100);
+      const start = v - (Math.random() * 2 + 1);
+      return Array.from({length: nPts}, (_, i) => {
+        const t = i / (nPts - 1);
+        const noise = (Math.random() - 0.5) * 0.8;
+        return parseFloat((start + (v - start) * t + noise).toFixed(1));
+      });
+    }
+    propSTRChart.data.labels = chartLabels;
+    PROP_STR_DATA.MPI.data = makeTrend(mpi);
+    PROP_STR_DATA.ARI.data = makeTrend(ari);
+    PROP_STR_DATA.RGI.data = makeTrend(rgi);
+    PROP_STR_DATA.MPI.min = parseFloat(mpi) - 6; PROP_STR_DATA.MPI.max = parseFloat(mpi) + 6;
+    PROP_STR_DATA.ARI.min = parseFloat(ari) - 6; PROP_STR_DATA.ARI.max = parseFloat(ari) + 6;
+    PROP_STR_DATA.RGI.min = parseFloat(rgi) - 6; PROP_STR_DATA.RGI.max = parseFloat(rgi) + 6;
+    switchPropSTR(activePropSTR);
+    // Use portfolio-level trend charts as proxy
+    updateChart(propertyTrendChart, periodData.charts[currentPropTrendMetric]);
+    const titleEl = document.querySelector('#propTrendCardTitle .section-title');
+    if (titleEl) titleEl.textContent = periodData.charts[currentPropTrendMetric].title;
+    // Update trend subtitle
+    const trendSubEl = document.querySelector('[data-bind="a.trend.sub"]');
+    if (trendSubEl) trendSubEl.textContent = periodData.trendSub;
+    // Update department subtitle
+    const deptSubEl = document.querySelector('[data-bind="a.dept.sub"]');
+    if (deptSubEl) deptSubEl.textContent = periodData.perfSub.split(' · ')[0] || periodData.label;
+    // Update department table (show ASTOR data as reference)
+    updateDeptTable(p);
+    // Profit row — from propRow cols 10,11,12
+    setPropProfitRow(gop, ebitda, ebitdaMgn, yoy);
+    return;
+  }
+
+  // STR cards and chart (ASTOR full data)
+  if (d && d.str) {
+    ['MPI','ARI','RGI'].forEach(m => {
+      const valEl = document.getElementById('propStrVal-' + m);
+      const deltaEl = document.getElementById('propStrDelta-' + m);
+      if (valEl) valEl.textContent = d.str[m].value;
+      if (deltaEl) {
+        deltaEl.textContent = d.str[m].delta;
+        deltaEl.className = 'delta-pill ' + (d.str[m].up ? 'delta-up' : 'delta-down');
+      }
+    });
+    const astrLabels = { yesterday: ['12a','3a','6a','9a','12p','3p','6p','9p','11p'], wtd: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], mtd: Array.from({length:13},(_,i)=>`W${i+1}`), ytd: ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13'] };
+    propSTRChart.data.labels = astrLabels[p] || astrLabels.ytd;
+    PROP_STR_DATA.MPI.data = d.str.chartData.MPI;
+    PROP_STR_DATA.ARI.data = d.str.chartData.ARI;
+    PROP_STR_DATA.RGI.data = d.str.chartData.RGI;
+    ['MPI','ARI','RGI'].forEach(m => {
+      const v = parseFloat(d.str[m].value);
+      PROP_STR_DATA[m].min = v - 6; PROP_STR_DATA[m].max = v + 6;
+    });
+    switchPropSTR(activePropSTR);
+  }
+
+  // Update trend chart
+  updatePropTrendMetric(currentPropTrendMetric);
+  
+  // Profit row — use ASTOR data if available, otherwise from propRows
+  if (d && d.profit) {
+    // ASTOR full data with profit section
+    const pf = d.profit;
+    const setVal = (bind, val) => { const el = document.querySelector('[data-bind="' + bind + '"]'); if (el) el.textContent = val || '—'; };
+    const setDlt = (bind, val, up) => { const el = document.querySelector('[data-bind="' + bind + '"]'); if (el) setDelta(el, val, up); };
+    setVal('a.gop.value', pf.gop.value);
+    setDlt('a.gop.budget', pf.gop.budget, pf.gop.budgetUp);
+    setDlt('a.gop.ly', pf.gop.ly, pf.gop.lyUp);
+    setVal('a.ebitda.value', pf.ebitda.value);
+    setDlt('a.ebitda.budget', pf.ebitda.budget, pf.ebitda.budgetUp);
+    setDlt('a.ebitda.ly', pf.ebitda.ly, pf.ebitda.lyUp);
+    setVal('a.ebitdaMgn.value', pf.ebitdaMgn.value);
+    setDlt('a.ebitdaMgn.budget', pf.ebitdaMgn.budget, pf.ebitdaMgn.budgetUp);
+    setDlt('a.ebitdaMgn.ly', pf.ebitdaMgn.ly, pf.ebitdaMgn.lyUp);
+    setVal('a.flowthrough.value', pf.flowthrough.value);
+    const ftBadge = document.querySelector('[data-bind="a.flowthrough.badge"]');
+    if (ftBadge) { ftBadge.textContent = pf.flowthrough.badge; ftBadge.className = 'delta-pill ' + (pf.flowthrough.badgeUp ? 'delta-up' : 'delta-down'); }
+    const ftDetail = document.querySelector('[data-bind="a.flowthrough.detail"]');
+    if (ftDetail) ftDetail.textContent = pf.flowthrough.detail;
+  } else if (row) {
+    // Other properties — from propRows
+    const [,,, , , , , , , , gop, ebitda, ebitdaMgn, yoy] = row;
+    setPropProfitRow(gop, ebitda, ebitdaMgn, yoy);
+  }
+}
+
+// Department table data for ASTOR by period
+const ASTOR_DEPT_DATA = {
+  yesterday: [
+    ['Rooms', '$15,280', '94.2%', '▲ 2.1%', true, '▲ 13.4%', true],
+    ['F&B (Breakfast)', '$680', '4.2%', '▲ 0.8%', true, '▲ 5.2%', true],
+    ['Other Operated', '$380', '2.3%', '▼ 1.1%', false, '▲ 8.0%', true],
+    ['Miscellaneous', '$60', '-0.7%', '— 0.0%', null, '▼ 2.1%', false],
+    ['TOTAL', '$16,400', '100%', '▲ 1.5%', true, '▲ 12.1%', true]
+  ],
+  wtd: [
+    ['Rooms', '$105,520', '95.8%', '▲ 1.6%', true, '▲ 10.2%', true],
+    ['F&B (Breakfast)', '$3,620', '3.3%', '▲ 0.5%', true, '▲ 4.8%', true],
+    ['Other Operated', '$1,890', '1.7%', '▲ 2.1%', true, '▲ 7.4%', true],
+    ['Miscellaneous', '$510', '-0.8%', '— 0.0%', null, '▼ 0.8%', false],
+    ['TOTAL', '$111,540', '100%', '▲ 1.4%', true, '▲ 9.8%', true]
+  ],
+  mtd: [
+    ['Rooms', '$538,200', '95.8%', '▲ 1.8%', true, '▲ 9.4%', true],
+    ['F&B (Breakfast)', '$14,100', '2.5%', '▲ 0.6%', true, '▲ 4.2%', true],
+    ['Other Operated', '$7,820', '1.4%', '▲ 2.4%', true, '▲ 6.0%', true],
+    ['Miscellaneous', '$1,880', '0.3%', '— 0.0%', null, '▼ 1.2%', false],
+    ['TOTAL', '$562,000', '100%', '▲ 1.7%', true, '▲ 9.1%', true]
+  ],
+  ytd: [
+    ['Rooms', '$2,043,200', '96.0%', '▲ 1.5%', true, '▲ 8.8%', true],
+    ['F&B (Breakfast)', '$54,500', '2.6%', '▲ 0.4%', true, '▲ 3.8%', true],
+    ['Other Operated', '$29,800', '1.4%', '▲ 1.9%', true, '▲ 5.6%', true],
+    ['Miscellaneous', '$6,200', '-0.0%', '— 0.0%', null, '▼ 0.6%', false],
+    ['TOTAL', '$2,133,700', '100%', '▲ 1.3%', true, '▲ 7.9%', true]
+  ]
+};
+
+function updateDeptTable(period) {
+  const deptTbody = document.getElementById('deptTable');
+  if (!deptTbody) return;
+  const deptData = ASTOR_DEPT_DATA[period];
+  if (!deptData) return;
+  deptTbody.innerHTML = deptData.map((row, idx) => {
+    const [dept, rev, pct, varBudget, budgetUp, varYoY, yoyUp] = row;
+    const isTotal = idx === deptData.length - 1;
+    const budgetPill = varBudget === '— 0.0%' 
+      ? '<span class="delta-pill delta-flat">— 0.0%</span>'
+      : `<span class="delta-pill ${budgetUp ? 'delta-up' : 'delta-down'}">▲ ${varBudget.replace(/^▲|^▼/, '')}${budgetUp ? '' : ''}</span>`.replace(/▲▼/, '▼');
+    const yoyPill = `<span class="delta-pill ${yoyUp ? 'delta-up' : 'delta-down'}">${yoyUp ? '▲' : '▼'} ${varYoY.replace(/^▲|^▼/, '')}</span>`;
+    return `<tr${isTotal ? ' class="total"' : ''}><td>${isTotal ? '<strong>' + dept + '</strong>' : dept}</td><td class="num">${rev}</td><td class="num">${pct}</td><td class="num">${budgetPill}</td><td class="num">${yoyPill}</td></tr>`;
+  }).join('');
+}
+
+function applyPeriod(p) {
+  currentPeriod = p;
+  if (currentView === 'portfolio') {
+    applyPortfolioPeriod(p);
+  } else {
+    applyPropertyPeriod(p);
+  }
+  updateChatScope();
+}
+
+// Static metadata for all 26 properties — keyed by actual propRow codes
+const PROPERTY_META = {
+  ASTOR:   { name: 'Holiday Inn Express Astoria',              brand: 'IHG',      brandType: 'Holiday Inn Express',     address: '38-05 Northern Blvd, Astoria, NY',  type: 'Limited-service', rooms: 134, gm: 'Sarah Chen' },
+  BNAGV:   { name: 'Tru by Hilton Goodlettsville Nashville',   brand: 'Hilton',   brandType: 'Tru by Hilton',           address: 'Goodlettsville, TN',                type: 'Limited-service', rooms: 98,  gm: 'Marcus Johnson' },
+  BOIGI:   { name: 'Hilton Garden Inn Boise Spectrum',         brand: 'Hilton',   brandType: 'Hilton Garden Inn',       address: 'Boise, ID',                         type: 'Select-service',  rooms: 137, gm: 'Lisa Park' },
+  BOIRI:   { name: 'Residence Inn by Marriott Boise',          brand: 'Marriott', brandType: 'Residence Inn',           address: 'Boise, ID',                         type: 'Extended-stay',   rooms: 104, gm: 'David Kim' },
+  BOISH:   { name: 'Springhill Suites Boise West Eagle',       brand: 'Marriott', brandType: 'Springhill Suites',       address: 'Eagle, ID',                         type: 'Extended-stay',   rooms: 119, gm: 'Rachel Torres' },
+  BOISP:   { name: 'Hampton Inn & Suites Boise Spectrum',      brand: 'Hilton',   brandType: 'Hampton Inn & Suites',    address: 'Boise, ID',                         type: 'Select-service',  rooms: 133, gm: 'Carlos Reyes' },
+  BZNFC:   { name: 'Home2 Suites Bozeman Four Corners',        brand: 'Hilton',   brandType: 'Home2 Suites',            address: 'Bozeman, MT',                       type: 'Extended-stay',   rooms: 100, gm: 'Amy Wilson' },
+  CDAID:   { name: 'Hampton Inn & Suites Coeur d\'Alene',      brand: 'Hilton',   brandType: 'Hampton Inn & Suites',    address: 'Coeur d\'Alene, ID',                type: 'Select-service',  rooms: 124, gm: 'Tom Bradley' },
+  DALFB:   { name: 'DoubleTree Dallas-Farmers Branch',         brand: 'Hilton',   brandType: 'DoubleTree',              address: 'Farmers Branch, TX',                type: 'Full-service',    rooms: 160, gm: 'Nina Patel' },
+  LASET:   { name: 'Hampton Inn & Suites Las Vegas Airport',   brand: 'Hilton',   brandType: 'Hampton Inn & Suites',    address: 'Las Vegas, NV',                     type: 'Select-service',  rooms: 129, gm: 'James Carter' },
+  LASHE:   { name: 'Hilton Garden Inn Henderson',              brand: 'Hilton',   brandType: 'Hilton Garden Inn',       address: 'Henderson, NV',                     type: 'Select-service',  rooms: 139, gm: 'Diane Moore' },
+  LG52840: { name: 'La Quinta Inn Twin Falls',                 brand: 'Wyndham',  brandType: 'La Quinta',               address: 'Twin Falls, ID',                    type: 'Limited-service', rooms: 101, gm: 'Steve Allen' },
+  LQ52836: { name: 'La Quinta Inn Coeur d\'Alene',             brand: 'Wyndham',  brandType: 'La Quinta',               address: 'Coeur d\'Alene, ID',                type: 'Limited-service', rooms: 118, gm: 'Maria Garcia' },
+  MSOGI:   { name: 'Hilton Garden Inn Missoula',               brand: 'Hilton',   brandType: 'Hilton Garden Inn',       address: 'Missoula, MT',                      type: 'Select-service',  rooms: 146, gm: 'Brian Lee' },
+  OR113:   { name: 'Comfort Suites Redmond Airport',           brand: 'Choice',   brandType: 'Comfort Suites',          address: 'Redmond, OR',                       type: 'Limited-service', rooms: 92,  gm: 'Sandra White' },
+  PDXRE:   { name: 'River\'s Edge Portland, Tapestry Collection', brand: 'IHG',  brandType: 'Tapestry Collection',     address: 'Portland, OR',                      type: 'Full-service',    rooms: 112, gm: 'Kevin Brown' },
+  PDXSH:   { name: 'Hampton Inn & Suites Sherwood',            brand: 'Hilton',   brandType: 'Hampton Inn & Suites',    address: 'Sherwood, OR',                      type: 'Select-service',  rooms: 73,  gm: 'Julie Chen' },
+  PDXTG:   { name: 'Hampton Inn & Suites Portland Tigard',     brand: 'Hilton',   brandType: 'Hampton Inn & Suites',    address: 'Tigard, OR',                        type: 'Select-service',  rooms: 152, gm: 'Paul Davis' },
+  PHXRU:   { name: 'Tru by Hilton Gilbert',                    brand: 'Hilton',   brandType: 'Tru by Hilton',           address: 'Gilbert, AZ',                       type: 'Limited-service', rooms: 98,  gm: 'Megan Hill' },
+  RDMBE:   { name: 'Hampton Inn & Suites Bend',                brand: 'Hilton',   brandType: 'Hampton Inn & Suites',    address: 'Bend, OR',                          type: 'Select-service',  rooms: 114, gm: 'Robert Flores' },
+  RDMBO:   { name: 'Hilton Garden Inn Bend',                   brand: 'Hilton',   brandType: 'Hilton Garden Inn',       address: 'Bend, OR',                          type: 'Select-service',  rooms: 96,  gm: 'Cindy Adams' },
+  RDMNB:   { name: 'The Newberry Bend',                        brand: 'IHG',      brandType: 'Tapestry Collection',     address: 'Bend, OR',                          type: 'Full-service',    rooms: 117, gm: 'Frank Scott' },
+  SCCDT:   { name: 'DoubleTree Spokane City Center',           brand: 'Hilton',   brandType: 'DoubleTree',              address: 'Spokane, WA',                       type: 'Full-service',    rooms: 375, gm: 'Laura Evans' },
+  SLCDW:   { name: 'Hilton Garden Inn SLC Downtown',           brand: 'Hilton',   brandType: 'Hilton Garden Inn',       address: 'Salt Lake City, UT',                type: 'Select-service',  rooms: 132, gm: 'Michael Young' },
+  SLCLE:   { name: 'Springhill Suites Lehi',                   brand: 'Marriott', brandType: 'Springhill Suites',       address: 'Lehi, UT',                          type: 'Extended-stay',   rooms: 94,  gm: 'Patricia King' },
+  SLCLI:   { name: 'Courtyard by Marriott Lehi',               brand: 'Marriott', brandType: 'Courtyard',               address: 'Lehi, UT',                          type: 'Select-service',  rooms: 97,  gm: 'Daniel Cruz' }
+};
+
+function switchView(v) {
+  currentView = v;
+  // Sync dropdown
+  const sel = document.getElementById('viewSelect');
+  if (sel && sel.value !== v) sel.value = v;
+  const portfolioEl = document.getElementById('portfolioView');
+  const propertyEl = document.getElementById('propertyView');
+  const breadcrumb = document.getElementById('breadcrumb');
+  if (v === 'portfolio') {
+    portfolioEl.classList.remove('hidden');
+    propertyEl.classList.add('hidden');
+    breadcrumb.classList.add('hidden');
+    applyPortfolioPeriod(currentPeriod);
+  } else {
+    portfolioEl.classList.add('hidden');
+    propertyEl.classList.remove('hidden');
+    breadcrumb.classList.remove('hidden');
+    
+    // Scroll to top
+    window.scrollTo(0, 0);
+
+    // Update property header from metadata
+    const meta = PROPERTY_META[v] || PROPERTY_META['ASTOR'];
+    const h1 = propertyEl.querySelector('.property-info h1');
+    if (h1) h1.textContent = meta.name;
+    const tags = propertyEl.querySelector('.property-tags');
+    if (tags) tags.innerHTML = `
+      <span class="brand-pill">${meta.brand}</span>
+      <span>${meta.brandType}</span>
+      <span class="dot">·</span>
+      <span>${meta.address}</span>
+      <span class="dot">·</span>
+      <span>${meta.type} · ${meta.rooms} rooms</span>
+      <span class="dot">·</span>
+      <span>GM: ${meta.gm}</span>`;
+    const codeEl = propertyEl.querySelector('.property-stat-value.mono');
+    if (codeEl) codeEl.textContent = v;
+
+    applyPropertyPeriod(currentPeriod);
+  }
+  updateChatScope();
+}
+
+function updateChatScope() {
+  const periodLabel = { yesterday: 'Yesterday', wtd: 'WTD', mtd: 'MTD', ytd: 'YTD' }[currentPeriod];
+  const scope = currentView === 'portfolio'
+    ? `Full Portfolio · ${periodLabel}`
+    : `ASTOR · ${periodLabel}`;
+  const el = document.getElementById('chatScope');
+  if (el) el.textContent = scope;
+}
+
+// ========== CHARTS ==========
+function makeSpark(id, data, color) {
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.map((_,i) => i),
+      datasets: [{
+        data: data,
+        borderColor: color,
+        borderWidth: 1.5,
+        tension: 0.4,
+        fill: true,
+        backgroundColor: ctx => {
+          const c = ctx.chart.ctx.createLinearGradient(0, 0, 0, 36);
+          c.addColorStop(0, color + '55'); c.addColorStop(1, color + '00');
+          return c;
+        },
+        pointRadius: 0
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      scales: { x: { display: false }, y: { display: false } },
+      elements: { line: { borderJoinStyle: 'round' } }
+    }
+  });
+}
+
+makeSpark('spark1', [128, 134, 130, 138, 141, 137, 142], ACCENT);
+makeSpark('spark2', [180, 182, 185, 188, 187, 191, 189], ACCENT);
+makeSpark('spark3', [71, 73, 70, 72, 74, 73, 75], ACCENT);
+makeSpark('spark4', [4.4, 4.5, 4.55, 4.6, 4.7, 4.75, 4.82], ACCENT);
+makeSpark('aSpark1', [135,138,140,143,141,144,148], ACCENT);
+makeSpark('aSpark2', [171,173,175,177,176,178,182], ACCENT);
+makeSpark('aSpark3', [78,80,79,82,81,83,85], ACCENT);
+makeSpark('aSpark4', [510,520,530,545,550,556,562], ACCENT);
+
+// STR Index chart — MPI / ARI / RGI switchable
+const STR_CHART_DATA = {
+  MPI: {
+    label: 'MPI (Occupancy Index)',
+    data: [96.2, 97.0, 98.1, 99.4, 98.8, 100.2, 101.5, 100.9, 101.4, 101.7, 101.2, 101.8, 101.7],
+    min: 93, max: 104
+  },
+  ARI: {
+    label: 'ARI (ADR Index)',
+    data: [99.1, 99.8, 100.4, 101.0, 100.6, 101.4, 102.2, 101.8, 102.1, 102.5, 102.0, 102.6, 102.5],
+    min: 96, max: 106
+  },
+  RGI: {
+    label: 'RGI (RevPAR Index)',
+    data: [98.4, 99.1, 100.3, 101.2, 100.8, 102.1, 103.4, 102.9, 103.8, 104.2, 103.7, 104.5, 104.2],
+    min: 95, max: 107
+  }
+};
+let activeSTR = 'MPI';
+
+const strChart = new Chart(document.getElementById('rgiChart'), {
+  type: 'line',
+  data: {
+    labels: ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13'],
+    datasets: [{
+      data: STR_CHART_DATA.RGI.data,
+      borderColor: ACCENT, borderWidth: 2, tension: 0.3, fill: true,
+      backgroundColor: ctx => {
+        const c = ctx.chart.ctx.createLinearGradient(0,0,0,160);
+        c.addColorStop(0, 'rgba(212, 165, 116, 0.22)');
+        c.addColorStop(1, 'rgba(212, 165, 116, 0)');
+        return c;
+      },
+      pointRadius: 0, pointHoverRadius: 5
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { backgroundColor: '#18202B', borderColor: '#232E3D', borderWidth: 1, padding: 10, titleColor: '#ECEFF4', bodyColor: '#9AA5B8' }
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+      y: { grid: { color: '#1A222D' }, ticks: { font: { size: 10 } },
+           suggestedMin: STR_CHART_DATA.RGI.min, suggestedMax: STR_CHART_DATA.RGI.max }
+    }
+  }
+});
+
+function switchSTRChart(metric) {
+  activeSTR = metric;
+  const d = STR_CHART_DATA[metric];
+  // Directly splice the dataset array so Chart.js detects the mutation
+  const ds = strChart.data.datasets[0].data;
+  ds.splice(0, ds.length, ...d.data);
+  strChart.options.scales.y.suggestedMin = d.min;
+  strChart.options.scales.y.suggestedMax = d.max;
+  strChart.update();
+  const pLabel = { yesterday: 'Trailing 24 hours', wtd: 'Trailing 7 days', mtd: 'Trailing 30 days', ytd: 'Trailing 13 weeks' }[currentPeriod] || 'Trailing 13 weeks';
+  document.getElementById('strChartLabel').textContent = d.label + ' — ' + pLabel;
+  // Update card highlight
+  ['MPI','ARI','RGI'].forEach(m => {
+    const card = document.getElementById('strCard-' + m);
+    if (m === metric) {
+      card.style.borderColor = 'var(--accent)';
+      card.style.background = 'var(--accent-soft)';
+    } else {
+      card.style.borderColor = '';
+      card.style.background = '';
+    }
+  });
+}
+
+['MPI','ARI','RGI'].forEach(m => {
+  document.getElementById('strCard-' + m).addEventListener('click', () => switchSTRChart(m));
+});
+
+function makeTrendChart(canvasId) {
+  return new Chart(document.getElementById(canvasId), {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [
+        { label: 'Actuals', data: [], borderColor: ACCENT, borderWidth: 2.2, tension: 0.25, pointRadius: 0, pointHoverRadius: 4,
+          fill: true,
+          backgroundColor: ctx => {
+            const c = ctx.chart.ctx.createLinearGradient(0,0,0,280);
+            c.addColorStop(0, 'rgba(212, 165, 116, 0.20)');
+            c.addColorStop(1, 'rgba(212, 165, 116, 0)');
+            return c;
+          }
+        },
+        { label: 'Budget', data: [], borderColor: INFO, borderWidth: 1.5, borderDash: [4,4], tension: 0, pointRadius: 0, fill: false },
+        { label: 'Last Year', data: [], borderColor: SUBTLE, borderWidth: 1.5, tension: 0.25, pointRadius: 0, pointHoverRadius: 4, fill: false }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: { backgroundColor: '#18202B', borderColor: '#232E3D', borderWidth: 1, padding: 12, titleColor: '#ECEFF4', bodyColor: '#9AA5B8',
+          callbacks: { label: ctx => `${ctx.dataset.label}: $${ctx.parsed.y.toFixed(2)}` } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 0, autoSkipPadding: 12 } },
+        y: { grid: { color: '#1A222D' }, ticks: { font: { size: 10 }, callback: v => '$' + v } }
+      }
+    }
+  });
+}
+
+const portfolioTrendChart = makeTrendChart('trendChart');
+const propertyTrendChart = makeTrendChart('aTrendChart');
+
+// ========== PROPERTY STR CHART ==========
+const PROP_STR_DATA = {
+  MPI: { data: [], label: 'MPI', min: 98, max: 116 },
+  ARI: { data: [], label: 'ARI', min: 92, max: 108 },
+  RGI: { data: [], label: 'RGI', min: 96, max: 116 }
+};
+let activePropSTR = 'MPI';
+
+const propSTRChart = new Chart(document.getElementById('propSTRChart'), {
+  type: 'line',
+  data: {
+    labels: ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13'],
+    datasets: [
+      {
+        data: [],
+        borderColor: ACCENT, borderWidth: 2, tension: 0.3, fill: true,
+        backgroundColor: ctx => {
+          const c = ctx.chart.ctx.createLinearGradient(0,0,0,160);
+          c.addColorStop(0,'rgba(212,165,116,0.22)');
+          c.addColorStop(1,'rgba(212,165,116,0)');
+          return c;
+        },
+        pointRadius: 0, pointHoverRadius: 5
+      },
+      {
+        data: Array(13).fill(100),
+        borderColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderDash: [4,4],
+        tension: 0, fill: false, pointRadius: 0
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { backgroundColor: '#18202B', borderColor: '#232E3D', borderWidth: 1, padding: 10, titleColor: '#ECEFF4', bodyColor: '#9AA5B8' }
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+      y: { grid: { color: '#1A222D' }, ticks: { font: { size: 10 } }, suggestedMin: 96, suggestedMax: 116 }
+    }
+  }
+});
+
+const STR_PERIOD_LABELS = {
+  yesterday: 'Trailing 24 hours',
+  wtd:       'Trailing 7 days',
+  mtd:       'Trailing 30 days',
+  ytd:       'Trailing 13 weeks'
+};
+
+function switchPropSTR(metric) {
+  activePropSTR = metric;
+  const d = PROP_STR_DATA[metric];
+  propSTRChart.data.datasets[0].data = d.data;
+  propSTRChart.data.datasets[1].data = Array(d.data.length).fill(100);
+  propSTRChart.options.scales.y.suggestedMin = d.min;
+  propSTRChart.options.scales.y.suggestedMax = d.max;
+  propSTRChart.update();
+  const periodLabel = STR_PERIOD_LABELS[currentPeriod] || 'Trailing 13 weeks';
+  const labelEl = document.getElementById('propSTRChartLabel');
+  if (labelEl) labelEl.textContent = d.label + ' — ' + periodLabel;
+  ['MPI','ARI','RGI'].forEach(m => {
+    const card = document.getElementById('propStrCard-' + m);
+    if (card) {
+      card.style.borderColor = m === metric ? 'var(--accent)' : '';
+      card.style.background  = m === metric ? 'var(--accent-soft)' : '';
+    }
+  });
+}
+
+// ========== PROPERTY TREND METRIC SWITCHER ==========
+let currentPropTrendMetric = 'revpar';
+
+function updatePropTrendMetric(metric) {
+  currentPropTrendMetric = metric;
+  if (currentView === 'portfolio') return;
+  const d = ASTOR_DATA[currentPeriod];
+  if (!d || !d.charts) return;
+  const cd = d.charts[metric];
+  if (!cd) return;
+  updateChart(propertyTrendChart, cd);
+  const titleEl = document.querySelector('#propTrendCardTitle .section-title');
+  if (titleEl) titleEl.textContent = cd.title;
+  document.querySelectorAll('#propTrendMetricSeg button').forEach(b => {
+    b.classList.toggle('active', b.dataset.ptm === metric);
+  });
+}
+
+document.querySelectorAll('#propTrendMetricSeg button').forEach(btn => {
+  btn.addEventListener('click', () => updatePropTrendMetric(btn.dataset.ptm));
+});
+
+function updateChart(chart, data) {
+  chart.data.labels = data.labels;
+  chart.data.datasets[0].data = data.actuals;
+  chart.data.datasets[1].data = data.budget;
+  chart.data.datasets[2].data = data.ly;
+  // Update y-axis and tooltip format based on prefix/suffix
+  const p = data.prefix || '';
+  const s = data.suffix || '';
+  const fmt = v => s === 'M' ? parseFloat(v).toFixed(1) : v;
+  chart.options.scales.y.ticks.callback = v => p + fmt(v) + s;
+  chart.options.plugins.tooltip.callbacks.label = ctx => `${ctx.dataset.label}: ${p}${fmt(ctx.parsed.y)}${s}`;
+  chart.update();
+}
+
+// ========== TREND METRIC SWITCHER ==========
+let currentTrendMetric = 'revpar';
+
+function updateTrendMetric(metric) {
+  currentTrendMetric = metric;
+  if (currentView !== 'portfolio') return;
+  const d = PORTFOLIO_DATA[currentPeriod];
+  if (!d || !d.charts) return;
+  const cd = d.charts[metric];
+  if (!cd) return;
+  updateChart(portfolioTrendChart, cd);
+  // Update card title
+  const titleEl = document.querySelector('#trendCardTitle .section-title');
+  if (titleEl) titleEl.textContent = cd.title;
+  // Update tab highlight
+  document.querySelectorAll('#trendMetricSeg button').forEach(b => {
+    b.classList.toggle('active', b.dataset.tm === metric);
+  });
+}
+
+document.querySelectorAll('#trendMetricSeg button').forEach(btn => {
+  btn.addEventListener('click', () => updateTrendMetric(btn.dataset.tm));
+});
+
+// ========== EVENT WIRING ==========
+document.querySelectorAll('#periodSeg button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.disabled) return;
+    document.querySelectorAll('#periodSeg button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    applyPeriod(btn.dataset.p);
+  });
+});
+
+document.getElementById('viewSelect').addEventListener('change', (e) => {
+  switchView(e.target.value);
+});
+
+document.getElementById('breadcrumb').addEventListener('click', () => {
+  document.getElementById('viewSelect').value = 'portfolio';
+  switchView('portfolio');
+});
+
+document.getElementById('goHome').addEventListener('click', () => {
+  document.getElementById('viewSelect').value = 'portfolio';
+  switchView('portfolio');
+});
+
+// ========== DRAWERS / AI ==========
+const overlay = document.getElementById('overlay');
+const insightsDrawer = document.getElementById('insightsDrawer');
+const insightsBtn = document.getElementById('insightsBtn');
+const generateBtn = document.getElementById('generateBtn');
+const insightsBody = document.getElementById('insightsBody');
+
+insightsBtn.addEventListener('click', () => { insightsDrawer.classList.add('open'); overlay.classList.add('open'); });
+overlay.addEventListener('click', () => { insightsDrawer.classList.remove('open'); overlay.classList.remove('open'); });
+document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => { insightsDrawer.classList.remove('open'); overlay.classList.remove('open'); }));
+
+const PORTFOLIO_INSIGHTS = [
+  { tag: 'WATCH', type: 'negative', text: `Portfolio RevPAR is <span class="num">-1.4%</span> vs. budget MTD, driven primarily by <strong>Springhill Suites Boise West Eagle</strong> (<span class="num">-2.8%</span> YoY). Boise comp set is up <span class="num">+1.1%</span>, suggesting a property-specific issue rather than market softness.` },
+  { tag: 'WIN', type: 'positive', text: `<strong>Residence Inn by Marriott</strong> is your top performer: RevPAR up <span class="num">+12.4%</span> YoY with RGI of <span class="num">110.6</span>, gaining <span class="num">+4.2 pts</span> of comp set share.` },
+  { tag: 'OBSERVATION', type: 'info', text: `OOO rooms are <span class="num">142</span> vs. budget of <span class="num">90</span> — a <span class="num">58%</span> overage. Consider asking which properties account for the variance.` },
+  { tag: 'OPPORTUNITY', type: 'warn', text: `ARI of <span class="num">102.5</span> with MPI of only <span class="num">101.7</span> means the portfolio is winning rate but not occupancy — a <span class="num">$3–5</span> ADR test on shoulder dates at limited-service properties could lift RevPAR <span class="num">~$2–4</span> without measurable occ loss.` },
+  { tag: 'RISK', type: 'negative', text: `<strong>Springhill Suites Boise West Eagle</strong> has slipped below <span class="num">100 RGI</span> for the first time in 7 months. Comp set added <span class="num">312</span> rooms in Q1.` }
+];
+const ASTOR_INSIGHTS = [
+  { tag: 'WIN', type: 'positive', text: `ASTOR is overperforming: RevPAR <span class="num">+9.4%</span> YoY MTD with RGI of <span class="num">108.0</span>, gaining <span class="num">+1.7 pts</span> of comp set share. Strong weekday business demand from LGA travelers.` },
+  { tag: 'OPPORTUNITY', type: 'info', text: `Saturday occupancy averages <span class="num">68%</span> — the weak spot. A leisure-rate test on weekend stays could lift Sat RevPAR by <span class="num">$15–25</span> without compromising the weekday corporate base.` },
+  { tag: 'OBSERVATION', type: 'warn', text: `OTA mix is <span class="num">38%</span> of revenue. Direct mix gained <span class="num">+2.1 pts</span> YoY — momentum is good but commission load (~<span class="num">$80K</span> annualized) is still high. Worth pursuing a direct booking incentive.` },
+  { tag: 'PACE', type: 'positive', text: `Forward 30-day on-the-books is <span class="num">+10.6%</span> vs. STLY (<span class="num">1,805</span> rooms). Pickup last 7 days is <span class="num">+217</span> rooms — pace is accelerating.` },
+  { tag: 'WATCH', type: 'info', text: `ARI of <span class="num">98.7</span> means you're winning occupancy but underpricing slightly. Comp 3 (LGA midscale) is at <span class="num">$185.40</span> ADR; ASTOR is <span class="num">$176.90</span>. Test +<span class="num">$5</span> on midweek peak nights.` }
+];
+
+generateBtn.addEventListener('click', () => {
+  insightsBody.innerHTML = `
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <div class="loading-shimmer" style="height: 80px;"></div>
+      <div class="loading-shimmer" style="height: 80px;"></div>
+      <div class="loading-shimmer" style="height: 80px;"></div>
+      <div style="text-align:center; color: var(--text-subtle); font-size:12px; margin-top:8px;">Analyzing data…</div>
+    </div>`;
+  setTimeout(() => {
+    const insights = currentView === 'portfolio' ? PORTFOLIO_INSIGHTS : ASTOR_INSIGHTS;
+    const scopeLabel = currentView === 'portfolio' ? 'Full Portfolio' : 'Holiday Inn Express Astoria';
+    const periodLabel = { yesterday: 'Yesterday', wtd: 'WTD', mtd: 'MTD', ytd: 'YTD' }[currentPeriod];
+    const html = insights.map(i => `
+      <div class="insight-item ${i.type}">
+        <span class="insight-tag">${i.tag}</span>
+        <div class="insight-text">${i.text}</div>
+        <div class="insight-meta">
+          <span>Anchored to: ${periodLabel} · ${scopeLabel.split('—')[0].trim()}</span>
+          <a style="margin-left:auto;">Save</a>
+          <a>Share</a>
+        </div>
+      </div>
+    `).join('');
+    insightsBody.innerHTML = `
+      <div style="margin-bottom:16px; padding: 12px 14px; background: var(--surface); border-radius: 8px; border: 1px solid var(--border-subtle); font-size: 12.5px; color: var(--text-muted);">
+        Generated for <strong style="color:var(--text)">${scopeLabel} · ${periodLabel}</strong> on Apr 28, 2026 · Cost: <span class="mono">$0.038</span> · ${insights.length} insights
+      </div>
+      ${html}
+      <div style="margin-top: 16px; display:flex; gap:8px;">
+        <button class="btn" style="flex:1;">Re-run with new data</button>
+        <button class="btn">Export PDF</button>
+      </div>
+    `;
+  }, 1800);
+});
+
+// ========== CHAT ==========
+const chatFab = document.getElementById('chatFab');
+const chatDrawer = document.getElementById('chatDrawer');
+const chatClose = document.getElementById('chatClose');
+const chatBody = document.getElementById('chatBody');
+const chatInput = document.getElementById('chatInput');
+const sendBtn = document.getElementById('sendBtn');
+
+chatFab.addEventListener('click', () => {
+  chatDrawer.classList.add('open');
+  chatFab.classList.add('hidden');
+  setTimeout(() => chatInput.focus(), 100);
+});
+chatClose.addEventListener('click', () => {
+  chatDrawer.classList.remove('open');
+  chatFab.classList.remove('hidden');
+});
+document.querySelectorAll('.prompt-chip').forEach(chip => {
+  chip.addEventListener('click', () => { chatInput.value = chip.dataset.prompt; sendMessage(); });
+});
+chatInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+sendBtn.addEventListener('click', sendMessage);
+
+const PORTFOLIO_RESPONSES = {
+  default: `Looking at the portfolio MTD: RevPAR is <span class="num">$142.18</span>, down <span class="num">1.4%</span> vs. budget but up <span class="num">8.2%</span> YoY. The drag is primarily Springhill Suites Boise (<span class="num">-2.8% YoY</span>). Want me to dig in?`,
+  revpar: `RevPAR is short of budget by <span class="num">$2.02</span> (<span class="num">-1.4%</span>) MTD. Two drivers: OOO rooms (<span class="num">142</span> vs. budgeted <span class="num">90</span>) and BOISH losing comp set share. ADR is actually beating budget — this is an occupancy story.`,
+  property: `<strong>Springhill Suites Boise West Eagle</strong> is the biggest drag — RGI <span class="num">96.7</span>, YoY <span class="num">-2.8%</span>. Bright spot: <strong>Residence Inn</strong> with RGI <span class="num">110.6</span>, RevPAR <span class="num">+12.4%</span> YoY.`,
+  forecast: `April is tracking <span class="num">~$0.03M</span> below budget on rooms revenue, ahead on total revenue (<span class="num">+0.8%</span>). May pace is <span class="num">+5.1%</span> YoY at the portfolio level.`
+};
+const ASTOR_RESPONSES = {
+  default: `ASTOR is having a strong month: RevPAR <span class="num">$143.55</span> (<span class="num">+9.4%</span> YoY, <span class="num">+1.4%</span> vs. budget), RGI <span class="num">108.0</span>, occupancy <span class="num">81.1%</span>. Strong weekday business pattern; Saturday is the soft spot at <span class="num">68%</span>.`,
+  revpar: `RevPAR is <span class="num">$143.55</span>, beating budget by <span class="num">+1.4%</span> and up <span class="num">+9.4%</span> YoY. The drivers are higher occupancy (<span class="num">81.1%</span> vs. budget <span class="num">80.5%</span>) and a slight ADR lift. Comp set is up <span class="num">+4.0%</span> — ASTOR is outpacing.`,
+  forecast: `ASTOR's forward pace looks healthy: 30-day on-the-books at <span class="num">1,805</span> rooms (<span class="num">+10.6%</span> vs. STLY) with <span class="num">+217</span> rooms picked up in the last 7 days. Forecast for May is <span class="num">$598K</span> total revenue (<span class="num">+7.2%</span> YoY).`,
+  weekend: `Saturday averages <span class="num">68%</span> occupancy vs. Wednesday peak of <span class="num">91%</span>. ASTOR is a weekday business hotel (LGA traffic). A leisure rate test on Friday/Saturday could lift weekend RevPAR by <span class="num">$15–25</span> — Astoria is increasingly a Manhattan-spillover leisure submarket.`,
+  channel: `OTA mix is <span class="num">38%</span>, Direct <span class="num">22%</span>, Corporate <span class="num">18%</span>. Direct gained <span class="num">+2.1 pts</span> YoY. Annualized OTA commissions are roughly <span class="num">$80K</span> — meaningful enough to justify a direct-booking incentive program.`
+};
+
+function pickResponse(q) {
+  const responses = currentView === 'portfolio' ? PORTFOLIO_RESPONSES : ASTOR_RESPONSES;
+  const ql = q.toLowerCase();
+  if (ql.includes('weekend') || ql.includes('saturday') || ql.includes('sunday')) return responses.weekend || responses.default;
+  if (ql.includes('channel') || ql.includes('ota') || ql.includes('direct')) return responses.channel || responses.default;
+  if (ql.includes('revpar') && (ql.includes('down') || ql.includes('budget') || ql.includes('why'))) return responses.revpar;
+  if (ql.includes('property') || ql.includes('drag')) return responses.property || responses.default;
+  if (ql.includes('forecast') || ql.includes('pace') || ql.includes('30')) return responses.forecast;
+  return responses.default;
+}
+
+function sendMessage() {
+  const text = chatInput.value.trim();
+  if (!text) return;
+  const sp = chatBody.querySelector('.suggested-prompts');
+  if (sp) sp.remove();
+
+  const userMsg = document.createElement('div');
+  userMsg.className = 'msg msg-user';
+  userMsg.textContent = text;
+  chatBody.appendChild(userMsg);
+  chatInput.value = '';
+  chatBody.scrollTop = chatBody.scrollHeight;
+
+  const typing = document.createElement('div');
+  typing.className = 'msg msg-ai';
+  typing.innerHTML = `<span class="typing-dots"><span></span><span></span><span></span></span>`;
+  chatBody.appendChild(typing);
+  chatBody.scrollTop = chatBody.scrollHeight;
+
+  setTimeout(() => {
+    typing.innerHTML = pickResponse(text) + `<div class="msg-meta"><span>Just now</span><span class="mono">$0.0028</span></div>`;
+    chatBody.scrollTop = chatBody.scrollHeight;
+  }, 900);
+}
+
+// ========== OCCUPANCY DETAIL PANEL ==========
+const occKpiCard = document.getElementById('occKpiCard');
+const occDetailPanel = document.getElementById('occDetailPanel');
+const occExpandHint = document.getElementById('occExpandHint');
+
+occKpiCard.addEventListener('click', () => {
+  const isOpen = occDetailPanel.style.display !== 'none';
+  if (isOpen) {
+    occDetailPanel.style.display = 'none';
+    occKpiCard.classList.remove('occ-active');
+    occExpandHint.textContent = 'All properties ›';
+  } else {
+    occDetailPanel.style.display = 'block';
+    occKpiCard.classList.add('occ-active');
+    occExpandHint.textContent = '▴ Collapse';
+    occDetailPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+});
+
+// ========== INIT ==========
+applyPortfolioPeriod('mtd');
+applyPropertyPeriod('mtd');
+
+} // ========== END runDashboard() ==========
+
+</script>
+</body>
+</html>
