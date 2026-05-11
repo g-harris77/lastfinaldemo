@@ -1000,7 +1000,7 @@
       <button data-p="wtd">WTD</button>
       <button data-p="mtd" class="active">MTD</button>
       <button data-p="ytd">YTD</button>
-      <button data-p="t12m" disabled title="Coming soon">T12M</button>
+      <button data-p="3yr">3YR</button>
     </div>
   </div>
 </div>
@@ -1556,9 +1556,7 @@ const msalConfig = {
   },
   cache: { cacheLocation: 'localStorage' },
 };
-
 const msalInstance = new msal.PublicClientApplication(msalConfig);
-
 msalInstance.initialize().then(() => {
   return msalInstance.handleRedirectPromise();
 }).then((response) => {
@@ -1578,7 +1576,6 @@ msalInstance.initialize().then(() => {
 }).catch(err => console.error('Auth error:', err));
 
 function runDashboard() {
-
 // ========== CHART DEFAULTS ==========
 Chart.defaults.color = '#9AA5B8';
 Chart.defaults.borderColor = '#1A222D';
@@ -1878,6 +1875,78 @@ const PORTFOLIO_DATA = {
       ebitdaMgn: { value: '17.7%',  budget: '+0.1pts', ly: '+1.0pts', budgetUp: true, lyUp: true },
       flowthrough: { value: '56.8%', badge: 'On Target', detail: '+$242K / +$426K rev', badgeUp: true }
     }
+  },
+  '3yr': {
+    label: "3-Year Rolling · 2024–2026",
+    perfSub: "3-Year Rolling · Portfolio rollup",
+    propsSub: "3-Year Rolling · Click row to drill in",
+    trendSub: "Quarterly · Q1 2024–Q1 2026 · Actuals vs. Budget vs. Prior 3YR",
+    revparLabel: "RevPAR",
+    totalRevLabel: "Total Revenue (3YR)",
+    kpi: {
+      revpar: { value: '$131.40', budget: '+2.2%', ly: '+9.4%', budgetUp: true, lyUp: true },
+      adr: { value: '$176.80', budget: '+1.8%', ly: '+6.2%', budgetUp: true, lyUp: true },
+      occ: { value: '74.3%', budget: '+0.2pts', ly: '+2.1pts', budgetUp: true, lyUp: true },
+      totalrev: { value: '$68.2M', budget: '+2.4%', ly: '+8.8%', budgetUp: true, lyUp: true }
+    },
+    perfRows: [
+      ['OCC Rooms Sold', '384,612', '382,000', '356,214', ['+0.7%', true], ['+8.0%', true]],
+      ['OOO Rooms', '1,580', '1,480', '2,410', ['+6.8%', false], ['-34%', true]],
+      ['Comp Set Rooms Sold', '1,104,820', '—', '1,028,440', ['—', null], ['+7.4%', true]],
+      ['ADR', '$176.80', '$173.70', '$166.50', ['+1.8%', true], ['+6.2%', true]],
+      ['RevPAR', '$131.40', '$128.60', '$120.10', ['+2.2%', true], ['+9.4%', true]],
+      ['Total Rooms Rev', '$71.8M', '$70.2M', '$62.6M', ['+2.3%', true], ['+14.7%', true]],
+      ['Total Property Rev', '$68.2M', '$66.6M', '$62.7M', ['+2.4%', true], ['+8.8%', true], 'total']
+    ],
+    propRows: [
+      ['ASTOR','Holiday Inn Express Astoria','134 rms','$122.10','73.8%','$165.50','$7.28M','105.2','98.6','104.4','$2.08M','$1.56M','21.4%',['+8.6%', true]],
+      ['BNAGV','Tru by Hilton Goodlettsville','98 rms','$112.20','80.6%','$139.30','$4.80M','103.2','101.4','100.2','$1.30M','$980K','20.4%',['+4.0%', true]],
+      ['BOIGI','Hilton Garden Inn Boise Spectrum','137 rms','$133.40','85.4%','$156.20','$8.42M','105.8','104.0','102.0','$2.48M','$1.88M','22.3%',['+6.4%', true]],
+      ['BOIRI','Residence Inn by Marriott','104 rms','$154.60','90.8%','$170.30','$7.40M','112.0','108.6','107.8','$2.22M','$1.68M','22.7%',['+11.0%', true]],
+      ['BOISH','Springhill Suites Boise West Eagle','119 rms','$122.80','83.4%','$147.40','$6.62M','99.4','97.8','97.6','$1.78M','$1.32M','19.9%',['-0.8%', false]],
+      ['BOISP','Hampton Inn & Suites Boise Spectrum','133 rms','$136.40','87.6%','$155.70','$8.48M','107.0','104.6','103.4','$2.52M','$1.92M','22.6%',['+6.2%', true]],
+      ['BZNFC','Home2 Suites Bozeman Four Corners','100 rms','$59.20','41.8%','$141.60','$3.06M','98.0','96.2','95.2','$710K','$500K','16.3%',['+5.0%', true]],
+      ['CDAID','Hampton Inn & Suites Coeur d\'Alene','124 rms','$110.40','72.2%','$152.90','$6.48M','104.6','102.8','101.6','$1.86M','$1.40M','21.6%',['+7.4%', true]],
+      ['DALFB','DoubleTree Dallas-Farmers Branch','160 rms','$145.20','86.0%','$168.90','$11.0M','104.8','103.2','102.6','$3.30M','$2.52M','22.9%',['+4.6%', true]],
+      ['LASET','Hampton Inn & Suites Las Vegas Airport','129 rms','$116.20','69.8%','$166.40','$7.22M','101.8','100.2','99.2','$2.02M','$1.52M','21.0%',['+3.2%', true]],
+      ['LASHE','Hilton Garden Inn Henderson','139 rms','$140.40','88.6%','$158.40','$9.28M','106.4','104.8','103.4','$2.80M','$2.14M','23.0%',['+5.8%', true]],
+      ['LG52840','La Quinta Twin Falls','101 rms','$116.80','83.4%','$140.10','$5.58M','103.6','102.0','101.0','$1.60M','$1.20M','21.5%',['+6.0%', true]],
+      ['LQ52836','La Quinta Coeur d\'Alene','118 rms','$57.80','37.6%','$153.70','$3.40M','101.0','99.0','98.6','$820K','$590K','17.4%',['+3.4%', true]],
+      ['MSOGI','Hilton Garden Inn Missoula','146 rms','$127.60','80.4%','$158.70','$8.96M','105.2','103.4','102.6','$2.68M','$2.04M','22.8%',['+5.6%', true]],
+      ['OR113','Comfort Suites Redmond Airport','92 rms','$82.20','56.8%','$144.70','$3.68M','102.4','100.4','99.8','$1.00M','$748K','20.3%',['+4.2%', true]],
+      ['PDXRE','River\'s Edge Portland, Tapestry','112 rms','$87.80','57.6%','$152.40','$4.70M','102.8','101.0','100.2','$1.28M','$950K','20.2%',['+3.8%', true]],
+      ['PDXSH','Hampton Inn & Suites Sherwood','73 rms','$86.00','56.6%','$151.90','$3.06M','102.2','100.2','99.6','$820K','$610K','19.9%',['+3.2%', true]],
+      ['PDXTG','Hampton Inn & Suites Portland Tigard','152 rms','$78.60','51.4%','$152.90','$5.78M','100.8','98.8','98.2','$1.46M','$1.07M','18.5%',['+1.6%', true]],
+      ['PHXRU','Tru by Hilton Gilbert','98 rms','$48.20','31.6%','$152.50','$2.32M','99.6','97.8','97.0','$520K','$364K','15.7%',['-1.6%', false]],
+      ['RDMBE','Hampton Inn & Suites Bend','114 rms','$97.60','65.4%','$149.20','$5.44M','103.6','102.0','101.2','$1.54M','$1.16M','21.3%',['+5.0%', true]],
+      ['RDMBO','Hilton Garden Inn Bend','96 rms','$92.80','61.8%','$150.20','$4.34M','102.0','100.0','99.6','$1.18M','$882K','20.3%',['+2.4%', true]],
+      ['RDMNB','The Newberry Bend','117 rms','$74.60','49.6%','$150.40','$4.26M','103.2','101.4','100.8','$1.14M','$844K','19.8%',['+3.4%', true]],
+      ['SCCDT','DoubleTree Spokane City Center','375 rms','$98.80','65.8%','$150.10','$18.0M','104.0','102.2','101.6','$5.58M','$4.28M','23.8%',['+4.2%', true]],
+      ['SLCDW','Hilton Garden Inn SLC Downtown','132 rms','$129.60','87.4%','$148.30','$8.20M','105.4','103.6','102.8','$2.48M','$1.90M','23.2%',['+6.0%', true]],
+      ['SLCLE','Springhill Suites Lehi','94 rms','$23.80','15.6%','$152.60','$1.04M','—','—','—','—','—','—',['-62%', false]],
+      ['SLCLI','Courtyard by Marriott Lehi','97 rms','$105.80','70.8%','$149.40','$4.98M','102.4','100.4','100.0','$1.38M','$1.02M','20.5%',['+2.8%', true]]
+    ],
+    str: {
+      MPI: { value: '103.4', delta: '▲ 2.1', up: true },
+      ARI: { value: '101.8', delta: '▲ 1.2', up: true },
+      RGI: { value: '104.8', delta: '▲ 2.6', up: true },
+      chartData: {
+        MPI: [99.2,100.1,101.0,102.2,101.8,102.4,103.0,102.6,103.2,103.8,103.2,103.6,103.4],
+        ARI: [99.8,100.2,100.6,101.2,100.8,101.4,101.8,101.4,101.8,102.2,101.6,102.0,101.8],
+        RGI: [100.4,101.2,102.0,103.2,102.8,103.6,104.4,103.8,104.6,105.2,104.6,105.0,104.8]
+      }
+    },
+    charts: {
+      revpar:   { labels: ['Q1\'24','Q2\'24','Q3\'24','Q4\'24','Q1\'25','Q2\'25','Q3\'25','Q4\'25','Q1\'26'], actuals: [108,124,138,118,116,136,148,124,129], budget: Array.from({length:9},()=>126), ly: [99,114,128,108,108,125,138,114,120], prefix:'$', title:'RevPAR Trend (3-Year)' },
+      adr:      { labels: ['Q1\'24','Q2\'24','Q3\'24','Q4\'24','Q1\'25','Q2\'25','Q3\'25','Q4\'25','Q1\'26'], actuals: [163,175,186,169,168,180,192,172,175], budget: Array.from({length:9},()=>170), ly: [155,166,178,160,160,172,184,163,167], prefix:'$', title:'ADR Trend (3-Year)' },
+      totalrev: { labels: ['Q1\'24','Q2\'24','Q3\'24','Q4\'24','Q1\'25','Q2\'25','Q3\'25','Q4\'25','Q1\'26'], actuals: [14.2,17.8,20.4,15.6,15.8,19.2,22.0,16.4,17.1], budget: Array.from({length:9},()=>16.8), ly: [13.0,16.4,18.8,14.2,14.6,17.8,20.4,15.0,15.8], prefix:'$', suffix:'M', title:'Total Revenue Trend (3-Year)' }
+    },
+    profit: {
+      gop:       { value: '$15.82M', budget: '+2.4%', ly: '+9.6%', budgetUp: true, lyUp: true },
+      ebitda:    { value: '$12.08M', budget: '+1.8%', ly: '+8.8%', budgetUp: true, lyUp: true },
+      ebitdaMgn: { value: '17.7%',  budget: '+0.2pts', ly: '+1.2pts', budgetUp: true, lyUp: true },
+      flowthrough: { value: '57.2%', badge: 'On Target', detail: '+$872K / +$1.52M rev', badgeUp: true }
+    }
   }
 };
 
@@ -2054,6 +2123,44 @@ const ASTOR_DATA = {
       ebitdaMgn: { value: '25.4%', budget: '+0.1pts', ly: '+1.0pts', budgetUp: true, lyUp: true },
       flowthrough: { value: '56.8%', badge: 'On Target', detail: '+$128.6K / +$226.2K rev', badgeUp: true }
     }
+  },
+  '3yr': {
+    label: "3-Year Rolling · 2024–2026",
+    perfSub: "3-Year Rolling · ASTOR",
+    trendSub: "Quarterly · Q1 2024–Q1 2026 · Actuals vs. Budget vs. Prior 3YR",
+    deptSub: "3-Year Rolling · Q1 2024 – Q1 2026",
+    totalRevLabel: "Total Revenue (3YR)",
+    kpi: {
+      revpar:   { value: '$122.10', budget: '+3.2%', ly: '+8.6%', budgetUp: true, lyUp: true },
+      adr:      { value: '$165.50', budget: '+2.0%', ly: '+5.2%', budgetUp: true, lyUp: true },
+      occ:      { value: '73.8%',  budget: '+0.9pts', ly: '+2.8pts', budgetUp: true, lyUp: true },
+      totalrev: { value: '$7.28M', budget: '+3.4%', ly: '+9.0%', budgetUp: true, lyUp: true }
+    },
+    perfRows: [
+      { label: 'RevPAR',      value: '$122.10', budgetVar: '+3.2%', budgetUp: true, lyVar: '+8.6%',  lyUp: true },
+      { label: 'ADR',         value: '$165.50', budgetVar: '+2.0%', budgetUp: true, lyVar: '+5.2%',  lyUp: true },
+      { label: 'Occupancy',   value: '73.8%',   budgetVar: '+0.9pts', budgetUp: true, lyVar: '+2.8pts', lyUp: true },
+      { label: 'Total Rev',   value: '$7.28M',  budgetVar: '+3.4%', budgetUp: true, lyVar: '+9.0%',  lyUp: true },
+      { label: 'GOP',         value: '$2.16M',  budgetVar: '+2.8%', budgetUp: true, lyVar: '+10.2%', lyUp: true },
+      { label: 'EBITDA',      value: '$1.62M',  budgetVar: '+2.2%', budgetUp: true, lyVar: '+9.6%',  lyUp: true }
+    ],
+    str: {
+      MPI: { value: '104.2', trend: '+2.1pts', trendUp: true },
+      ARI: { value: '98.6',  trend: '-0.4pts', trendUp: false },
+      RGI: { value: '102.8', trend: '+1.8pts', trendUp: true }
+    },
+    charts: {
+      revpar:   { labels: ["Q1'24","Q2'24","Q3'24","Q4'24","Q1'25","Q2'25","Q3'25","Q4'25","Q1'26"], actuals: [104,128,142,116,108,134,148,120,122], budget: Array.from({length:9},()=>118), ly: [96,118,130,106,100,124,136,110,114], prefix:'$', title:'RevPAR Trend (3-Year)' },
+      adr:      { labels: ["Q1'24","Q2'24","Q3'24","Q4'24","Q1'25","Q2'25","Q3'25","Q4'25","Q1'26"], actuals: [142,162,174,152,148,168,180,158,166], budget: Array.from({length:9},()=>162), ly: [132,150,162,140,136,156,168,148,154], prefix:'$', title:'ADR Trend (3-Year)' },
+      occ:      { labels: ["Q1'24","Q2'24","Q3'24","Q4'24","Q1'25","Q2'25","Q3'25","Q4'25","Q1'26"], actuals: [73.2,79.0,81.6,76.3,72.9,79.8,82.2,75.9,73.8], budget: Array.from({length:9},()=>72.9), ly: [72.7,78.7,80.2,75.7,71.3,79.5,81.0,74.3,72.2], prefix:'', suffix:'%', title:'Occupancy Trend (3-Year)' },
+      totalrev: { labels: ["Q1'24","Q2'24","Q3'24","Q4'24","Q1'25","Q2'25","Q3'25","Q4'25","Q1'26"], actuals: [1.62,2.08,2.28,1.84,1.70,2.18,2.40,1.94,1.82], budget: Array.from({length:9},()=>1.90), ly: [1.48,1.92,2.10,1.68,1.56,2.02,2.22,1.78,1.68], prefix:'$', suffix:'M', title:'Total Revenue Trend (3-Year)' }
+    },
+    profit: {
+      gop:       { value: '$2.16M',  budget: '+2.8%', ly: '+10.2%', budgetUp: true, lyUp: true },
+      ebitda:    { value: '$1.62M',  budget: '+2.2%', ly: '+9.6%',  budgetUp: true, lyUp: true },
+      ebitdaMgn: { value: '22.3%',   budget: '+0.2pts', ly: '+0.8pts', budgetUp: true, lyUp: true },
+      flowthrough: { value: '57.2%', badge: 'On Target', detail: '+$384K / +$672K rev', badgeUp: true }
+    }
   }
 };
 
@@ -2200,7 +2307,7 @@ function applyPortfolioPeriod(p) {
       }
     });
     // Update STR chart data and x-axis labels for the period
-    const strLabels = { yesterday: ['12a','3a','6a','9a','12p','3p','6p','9p','11p'], wtd: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], mtd: Array.from({length:13},(_,i)=>`W${i+1}`), ytd: ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13'] };
+    const strLabels = { yesterday: ['12a','3a','6a','9a','12p','3p','6p','9p','11p'], wtd: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], mtd: Array.from({length:13},(_,i)=>`W${i+1}`), ytd: ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13'], '3yr': ["Q1'24","Q2'24","Q3'24","Q4'24","Q1'25","Q2'25","Q3'25","Q4'25","Q1'26"] };
     strChart.data.labels = strLabels[p] || strLabels.ytd;
     // Mutate the arrays in place using splice so Chart.js detects the change (same pattern as property view)
     STR_CHART_DATA.MPI.data.splice(0, STR_CHART_DATA.MPI.data.length, ...d.str.chartData.MPI);
@@ -2317,7 +2424,7 @@ function applyPropertyPeriod(p) {
     document.querySelector('[data-bind="a.occ.value"]').textContent = occ;
     setDelta(document.querySelector('[data-bind="a.occ.budget"]'), estimatedBudgetVar, estimatedBudgetUp);
     setDelta(document.querySelector('[data-bind="a.occ.ly"]'), yoyVal, yoyUp);
-    const periodLabel = { yesterday: 'Total Revenue (Yesterday)', wtd: 'Total Revenue (WTD)', mtd: 'Total Revenue (MTD)', ytd: 'Total Revenue (YTD)' }[p] || 'Total Revenue';
+    const periodLabel = { yesterday: 'Total Revenue (Yesterday)', wtd: 'Total Revenue (WTD)', mtd: 'Total Revenue (MTD)', ytd: 'Total Revenue (YTD)', '3yr': 'Total Revenue (3YR)' }[p] || 'Total Revenue';
     document.querySelector('[data-bind="a.totalrev.label"]').textContent = periodLabel;
     document.querySelector('[data-bind="a.totalrev.value"]').textContent = totalrev;
     setDelta(document.querySelector('[data-bind="a.totalrev.budget"]'), estimatedBudgetVar, estimatedBudgetUp);
@@ -2344,12 +2451,13 @@ function applyPropertyPeriod(p) {
       }
     });
     // Generate period-appropriate trend ending at current index values
-    const STR_POINT_COUNTS = { yesterday: 9, wtd: 7, mtd: 30, ytd: 13 };
+    const STR_POINT_COUNTS = { yesterday: 9, wtd: 7, mtd: 30, ytd: 13, '3yr': 9 };
     const STR_CHART_LABELS = {
       yesterday: ['12a','3a','6a','9a','12p','3p','6p','9p','11p'],
       wtd:       ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
       mtd:       Array.from({length:30},(_,i)=>`${i+1}`),
-      ytd:       ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13']
+      ytd:       ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13'],
+      '3yr':     ["Q1'24","Q2'24","Q3'24","Q4'24","Q1'25","Q2'25","Q3'25","Q4'25","Q1'26"]
     };
     const nPts = STR_POINT_COUNTS[p] || 13;
     const chartLabels = STR_CHART_LABELS[p] || STR_CHART_LABELS.ytd;
@@ -2399,7 +2507,7 @@ function applyPropertyPeriod(p) {
         deltaEl.className = 'delta-pill ' + (d.str[m].up ? 'delta-up' : 'delta-down');
       }
     });
-    const astrLabels = { yesterday: ['12a','3a','6a','9a','12p','3p','6p','9p','11p'], wtd: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], mtd: Array.from({length:13},(_,i)=>`W${i+1}`), ytd: ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13'] };
+    const astrLabels = { yesterday: ['12a','3a','6a','9a','12p','3p','6p','9p','11p'], wtd: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], mtd: Array.from({length:13},(_,i)=>`W${i+1}`), ytd: ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13'], '3yr': ["Q1'24","Q2'24","Q3'24","Q4'24","Q1'25","Q2'25","Q3'25","Q4'25","Q1'26"] };
     propSTRChart.data.labels = astrLabels[p] || astrLabels.ytd;
     PROP_STR_DATA.MPI.data = d.str.chartData.MPI;
     PROP_STR_DATA.ARI.data = d.str.chartData.ARI;
@@ -2470,6 +2578,13 @@ const ASTOR_DEPT_DATA = {
     ['Other Operated', '$29,800', '1.4%', '▲ 1.9%', true, '▲ 5.6%', true],
     ['Miscellaneous', '$6,200', '-0.0%', '— 0.0%', null, '▼ 0.6%', false],
     ['TOTAL', '$2,133,700', '100%', '▲ 1.3%', true, '▲ 7.9%', true]
+  ],
+  '3yr': [
+    ['Rooms', '$6,982,400', '95.9%', '▲ 2.2%', true, '▲ 8.6%', true],
+    ['F&B (Breakfast)', '$188,600', '2.6%', '▲ 0.8%', true, '▲ 4.4%', true],
+    ['Other Operated', '$102,400', '1.4%', '▲ 2.6%', true, '▲ 6.2%', true],
+    ['Miscellaneous', '$19,600', '-0.1%', '— 0.0%', null, '▼ 0.4%', false],
+    ['TOTAL', '$7,293,000', '100%', '▲ 2.0%', true, '▲ 8.4%', true]
   ]
 };
 
@@ -2529,7 +2644,7 @@ const PROPERTY_META = {
   SLCLI:   { name: 'Courtyard by Marriott Lehi',               brand: 'Marriott', brandType: 'Courtyard',               address: 'Lehi, UT',                          type: 'Select-service',  rooms: 97,  gm: 'Daniel Cruz' }
 };
 
-function switchView(v) {
+window.switchView = function(v) {
   currentView = v;
   // Sync dropdown
   const sel = document.getElementById('viewSelect');
@@ -2573,7 +2688,7 @@ function switchView(v) {
 }
 
 function updateChatScope() {
-  const periodLabel = { yesterday: 'Yesterday', wtd: 'WTD', mtd: 'MTD', ytd: 'YTD' }[currentPeriod];
+  const periodLabel = { yesterday: 'Yesterday', wtd: 'WTD', mtd: 'MTD', ytd: 'YTD', '3yr': '3YR' }[currentPeriod];
   const scope = currentView === 'portfolio'
     ? `Full Portfolio · ${periodLabel}`
     : `ASTOR · ${periodLabel}`;
@@ -2680,7 +2795,7 @@ function switchSTRChart(metric) {
   strChart.options.scales.y.suggestedMin = d.min;
   strChart.options.scales.y.suggestedMax = d.max;
   strChart.update();
-  const pLabel = { yesterday: 'Trailing 24 hours', wtd: 'Trailing 7 days', mtd: 'Trailing 30 days', ytd: 'Trailing 13 weeks' }[currentPeriod] || 'Trailing 13 weeks';
+  const pLabel = { yesterday: 'Trailing 24 hours', wtd: 'Trailing 7 days', mtd: 'Trailing 30 days', ytd: 'Trailing 13 weeks', '3yr': '3-Year Rolling (Quarterly)' }[currentPeriod] || 'Trailing 13 weeks';
   document.getElementById('strChartLabel').textContent = d.label + ' — ' + pLabel;
   // Update card highlight
   ['MPI','ARI','RGI'].forEach(m => {
@@ -2784,10 +2899,11 @@ const STR_PERIOD_LABELS = {
   yesterday: 'Trailing 24 hours',
   wtd:       'Trailing 7 days',
   mtd:       'Trailing 30 days',
-  ytd:       'Trailing 13 weeks'
+  ytd:       'Trailing 13 weeks',
+  '3yr':     '3-Year Rolling (Quarterly)'
 };
 
-function switchPropSTR(metric) {
+window.switchPropSTR = function(metric) {
   activePropSTR = metric;
   const d = PROP_STR_DATA[metric];
   propSTRChart.data.datasets[0].data = d.data;
@@ -2928,7 +3044,7 @@ generateBtn.addEventListener('click', () => {
   setTimeout(() => {
     const insights = currentView === 'portfolio' ? PORTFOLIO_INSIGHTS : ASTOR_INSIGHTS;
     const scopeLabel = currentView === 'portfolio' ? 'Full Portfolio' : 'Holiday Inn Express Astoria';
-    const periodLabel = { yesterday: 'Yesterday', wtd: 'WTD', mtd: 'MTD', ytd: 'YTD' }[currentPeriod];
+    const periodLabel = { yesterday: 'Yesterday', wtd: 'WTD', mtd: 'MTD', ytd: 'YTD', '3yr': '3YR' }[currentPeriod];
     const html = insights.map(i => `
       <div class="insight-item ${i.type}">
         <span class="insight-tag">${i.tag}</span>
@@ -3050,9 +3166,7 @@ occKpiCard.addEventListener('click', () => {
 // ========== INIT ==========
 applyPortfolioPeriod('mtd');
 applyPropertyPeriod('mtd');
-
 } // ========== END runDashboard() ==========
-
 </script>
 </body>
 </html>
