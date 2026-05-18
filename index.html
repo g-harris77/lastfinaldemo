@@ -1452,33 +1452,6 @@
     <div class="chart-wrap"><canvas id="aTrendChart"></canvas></div>
   </div>
 
-  <!-- Department breakdown -->
-  <div class="card" style="margin-bottom:16px;">
-    <div class="card-header">
-      <div>
-        <div class="section-title">Revenue Department · Holiday Inn Express Astoria</div>
-        <div class="section-sub" data-bind="a.dept.sub">Month-to-date</div>
-      </div>
-    </div>
-    <table>
-      <thead>
-        <tr>
-          <th>Department</th>
-          <th class="num">Revenue</th>
-          <th class="num">% of Total</th>
-          <th class="num">vs Budget</th>
-          <th class="num">vs LY</th>
-        </tr>
-      </thead>
-      <tbody id="deptTable">
-        <tr><td>Rooms</td><td class="num">$538,200</td><td class="num">95.8%</td><td class="num"><span class="delta-pill delta-up">▲ 1.8%</span></td><td class="num"><span class="delta-pill delta-up">▲ 9.4%</span></td></tr>
-        <tr><td>F&B (Breakfast)</td><td class="num">$14,100</td><td class="num">2.5%</td><td class="num"><span class="delta-pill delta-up">▲ 0.6%</span></td><td class="num"><span class="delta-pill delta-up">▲ 4.2%</span></td></tr>
-        <tr><td>Other Operated (Parking, Vending)</td><td class="num">$7,820</td><td class="num">1.4%</td><td class="num"><span class="delta-pill delta-up">▲ 2.4%</span></td><td class="num"><span class="delta-pill delta-up">▲ 6.0%</span></td></tr>
-        <tr><td>Miscellaneous Income</td><td class="num">$1,880</td><td class="num">0.3%</td><td class="num"><span class="delta-pill delta-flat">— 0.0%</span></td><td class="num"><span class="delta-pill delta-down">▼ 1.2%</span></td></tr>
-        <tr class="total"><td><strong>Total Property Revenue</strong></td><td class="num">$562,000</td><td class="num">100%</td><td class="num"><span class="delta-pill delta-up">▲ 1.7%</span></td><td class="num"><span class="delta-pill delta-up">▲ 9.1%</span></td></tr>
-      </tbody>
-    </table>
-  </div>
 
 </main>
 
@@ -1630,7 +1603,7 @@ function yesterday() {
 function startOfWeek() {
   const d = new Date();
   const day = d.getDay(); // 0=Sun
-  d.setDate(d.getDate() - (day === 0 ? 6 : day - 1)); // Monday
+  d.setDate(d.getDate() - day); // Sunday — aligns with chart weekly grouping
   return d;
 }
 function startOfMonth() {
@@ -1766,7 +1739,12 @@ function aggregateRows(rows, fromDate, toDate) {
     const occ         = available > 0 ? occupied / available : 0;
     const ebitdaMgn   = revenue    > 0 ? ebitda  / revenue   : 0;
     const gopMgn      = revenue    > 0 ? gop     / revenue   : 0;
-    const csADR       = propRows.reduce((a, r) => a + (r.cr2cd_adrcompset || 0), 0) / (propRows.filter(r => r.cr2cd_adrcompset).length || 1);
+    // ARI = (property ADR / comp set ADR) * 100
+    // Weight comp set ADR by occupied rooms per day to match PS calculation
+    const csRows = propRows.filter(r => r.cr2cd_adrcompset && r.cr2cd_occupied_rooms);
+    const csADR = csRows.length > 0
+      ? csRows.reduce((a, r) => a + (r.cr2cd_adrcompset * r.cr2cd_occupied_rooms), 0) / csRows.reduce((a, r) => a + r.cr2cd_occupied_rooms, 0)
+      : 0;
     const ari         = csADR      > 0 ? (adr / csADR) * 100 : null;
     const mpi         = null;
     const rgi         = null;
@@ -1896,9 +1874,10 @@ function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag
   // Determine grouping strategy
   let groupFn, labelFn, lyGroupFn, lyLabelFn;
   if (totalDays <= 35) {
-    // Daily
+    // Daily — rows are stamped with today but contain yesterday's data (Power Automate runs at 2am)
+    // So label each bucket as stamp_date - 1 day for correct business date display
     groupFn   = d => toDateStr(d);
-    labelFn   = d => fmtLabel(new Date(d + 'T00:00:00'));
+    labelFn   = d => { const bd = new Date(d + 'T00:00:00'); bd.setDate(bd.getDate() - 1); return fmtLabel(bd); };
     lyGroupFn = d => toDateStr(new Date(d.getTime() + 365 * dayMs));
     lyLabelFn = labelFn;
   } else if (totalDays <= 180) {
@@ -2064,9 +2043,11 @@ function buildPropertyLiveData(tag, allRows, ranges) {
       const occ       = available > 0 ? occupied / available : 0;
       const ebitdaMgn = revenue   > 0 ? ebitda  / revenue  : 0;
       const gopMgn    = revenue   > 0 ? gop     / revenue  : 0;
-      // Comp set: weighted avg ADR compset (only rows with data, 4-day lag)
-      const csRows = rows.filter(r => r.cr2cd_adrcompset);
-      const csADR = csRows.length > 0 ? csRows.reduce((a, r) => a + (r.cr2cd_adrcompset || 0), 0) / csRows.length : 0;
+      // ARI: weight comp set ADR by occupied rooms per day to match PS calculation
+      const csRows = rows.filter(r => r.cr2cd_adrcompset && r.cr2cd_occupied_rooms);
+      const csADR = csRows.length > 0
+        ? csRows.reduce((a, r) => a + (r.cr2cd_adrcompset * r.cr2cd_occupied_rooms), 0) / csRows.reduce((a, r) => a + r.cr2cd_occupied_rooms, 0)
+        : 0;
       const ari = csADR > 0 ? (adr / csADR) * 100 : null;
       return { occupied, available, revenue, gop, ebitda, noi, adr, revpar, occ, ebitdaMgn, gopMgn, csADR, ari };
     }
@@ -2724,8 +2705,6 @@ function applyPropertyPeriod(p) {
     });
     // Comp set — show ARI if available
     updatePropCompSet(d, p);
-    // Dept table
-    updateDeptTable(p);
     return;
   }
 
@@ -2782,60 +2761,6 @@ function applyPropertyPeriod(p) {
   }
 }
 
-// Department table data for ASTOR by period
-const ASTOR_DEPT_DATA = {
-  yesterday: [
-    ['Rooms', '$15,280', '94.2%', '▲ 2.1%', true, '▲ 13.4%', true],
-    ['F&B (Breakfast)', '$680', '4.2%', '▲ 0.8%', true, '▲ 5.2%', true],
-    ['Other Operated', '$380', '2.3%', '▼ 1.1%', false, '▲ 8.0%', true],
-    ['Miscellaneous', '$60', '-0.7%', '— 0.0%', null, '▼ 2.1%', false],
-    ['TOTAL', '$16,400', '100%', '▲ 1.5%', true, '▲ 12.1%', true]
-  ],
-  wtd: [
-    ['Rooms', '$105,520', '95.8%', '▲ 1.6%', true, '▲ 10.2%', true],
-    ['F&B (Breakfast)', '$3,620', '3.3%', '▲ 0.5%', true, '▲ 4.8%', true],
-    ['Other Operated', '$1,890', '1.7%', '▲ 2.1%', true, '▲ 7.4%', true],
-    ['Miscellaneous', '$510', '-0.8%', '— 0.0%', null, '▼ 0.8%', false],
-    ['TOTAL', '$111,540', '100%', '▲ 1.4%', true, '▲ 9.8%', true]
-  ],
-  mtd: [
-    ['Rooms', '$538,200', '95.8%', '▲ 1.8%', true, '▲ 9.4%', true],
-    ['F&B (Breakfast)', '$14,100', '2.5%', '▲ 0.6%', true, '▲ 4.2%', true],
-    ['Other Operated', '$7,820', '1.4%', '▲ 2.4%', true, '▲ 6.0%', true],
-    ['Miscellaneous', '$1,880', '0.3%', '— 0.0%', null, '▼ 1.2%', false],
-    ['TOTAL', '$562,000', '100%', '▲ 1.7%', true, '▲ 9.1%', true]
-  ],
-  ytd: [
-    ['Rooms', '$2,043,200', '96.0%', '▲ 1.5%', true, '▲ 8.8%', true],
-    ['F&B (Breakfast)', '$54,500', '2.6%', '▲ 0.4%', true, '▲ 3.8%', true],
-    ['Other Operated', '$29,800', '1.4%', '▲ 1.9%', true, '▲ 5.6%', true],
-    ['Miscellaneous', '$6,200', '-0.0%', '— 0.0%', null, '▼ 0.6%', false],
-    ['TOTAL', '$2,133,700', '100%', '▲ 1.3%', true, '▲ 7.9%', true]
-  ],
-  '3yr': [
-    ['Rooms', '$6,982,400', '95.9%', '▲ 2.2%', true, '▲ 8.6%', true],
-    ['F&B (Breakfast)', '$188,600', '2.6%', '▲ 0.8%', true, '▲ 4.4%', true],
-    ['Other Operated', '$102,400', '1.4%', '▲ 2.6%', true, '▲ 6.2%', true],
-    ['Miscellaneous', '$19,600', '-0.1%', '— 0.0%', null, '▼ 0.4%', false],
-    ['TOTAL', '$7,293,000', '100%', '▲ 2.0%', true, '▲ 8.4%', true]
-  ]
-};
-
-function updateDeptTable(period) {
-  const deptTbody = document.getElementById('deptTable');
-  if (!deptTbody) return;
-  const deptData = ASTOR_DEPT_DATA[period];
-  if (!deptData) return;
-  deptTbody.innerHTML = deptData.map((row, idx) => {
-    const [dept, rev, pct, varBudget, budgetUp, varYoY, yoyUp] = row;
-    const isTotal = idx === deptData.length - 1;
-    const budgetPill = varBudget === '— 0.0%' 
-      ? '<span class="delta-pill delta-flat">— 0.0%</span>'
-      : `<span class="delta-pill ${budgetUp ? 'delta-up' : 'delta-down'}">▲ ${varBudget.replace(/^▲|^▼/, '')}${budgetUp ? '' : ''}</span>`.replace(/▲▼/, '▼');
-    const yoyPill = `<span class="delta-pill ${yoyUp ? 'delta-up' : 'delta-down'}">${yoyUp ? '▲' : '▼'} ${varYoY.replace(/^▲|^▼/, '')}</span>`;
-    return `<tr${isTotal ? ' class="total"' : ''}><td>${isTotal ? '<strong>' + dept + '</strong>' : dept}</td><td class="num">${rev}</td><td class="num">${pct}</td><td class="num">${budgetPill}</td><td class="num">${yoyPill}</td></tr>`;
-  }).join('');
-}
 
 function applyPeriod(p) {
   currentPeriod = p;
