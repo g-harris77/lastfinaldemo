@@ -352,6 +352,24 @@
     align-items: center;
     gap: 6px;
   }
+  /* Loading skeleton pulse */
+  @keyframes skeleton-pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.8; }
+  }
+  .loading [data-bind] {
+    animation: skeleton-pulse 1.4s ease-in-out infinite;
+    color: var(--text-subtle) !important;
+    pointer-events: none;
+  }
+  .loading .delta-pill {
+    animation: skeleton-pulse 1.4s ease-in-out infinite;
+    background: var(--surface-3) !important;
+    color: transparent !important;
+    border-radius: 4px;
+    min-width: 40px;
+  }
+
   .kpi-value {
     font-size: 28px;
     font-weight: 600;
@@ -1107,12 +1125,12 @@
 </div>
 
 <!-- ============== PORTFOLIO VIEW ============== -->
-<main id="portfolioView">
+<main id="portfolioView" class="loading">
 
   <div class="grid grid-kpi">
     <div class="kpi" data-metric="revpar">
       <div class="kpi-label">RevPAR <span class="help-dot" title="Revenue Per Available Room">i</span></div>
-      <div class="kpi-value" data-bind="p.revpar.value">$142.18</div>
+      <div class="kpi-value" data-bind="p.revpar.value">—</div>
       <div class="kpi-deltas">
         <div class="kpi-delta">
           <span class="kpi-delta-label">vs Budget</span>
@@ -1128,7 +1146,7 @@
 
     <div class="kpi" data-metric="adr">
       <div class="kpi-label">ADR <span class="help-dot" title="Average Daily Rate">i</span></div>
-      <div class="kpi-value" data-bind="p.adr.value">$189.45</div>
+      <div class="kpi-value" data-bind="p.adr.value">—</div>
       <div class="kpi-deltas">
         <div class="kpi-delta">
           <span class="kpi-delta-label">vs Budget</span>
@@ -1144,7 +1162,7 @@
 
     <div class="kpi" data-metric="occ" id="occKpiCard">
       <div class="kpi-label">Occupancy <span style="margin-left:auto; font-size:10px; color:var(--text-subtle); font-weight:500; text-transform:none; letter-spacing:0; font-family:'Inter',sans-serif;" id="occExpandHint">All properties ›</span></div>
-      <div class="kpi-value" data-bind="p.occ.value">75.1%</div>
+      <div class="kpi-value" data-bind="p.occ.value">—</div>
       <div class="kpi-deltas">
         <div class="kpi-delta">
           <span class="kpi-delta-label">vs Budget</span>
@@ -1160,7 +1178,7 @@
 
     <div class="kpi" data-metric="totalrev">
       <div class="kpi-label" data-bind="p.totalrev.label">Total Revenue (MTD)</div>
-      <div class="kpi-value" data-bind="p.totalrev.value">$4.82M</div>
+      <div class="kpi-value" data-bind="p.totalrev.value">—</div>
       <div class="kpi-deltas">
         <div class="kpi-delta">
           <span class="kpi-delta-label">vs Budget</span>
@@ -1179,7 +1197,7 @@
   <div class="grid grid-kpi" style="margin-top:0;">
     <div class="kpi profit-kpi">
       <div class="kpi-label">GOP <span class="help-dot" title="Gross Operating Profit — Revenue minus departmental & undistributed operating expenses">i</span></div>
-      <div class="kpi-value" data-bind="p.gop.value">$1.09M</div>
+      <div class="kpi-value" data-bind="p.gop.value">—</div>
       <div class="kpi-deltas">
         <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="p.gop.budget"></span></div>
         <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="p.gop.ly"></span></div>
@@ -1187,7 +1205,7 @@
     </div>
     <div class="kpi profit-kpi">
       <div class="kpi-label">EBITDA</div>
-      <div class="kpi-value" data-bind="p.ebitda.value">$782K</div>
+      <div class="kpi-value" data-bind="p.ebitda.value">—</div>
       <div class="kpi-deltas">
         <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="p.ebitda.budget"></span></div>
         <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="p.ebitda.ly"></span></div>
@@ -1195,7 +1213,7 @@
     </div>
     <div class="kpi profit-kpi">
       <div class="kpi-label">EBITDA Margin</div>
-      <div class="kpi-value" data-bind="p.ebitdaMgn.value">27.5%</div>
+      <div class="kpi-value" data-bind="p.ebitdaMgn.value">—</div>
       <div class="kpi-deltas">
         <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="p.ebitdaMgn.budget"></span></div>
         <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="p.ebitdaMgn.ly"></span></div>
@@ -1203,7 +1221,7 @@
     </div>
     <div class="kpi profit-kpi">
       <div class="kpi-label">Flow-Through <span class="help-dot" title="Incremental EBITDA / Incremental Revenue (vs LY). 40–60% is industry-standard for healthy operations">i</span></div>
-      <div class="kpi-value" data-bind="p.flowthrough.value">57.0%</div>
+      <div class="kpi-value" data-bind="p.flowthrough.value">—</div>
       <div class="kpi-deltas">
         <div class="kpi-delta"><span class="kpi-delta-label">Benchmark (40–60%)</span><span class="delta-pill" data-bind="p.flowthrough.badge"></span></div>
         <div class="kpi-delta"><span class="kpi-delta-label">Δ EBITDA / Δ Rev</span><span class="ft-context" data-bind="p.flowthrough.detail"></span></div>
@@ -1399,7 +1417,7 @@
   <div class="grid grid-kpi">
     <div class="kpi">
       <div class="kpi-label">RevPAR <span class="help-dot" title="Revenue Per Available Room">i</span></div>
-      <div class="kpi-value" data-bind="a.revpar.value">$143.55</div>
+      <div class="kpi-value" data-bind="a.revpar.value">—</div>
       <div class="kpi-deltas">
         <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="a.revpar.budget"></span></div>
         <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="a.revpar.ly"></span></div>
@@ -1408,7 +1426,7 @@
     </div>
     <div class="kpi">
       <div class="kpi-label">ADR</div>
-      <div class="kpi-value" data-bind="a.adr.value">$176.90</div>
+      <div class="kpi-value" data-bind="a.adr.value">—</div>
       <div class="kpi-deltas">
         <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="a.adr.budget"></span></div>
         <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="a.adr.ly"></span></div>
@@ -1417,7 +1435,7 @@
     </div>
     <div class="kpi">
       <div class="kpi-label">Occupancy</div>
-      <div class="kpi-value" data-bind="a.occ.value">81.1%</div>
+      <div class="kpi-value" data-bind="a.occ.value">—</div>
       <div class="kpi-deltas">
         <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="a.occ.budget"></span></div>
         <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="a.occ.ly"></span></div>
@@ -1426,7 +1444,7 @@
     </div>
     <div class="kpi">
       <div class="kpi-label" data-bind="a.totalrev.label">Total Revenue (MTD)</div>
-      <div class="kpi-value" data-bind="a.totalrev.value">$562K</div>
+      <div class="kpi-value" data-bind="a.totalrev.value">—</div>
       <div class="kpi-deltas">
         <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="a.totalrev.budget"></span></div>
         <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="a.totalrev.ly"></span></div>
@@ -3564,6 +3582,9 @@ occKpiCard.addEventListener('click', () => {
 // ========== INIT ==========
 applyPortfolioPeriod('mtd');
 applyPropertyPeriod('mtd');
+// Remove loading state once data is rendered
+document.getElementById('portfolioView')?.classList.remove('loading');
+document.getElementById('propertyView')?.classList.remove('loading');
 } // ========== END runDashboard() ==========
 </script>
 </body>
