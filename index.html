@@ -1873,10 +1873,10 @@ function aggregateRows(rows, fromDate, toDate) {
     const ebitdaMgn   = revenue    > 0 ? ebitda  / revenue   : 0;
     const gopMgn      = revenue    > 0 ? gop     / revenue   : 0;
     // ARI = (property ADR / comp set ADR) * 100
-    // Weight comp set ADR by occupied rooms per day to match PS calculation
-    const csRows = propRows.filter(r => r.cr2cd_adrcompset && r.cr2cd_occupied_rooms);
+    // Simple average of daily comp set ADR across the period
+    const csRows = propRows.filter(r => r.cr2cd_adrcompset);
     const csADR = csRows.length > 0
-      ? csRows.reduce((a, r) => a + (r.cr2cd_adrcompset * r.cr2cd_occupied_rooms), 0) / csRows.reduce((a, r) => a + r.cr2cd_occupied_rooms, 0)
+      ? csRows.reduce((a, r) => a + r.cr2cd_adrcompset, 0) / csRows.length
       : 0;
     const ari         = csADR      > 0 ? (adr / csADR) * 100 : null;
     const mpi         = null;
@@ -2201,10 +2201,10 @@ function buildPropertyLiveData(tag, allRows, ranges) {
       const occ       = available > 0 ? occupied / available : 0;
       const ebitdaMgn = revenue   > 0 ? ebitda  / revenue  : 0;
       const gopMgn    = revenue   > 0 ? gop     / revenue  : 0;
-      // ARI: weight comp set ADR by occupied rooms per day to match PS calculation
-      const csRows = rows.filter(r => r.cr2cd_adrcompset && r.cr2cd_occupied_rooms);
+      // ARI: simple average of daily comp set ADR across the period
+      const csRows = rows.filter(r => r.cr2cd_adrcompset);
       const csADR = csRows.length > 0
-        ? csRows.reduce((a, r) => a + (r.cr2cd_adrcompset * r.cr2cd_occupied_rooms), 0) / csRows.reduce((a, r) => a + r.cr2cd_occupied_rooms, 0)
+        ? csRows.reduce((a, r) => a + r.cr2cd_adrcompset, 0) / csRows.length
         : 0;
       const ari = csADR > 0 ? (adr / csADR) * 100 : null;
       return { occupied, available, revenue, gop, ebitda, noi, adr, revpar, occ, ebitdaMgn, gopMgn, csADR, ari };
