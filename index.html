@@ -1847,8 +1847,8 @@ function buildPropRows(agg, lyAgg) {
       fmtIndex(p.mpi),
       fmtIndex(p.ari),
       fmtIndex(p.rgi),
-      fmtCurrency(p.gop),
-      fmtCurrency(p.ebitda),
+      fmtCurrency(p.gop, false),
+      fmtCurrency(p.ebitda, false),
       fmtPct(p.ebitdaMgn),
       [yoy.text, yoy.up],
     ];
@@ -2010,8 +2010,8 @@ function buildPeriodData(label, propsSub, trendSub, totalRevLabel, agg, lyAgg, f
       totalrev: { value: fmtCurrency(p.revenue),  budget: '—', ly: revDelta.text,     budgetUp: false, lyUp: revDelta.up     },
     },
     profit: {
-      gop:        { value: fmtCurrency(p.gop),       budget: '—', ly: gopDelta.text,      budgetUp: false, lyUp: gopDelta.up      },
-      ebitda:     { value: fmtCurrency(p.ebitda),    budget: '—', ly: ebitdaDelta.text,   budgetUp: false, lyUp: ebitdaDelta.up   },
+      gop:        { value: fmtCurrency(p.gop, false),    budget: '—', ly: gopDelta.text,      budgetUp: false, lyUp: gopDelta.up      },
+      ebitda:     { value: fmtCurrency(p.ebitda, false), budget: '—', ly: ebitdaDelta.text,   budgetUp: false, lyUp: ebitdaDelta.up   },
       ebitdaMgn:  { value: fmtPct(p.ebitdaMgn),     budget: '—', ly: ebitdaMgnDelta.text,budgetUp: false, lyUp: ebitdaMgnDelta.up},
       flowthrough: { value: '—', badge: '—', detail: '—', badgeUp: true },
     },
