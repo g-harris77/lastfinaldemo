@@ -1873,12 +1873,17 @@ function aggregateRows(rows, fromDate, toDate) {
     const ebitdaMgn   = revenue    > 0 ? ebitda  / revenue   : 0;
     const gopMgn      = revenue    > 0 ? gop     / revenue   : 0;
     // ARI = (property ADR / comp set ADR) * 100
-    // Simple average of daily comp set ADR across the period
+    // Comp set data has an ~8-day lag — only use days where it exists,
+    // and compute property ADR for those same days to match PS methodology
     const csRows = propRows.filter(r => r.cr2cd_adrcompset);
-    const csADR = csRows.length > 0
-      ? csRows.reduce((a, r) => a + r.cr2cd_adrcompset, 0) / csRows.length
-      : 0;
-    const ari         = csADR      > 0 ? (adr / csADR) * 100 : null;
+    let csADR = 0, ari = null;
+    if (csRows.length > 0) {
+      csADR = csRows.reduce((a, r) => a + r.cr2cd_adrcompset, 0) / csRows.length;
+      const csOcc = csRows.reduce((a, r) => a + (r.cr2cd_occupied_rooms || 0), 0);
+      const csRev = csRows.reduce((a, r) => a + (r.cr2cd_total_rooms || 0), 0);
+      const myADRforCS = csOcc > 0 ? csRev / csOcc : adr;
+      ari = csADR > 0 ? (myADRforCS / csADR) * 100 : null;
+    }
     const mpi         = null;
     const rgi         = null;
 
@@ -2201,12 +2206,16 @@ function buildPropertyLiveData(tag, allRows, ranges) {
       const occ       = available > 0 ? occupied / available : 0;
       const ebitdaMgn = revenue   > 0 ? ebitda  / revenue  : 0;
       const gopMgn    = revenue   > 0 ? gop     / revenue  : 0;
-      // ARI: simple average of daily comp set ADR across the period
+      // ARI: only use days where comp set data exists, compute property ADR for those same days
       const csRows = rows.filter(r => r.cr2cd_adrcompset);
-      const csADR = csRows.length > 0
-        ? csRows.reduce((a, r) => a + r.cr2cd_adrcompset, 0) / csRows.length
-        : 0;
-      const ari = csADR > 0 ? (adr / csADR) * 100 : null;
+      let csADR = 0, ari = null;
+      if (csRows.length > 0) {
+        csADR = csRows.reduce((a, r) => a + r.cr2cd_adrcompset, 0) / csRows.length;
+        const csOcc = csRows.reduce((a, r) => a + (r.cr2cd_occupied_rooms || 0), 0);
+        const csRev = csRows.reduce((a, r) => a + (r.cr2cd_total_rooms || 0), 0);
+        const myADRforCS = csOcc > 0 ? csRev / csOcc : adr;
+        ari = csADR > 0 ? (myADRforCS / csADR) * 100 : null;
+      }
       return { occupied, available, revenue, gop, ebitda, noi, adr, revpar, occ, ebitdaMgn, gopMgn, csADR, ari };
     }
 
