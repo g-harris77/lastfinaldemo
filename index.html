@@ -2137,9 +2137,25 @@ async function loadDataAndRun() {
       }
     }
     const dedupedRows = [...dedupMap.values()];
+    window._allRows = allRows;
+    window._dedupedRows = dedupedRows;
     if (dedupedRows.length < allRows.length) {
       console.warn(`Deduped ${allRows.length - dedupedRows.length} duplicate rows from Dataverse`);
     }
+
+    // Debug: show raw tag fields for any rows that map to BNAGV
+    const bnagvRaw = allRows.filter(r => extractTag(r) === 'BNAGV');
+    console.log(`BNAGV raw rows (pre-dedup): ${bnagvRaw.length}`);
+    console.table(bnagvRaw.map(r => ({
+      date: extractDate(r),
+      sitetag: r.cr2cd_sitetag,
+      propertycode: r.cr2cd_propertycode,
+      name: r.cr2cd_name,
+      occ: r.cr2cd_occupied_rooms,
+      avail: r.cr2cd_available_rooms,
+      rev: r.cr2cd_total_rooms,
+      etag: r['@odata.etag'],
+    })));
 
     const ranges = {
       yesterday: { from: td,                          to: td                           },
