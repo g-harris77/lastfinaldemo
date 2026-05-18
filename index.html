@@ -1709,19 +1709,35 @@ async function fetchAllRows(token, fromDate) {
   return allRows;
 }
 
+// Extract property code from property_name field e.g. "LQ52836 – La Quinta..." → "LQ52836"
+function extractTag(r) {
+  const name = r.cr2cd_property_name || '';
+  // Split on dash variants and take first part, trimmed
+  const code = name.split(/\s*[–—-]\s*/)[0].trim();
+  return code || r.cr2cd_sitetag;
+}
+
+// Extract YYYY-MM-DD from date field (handles "2026-01-02T00:00:00Z" or "2026-01-02")
+function extractDate(r) {
+  return (r.cr2cd_date || '').slice(0, 10);
+}
+
 // ---- Aggregate rows for a date range ----
 function aggregateRows(rows, fromDate, toDate) {
   // Filter to date range
   const from = toDateStr(fromDate);
   const to = toDateStr(toDate);
-  const filtered = rows.filter(r => r.cr2cd_date >= from && r.cr2cd_date <= to);
+  const filtered = rows.filter(r => {
+    const d = extractDate(r);
+    return d >= from && d <= to;
+  });
 
   if (!filtered.length) return null;
 
-  // Group by property
+  // Group by property code
   const byProp = {};
   for (const r of filtered) {
-    const tag = r.cr2cd_sitetag;
+    const tag = extractTag(r);
     if (!byProp[tag]) byProp[tag] = [];
     byProp[tag].push(r);
   }
@@ -1858,10 +1874,10 @@ function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag
   // Filter rows by date range (and optionally siteTag)
   function filterRows(rows, start, end) {
     return rows.filter(r => {
-      const d = parseD(r.cr2cd_date);
+      const d = parseD(extractDate(r));
       const inRange = d >= start && d <= end;
       if (!inRange) return false;
-      if (siteTag) return r.cr2cd_sitetag === siteTag;
+      if (siteTag) return extractTag(r) === siteTag;
       return true;
     });
   }
@@ -1870,7 +1886,7 @@ function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag
   function groupRows(rows, start, groupFn) {
     const map = new Map();
     rows.forEach(r => {
-      const key = groupFn(parseD(r.cr2cd_date));
+      const key = groupFn(parseD(extractDate(r)));
       if (!map.has(key)) map.set(key, { revenue: 0, rooms_occ: 0, rooms_avail: 0 });
       const g = map.get(key);
       g.revenue     += (r.cr2cd_total_rooms || 0);
