@@ -1117,7 +1117,7 @@
       <label>View data as of</label>
       <input type="date" id="anchorDateInput" />
       <div class="date-picker-footer">
-        <button class="dp-today-btn" id="dpTodayBtn">Reset to today</button>
+        <button class="dp-today-btn" id="dpTodayBtn">Reset to latest</button>
         <button class="dp-apply-btn" id="dpApplyBtn">Apply</button>
       </div>
     </div>
@@ -1715,8 +1715,8 @@ function toDateStr(d) {
   const dd   = String(d.getDate()).padStart(2, '0');
   return `${yyyy}-${mm}-${dd}`;
 }
-// Anchor date — defaults to today, can be overridden by date picker
-window._anchorDate = new Date();
+// Anchor date — defaults to yesterday (most recent complete data)
+window._anchorDate = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return d; })();
 function today() {
   const d = new Date(window._anchorDate);
   d.setHours(0, 0, 0, 0);
@@ -2351,8 +2351,9 @@ async function loadDataAndRun() {
       const asOfHeaderEl = document.getElementById('asOfDateHeader');
       if (asOfHeaderEl) asOfHeaderEl.textContent = anchorStr;
 
-      // Highlight button if using a custom date
-      const isCustom = toDateStr(window._anchorDate) !== toDateStr(new Date());
+      // Highlight button if not on the most recent date (yesterday)
+      const latestDate = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return toDateStr(d); })();
+      const isCustom = toDateStr(window._anchorDate) !== latestDate;
       const asOfBtn = document.getElementById('asOfLabel');
       if (asOfBtn) asOfBtn.style.borderColor = isCustom ? 'var(--accent)' : '';
 
@@ -3532,10 +3533,11 @@ occKpiCard.addEventListener('click', () => {
   const todayBtn = document.getElementById('dpTodayBtn');
   if (!btn || !dropdown || !input) return;
 
-  // Set input max to today, default to today
-  const todayStr = toDateStr(new Date());
-  input.max = todayStr;
-  input.value = todayStr;
+  // Cap at yesterday — most recent complete data
+  const yd = new Date(); yd.setDate(yd.getDate() - 1);
+  const ydStr = toDateStr(yd);
+  input.max = ydStr;
+  input.value = ydStr;
 
   // Toggle dropdown
   btn.addEventListener('click', (e) => {
@@ -3565,10 +3567,11 @@ occKpiCard.addEventListener('click', () => {
     applyPeriod(currentPeriod);
   });
 
-  // Reset to today
+  // Reset to most recent (yesterday)
   todayBtn.addEventListener('click', () => {
-    window._anchorDate = new Date();
-    input.value = toDateStr(new Date());
+    const d = new Date(); d.setDate(d.getDate() - 1);
+    window._anchorDate = d;
+    input.value = toDateStr(d);
     dropdown.classList.remove('open');
     if (window.recompute) window.recompute();
     applyPeriod(currentPeriod);
