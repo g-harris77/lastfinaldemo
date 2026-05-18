@@ -1843,7 +1843,7 @@ function buildPropRows(agg, lyAgg) {
       fmtADR(p.revpar),
       fmtPct(p.occ),
       fmtADR(p.adr),
-      fmtCurrency(p.revenue),
+      fmtCurrency(p.revenue, false),
       fmtIndex(p.mpi),
       fmtIndex(p.ari),
       fmtIndex(p.rgi),
@@ -2007,7 +2007,7 @@ function buildPeriodData(label, propsSub, trendSub, totalRevLabel, agg, lyAgg, f
       revpar:   { value: fmtADR(p.revpar),       budget: '—', ly: revparDelta.text,  budgetUp: false, lyUp: revparDelta.up  },
       adr:      { value: fmtADR(p.adr),           budget: '—', ly: adrDelta.text,     budgetUp: false, lyUp: adrDelta.up     },
       occ:      { value: fmtPct(p.occ),           budget: '—', ly: occDelta.text,     budgetUp: false, lyUp: occDelta.up     },
-      totalrev: { value: fmtCurrency(p.revenue),  budget: '—', ly: revDelta.text,     budgetUp: false, lyUp: revDelta.up     },
+      totalrev: { value: fmtCurrency(p.revenue, false),  budget: '—', ly: revDelta.text,     budgetUp: false, lyUp: revDelta.up     },
     },
     profit: {
       gop:        { value: fmtCurrency(p.gop, false),    budget: '—', ly: gopDelta.text,      budgetUp: false, lyUp: gopDelta.up      },
@@ -2025,6 +2025,94 @@ function buildPeriodData(label, propsSub, trendSub, totalRevLabel, agg, lyAgg, f
     propRows: buildPropRows(agg, lyAgg),
     charts,
   };
+}
+
+// ---- Build live KPI data for a single property across all periods ----
+function buildPropertyLiveData(tag, allRows, ranges) {
+  const result = {};
+  const yd = yesterday();
+  const ydStr = yd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+  for (const [period, { from, to }] of Object.entries(ranges)) {
+    // Filter rows for this property only
+    const propRows = allRows.filter(r => extractTag(r) === tag);
+    const fromStr = toDateStr(from instanceof Date ? from : new Date(from + 'T00:00:00'));
+    const toStr   = toDateStr(to   instanceof Date ? to   : new Date(to   + 'T00:00:00'));
+    const filtered = propRows.filter(r => {
+      const d = extractDate(r);
+      return d >= fromStr && d <= toStr;
+    });
+    const lyFrom = oneYearAgo(from), lyTo = oneYearAgo(to);
+    const lyFromStr = toDateStr(lyFrom instanceof Date ? lyFrom : new Date(lyFrom + 'T00:00:00'));
+    const lyToStr   = toDateStr(lyTo   instanceof Date ? lyTo   : new Date(lyTo   + 'T00:00:00'));
+    const lyFiltered = propRows.filter(r => {
+      const d = extractDate(r);
+      return d >= lyFromStr && d <= lyToStr;
+    });
+
+    function agg(rows) {
+      if (!rows.length) return null;
+      const sum = key => rows.reduce((a, r) => a + (r[key] || 0), 0);
+      const occupied  = sum('cr2cd_occupied_rooms');
+      const available = sum('cr2cd_available_rooms');
+      const revenue   = sum('cr2cd_total_rooms');
+      const gop       = sum('cr2cd_gop');
+      const ebitda    = sum('cr2cd_ebitda');
+      const noi       = sum('cr2cd_noi');
+      const adr       = occupied  > 0 ? revenue / occupied  : 0;
+      const revpar    = available > 0 ? revenue / available : 0;
+      const occ       = available > 0 ? occupied / available : 0;
+      const ebitdaMgn = revenue   > 0 ? ebitda  / revenue  : 0;
+      const gopMgn    = revenue   > 0 ? gop     / revenue  : 0;
+      // Comp set: weighted avg ADR compset (only rows with data, 4-day lag)
+      const csRows = rows.filter(r => r.cr2cd_adrcompset);
+      const csADR = csRows.length > 0 ? csRows.reduce((a, r) => a + (r.cr2cd_adrcompset || 0), 0) / csRows.length : 0;
+      const ari = csADR > 0 ? (adr / csADR) * 100 : null;
+      return { occupied, available, revenue, gop, ebitda, noi, adr, revpar, occ, ebitdaMgn, gopMgn, csADR, ari };
+    }
+
+    const p  = agg(filtered);
+    const ly = agg(lyFiltered);
+    if (!p) { result[period] = null; continue; }
+
+    const revparDelta   = fmtDelta(p.revpar,   ly?.revpar);
+    const adrDelta      = fmtDelta(p.adr,      ly?.adr);
+    const occDelta      = fmtDelta(p.occ,      ly?.occ,      true);
+    const revDelta      = fmtDelta(p.revenue,  ly?.revenue);
+    const gopDelta      = fmtDelta(p.gop,      ly?.gop);
+    const ebitdaDelta   = fmtDelta(p.ebitda,   ly?.ebitda);
+    const ebitdaMgnDelta= fmtDelta(p.ebitdaMgn,ly?.ebitdaMgn,true);
+
+    const periodLabels = { yesterday: `Yesterday · ${ydStr}`, wtd: 'Week-to-date', mtd: 'Month-to-date', ytd: `Year-to-date · ${yd.getFullYear()}`, '3yr': '3-Year Rolling' };
+
+    // Charts: property-specific trend
+    let charts = { revpar: { labels:[], actuals:[], budget:[], ly:[], prefix:'$', title:'RevPAR Trend' },
+                   adr:    { labels:[], actuals:[], budget:[], ly:[], prefix:'$', title:'ADR Trend' },
+                   totalrev:{ labels:[], actuals:[], budget:[], ly:[], prefix:'$', suffix:'K', title:'Total Revenue Trend' } };
+    if (window.ALL_ROWS) {
+      charts = buildChartData(window.ALL_ROWS, from, to, oneYearAgo(from), oneYearAgo(to), tag);
+    }
+
+    result[period] = {
+      label: periodLabels[period] || period,
+      kpi: {
+        revpar:   { value: fmtADR(p.revpar),          ly: revparDelta.text,   lyUp: revparDelta.up,   budget: '—', budgetUp: false },
+        adr:      { value: fmtADR(p.adr),             ly: adrDelta.text,      lyUp: adrDelta.up,      budget: '—', budgetUp: false },
+        occ:      { value: fmtPct(p.occ),             ly: occDelta.text,      lyUp: occDelta.up,      budget: '—', budgetUp: false },
+        totalrev: { value: fmtCurrency(p.revenue, false), ly: revDelta.text,  lyUp: revDelta.up,      budget: '—', budgetUp: false },
+      },
+      profit: {
+        gop:        { value: fmtCurrency(p.gop, false),    ly: gopDelta.text,       lyUp: gopDelta.up,      budget: '—', budgetUp: false },
+        ebitda:     { value: fmtCurrency(p.ebitda, false), ly: ebitdaDelta.text,    lyUp: ebitdaDelta.up,   budget: '—', budgetUp: false },
+        ebitdaMgn:  { value: fmtPct(p.ebitdaMgn),         ly: ebitdaMgnDelta.text, lyUp: ebitdaMgnDelta.up,budget: '—', budgetUp: false },
+        flowthrough:{ value: '—', badge: '—', detail: '—', badgeUp: true },
+      },
+      charts,
+      csADR: p.csADR,
+      ari: p.ari,
+    };
+  }
+  return result;
 }
 
 // ---- Main entry point ----
@@ -2066,6 +2154,12 @@ async function loadDataAndRun() {
     const ydStr = yd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     // Store rows globally FIRST so buildChartData can use them
     window.ALL_ROWS = allRows;
+
+    // Build per-property live data for all known properties
+    window.LIVE_PROPERTY_DATA = {};
+    for (const tag of Object.keys(PROPERTY_META)) {
+      window.LIVE_PROPERTY_DATA[tag] = buildPropertyLiveData(tag, allRows, ranges);
+    }
 
     window.LIVE_PORTFOLIO_DATA = {
       yesterday: buildPeriodData(
@@ -2517,6 +2611,34 @@ function applyPortfolioPeriod(p) {
   updateTrendMetric(currentTrendMetric);
 }
 
+// ---- Comp set section for property view ----
+// Comp set data arrives 4 days late — only show for trailing 7, 30, YTD
+function updatePropCompSet(d, period) {
+  const compSetCard = document.getElementById('propCompSetCard') || document.querySelector('.prop-compset-section');
+  const compSetNote = document.getElementById('propCompSetNote');
+  // Periods where comp set data is valid (4-day lag means Yesterday/WTD unreliable)
+  const csValidPeriods = ['mtd', 'ytd', '3yr'];
+  const csNote = { yesterday: 'Comp set data arrives 4 days late — not available for Yesterday.', wtd: 'Comp set data arrives 4 days late — showing partial WTD data only.' };
+
+  if (compSetNote) {
+    compSetNote.textContent = csNote[period] || '';
+    compSetNote.style.display = csNote[period] ? 'block' : 'none';
+  }
+
+  // Show ARI in STR section if available
+  if (d && d.ari !== null && d.ari !== undefined) {
+    const ariEl = document.getElementById('propStrVal-ARI');
+    const ariDeltaEl = document.getElementById('propStrDelta-ARI');
+    if (ariEl) ariEl.textContent = d.ari.toFixed(1);
+    if (ariDeltaEl) {
+      const diff = (d.ari - 100).toFixed(1);
+      const up = d.ari >= 100;
+      ariDeltaEl.textContent = (up ? '▲ ' : '▼ ') + Math.abs(diff);
+      ariDeltaEl.className = 'delta-pill ' + (up ? 'delta-up' : 'delta-down');
+    }
+  }
+}
+
 function setPropProfitRow(gop, ebitda, ebitdaMgn, yoy) {
   const setVal = (bind, val) => { const el = document.querySelector('[data-bind="' + bind + '"]'); if (el) el.textContent = val || '—'; };
   const setDlt = (bind, val, up) => { const el = document.querySelector('[data-bind="' + bind + '"]'); if (el) setDelta(el, val, up); };
@@ -2552,118 +2674,58 @@ function setPropProfitRow(gop, ebitda, ebitdaMgn, yoy) {
 }
 
 function applyPropertyPeriod(p) {
-  const periodData = (window.LIVE_PORTFOLIO_DATA || {})[p] || PORTFOLIO_DATA[p];
-  const isASTOR = (currentView === 'ASTOR');
-  const d = isASTOR ? ASTOR_DATA[p] : null;
+  const setVal = (bind, val) => { const el = document.querySelector('[data-bind="' + bind + '"]'); if (el) el.textContent = val || '—'; };
+  const setDlt = (bind, val, up) => { const el = document.querySelector('[data-bind="' + bind + '"]'); if (el) setDelta(el, val, up); };
 
-  // Find this property's row in propRows for KPI values
-  const row = periodData ? periodData.propRows.find(r => r[0] === currentView) : null;
+  // Prefer live property data
+  const liveData = (window.LIVE_PROPERTY_DATA || {})[currentView];
+  const d = liveData ? liveData[p] : null;
 
   if (d) {
-    // Full ASTOR data
-    document.querySelector('[data-bind="a.revpar.value"]').textContent = d.kpi.revpar.value;
-    setDelta(document.querySelector('[data-bind="a.revpar.budget"]'), d.kpi.revpar.budget, d.kpi.revpar.budgetUp);
-    setDelta(document.querySelector('[data-bind="a.revpar.ly"]'), d.kpi.revpar.ly, d.kpi.revpar.lyUp);
-    document.querySelector('[data-bind="a.adr.value"]').textContent = d.kpi.adr.value;
-    setDelta(document.querySelector('[data-bind="a.adr.budget"]'), d.kpi.adr.budget, d.kpi.adr.budgetUp);
-    setDelta(document.querySelector('[data-bind="a.adr.ly"]'), d.kpi.adr.ly, d.kpi.adr.lyUp);
-    document.querySelector('[data-bind="a.occ.value"]').textContent = d.kpi.occ.value;
-    setDelta(document.querySelector('[data-bind="a.occ.budget"]'), d.kpi.occ.budget, d.kpi.occ.budgetUp);
-    setDelta(document.querySelector('[data-bind="a.occ.ly"]'), d.kpi.occ.ly, d.kpi.occ.lyUp);
-    document.querySelector('[data-bind="a.totalrev.label"]').textContent = d.totalRevLabel;
-    document.querySelector('[data-bind="a.totalrev.value"]').textContent = d.kpi.totalrev.value;
-    setDelta(document.querySelector('[data-bind="a.totalrev.budget"]'), d.kpi.totalrev.budget, d.kpi.totalrev.budgetUp);
-    setDelta(document.querySelector('[data-bind="a.totalrev.ly"]'), d.kpi.totalrev.ly, d.kpi.totalrev.lyUp);
-    const trendSubEl = document.querySelector('[data-bind="a.trend.sub"]');
-    if (trendSubEl) trendSubEl.textContent = d.trendSub;
-    // Update department table for ASTOR
-    updateDeptTable(p);
-  } else if (row) {
-    // All other properties — use propRow data [code, name, meta, revpar, occ, adr, totalrev, mpi, ari, rgi, gop, ebitda, ebitdaMgn, yoy]
-    const [code, name, meta, revpar, occ, adr, totalrev, mpi, ari, rgi, gop, ebitda, ebitdaMgn, yoy] = row;
-    document.querySelector('[data-bind="a.revpar.value"]').textContent = revpar;
-    // Estimate budget variance based on YoY performance (assume budget is similar to prior year)
-    const yoyVal = Array.isArray(yoy) ? yoy[0] : yoy;
-    const yoyUp = Array.isArray(yoy) ? yoy[1] : true;
-    const estimatedBudgetVar = yoyVal ? (parseFloat(yoyVal) * 0.6).toFixed(1) + '%' : '—'; // 60% of YoY as estimated budget variance
-    const estimatedBudgetUp = yoyUp;
-    setDelta(document.querySelector('[data-bind="a.revpar.budget"]'), estimatedBudgetVar, estimatedBudgetUp);
-    setDelta(document.querySelector('[data-bind="a.revpar.ly"]'), yoyVal, yoyUp);
-    document.querySelector('[data-bind="a.adr.value"]').textContent = adr;
-    setDelta(document.querySelector('[data-bind="a.adr.budget"]'), estimatedBudgetVar, estimatedBudgetUp);
-    setDelta(document.querySelector('[data-bind="a.adr.ly"]'), yoyVal, yoyUp);
-    document.querySelector('[data-bind="a.occ.value"]').textContent = occ;
-    setDelta(document.querySelector('[data-bind="a.occ.budget"]'), estimatedBudgetVar, estimatedBudgetUp);
-    setDelta(document.querySelector('[data-bind="a.occ.ly"]'), yoyVal, yoyUp);
+    // Live data for this property
+    setVal('a.revpar.value', d.kpi.revpar.value);
+    setDlt('a.revpar.budget', d.kpi.revpar.budget, d.kpi.revpar.budgetUp);
+    setDlt('a.revpar.ly', d.kpi.revpar.ly, d.kpi.revpar.lyUp);
+    setVal('a.adr.value', d.kpi.adr.value);
+    setDlt('a.adr.budget', d.kpi.adr.budget, d.kpi.adr.budgetUp);
+    setDlt('a.adr.ly', d.kpi.adr.ly, d.kpi.adr.lyUp);
+    setVal('a.occ.value', d.kpi.occ.value);
+    setDlt('a.occ.budget', d.kpi.occ.budget, d.kpi.occ.budgetUp);
+    setDlt('a.occ.ly', d.kpi.occ.ly, d.kpi.occ.lyUp);
     const periodLabel = { yesterday: 'Total Revenue (Yesterday)', wtd: 'Total Revenue (WTD)', mtd: 'Total Revenue (MTD)', ytd: 'Total Revenue (YTD)', '3yr': 'Total Revenue (3YR)' }[p] || 'Total Revenue';
-    document.querySelector('[data-bind="a.totalrev.label"]').textContent = periodLabel;
-    document.querySelector('[data-bind="a.totalrev.value"]').textContent = totalrev;
-    setDelta(document.querySelector('[data-bind="a.totalrev.budget"]'), estimatedBudgetVar, estimatedBudgetUp);
-    setDelta(document.querySelector('[data-bind="a.totalrev.ly"]'), yoyVal, yoyUp);
-    // STR cards from propRow
-    const strMetrics = [
-      { id: 'MPI', val: mpi },
-      { id: 'ARI', val: ari },
-      { id: 'RGI', val: rgi }
-    ];
-    strMetrics.forEach(({ id, val }) => {
-      const valEl = document.getElementById('propStrVal-' + id);
-      const deltaEl = document.getElementById('propStrDelta-' + id);
-      if (valEl) valEl.textContent = val === '—' ? '—' : val;
-      if (deltaEl) {
-        const n = parseFloat(val);
-        if (isNaN(n)) { deltaEl.textContent = '—'; deltaEl.className = 'delta-pill delta-flat'; }
-        else {
-          const diff = (n - 100).toFixed(1);
-          const up = n >= 100;
-          deltaEl.textContent = (up ? '▲ ' : '▼ ') + Math.abs(diff);
-          deltaEl.className = 'delta-pill ' + (up ? 'delta-up' : 'delta-down');
-        }
-      }
-    });
-    // Generate period-appropriate trend ending at current index values
-    const STR_POINT_COUNTS = { yesterday: 9, wtd: 7, mtd: 30, ytd: 13, '3yr': 9 };
-    const STR_CHART_LABELS = {
-      yesterday: ['12a','3a','6a','9a','12p','3p','6p','9p','11p'],
-      wtd:       ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
-      mtd:       Array.from({length:30},(_,i)=>`${i+1}`),
-      ytd:       ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13'],
-      '3yr':     ["Q1'24","Q2'24","Q3'24","Q4'24","Q1'25","Q2'25","Q3'25","Q4'25","Q1'26"]
-    };
-    const nPts = STR_POINT_COUNTS[p] || 13;
-    const chartLabels = STR_CHART_LABELS[p] || STR_CHART_LABELS.ytd;
-    function makeTrend(endVal) {
-      const v = parseFloat(endVal);
-      if (isNaN(v)) return Array(nPts).fill(100);
-      const start = v - (Math.random() * 2 + 1);
-      return Array.from({length: nPts}, (_, i) => {
-        const t = i / (nPts - 1);
-        const noise = (Math.random() - 0.5) * 0.8;
-        return parseFloat((start + (v - start) * t + noise).toFixed(1));
-      });
+    setVal('a.totalrev.label', periodLabel);
+    setVal('a.totalrev.value', d.kpi.totalrev.value);
+    setDlt('a.totalrev.budget', d.kpi.totalrev.budget, d.kpi.totalrev.budgetUp);
+    setDlt('a.totalrev.ly', d.kpi.totalrev.ly, d.kpi.totalrev.lyUp);
+    // Profit section
+    if (d.profit) {
+      setVal('a.gop.value', d.profit.gop.value);
+      setDlt('a.gop.budget', d.profit.gop.budget, d.profit.gop.budgetUp);
+      setDlt('a.gop.ly', d.profit.gop.ly, d.profit.gop.lyUp);
+      setVal('a.ebitda.value', d.profit.ebitda.value);
+      setDlt('a.ebitda.budget', d.profit.ebitda.budget, d.profit.ebitda.budgetUp);
+      setDlt('a.ebitda.ly', d.profit.ebitda.ly, d.profit.ebitda.lyUp);
+      setVal('a.ebitdaMgn.value', d.profit.ebitdaMgn.value);
+      setDlt('a.ebitdaMgn.budget', d.profit.ebitdaMgn.budget, d.profit.ebitdaMgn.budgetUp);
+      setDlt('a.ebitdaMgn.ly', d.profit.ebitdaMgn.ly, d.profit.ebitdaMgn.lyUp);
     }
-    propSTRChart.data.labels = chartLabels;
-    PROP_STR_DATA.MPI.data = makeTrend(mpi);
-    PROP_STR_DATA.ARI.data = makeTrend(ari);
-    PROP_STR_DATA.RGI.data = makeTrend(rgi);
-    PROP_STR_DATA.MPI.min = parseFloat(mpi) - 6; PROP_STR_DATA.MPI.max = parseFloat(mpi) + 6;
-    PROP_STR_DATA.ARI.min = parseFloat(ari) - 6; PROP_STR_DATA.ARI.max = parseFloat(ari) + 6;
-    PROP_STR_DATA.RGI.min = parseFloat(rgi) - 6; PROP_STR_DATA.RGI.max = parseFloat(rgi) + 6;
-    switchPropSTR(activePropSTR);
-    // Use portfolio-level trend charts as proxy
-    updateChart(propertyTrendChart, periodData.charts[currentPropTrendMetric]);
-    const titleEl = document.querySelector('#propTrendCardTitle .section-title');
-    if (titleEl) titleEl.textContent = periodData.charts[currentPropTrendMetric].title;
-    // Update trend subtitle
-    const trendSubEl = document.querySelector('[data-bind="a.trend.sub"]');
-    if (trendSubEl) trendSubEl.textContent = periodData.trendSub;
-    // Update department subtitle
-    const deptSubEl = document.querySelector('[data-bind="a.dept.sub"]');
-    if (deptSubEl) deptSubEl.textContent = periodData.perfSub.split(' · ')[0] || periodData.label;
-    // Update department table (show ASTOR data as reference)
+    // Trend chart — use property-specific live chart data
+    if (d.charts) {
+      updateChart(propertyTrendChart, d.charts[currentPropTrendMetric]);
+      const titleEl = document.querySelector('#propTrendCardTitle .section-title');
+      if (titleEl) titleEl.textContent = d.charts[currentPropTrendMetric]?.title || 'Trend';
+    }
+    // STR — no live data yet, show dashes
+    ['MPI','ARI','RGI'].forEach(m => {
+      const valEl = document.getElementById('propStrVal-' + m);
+      const deltaEl = document.getElementById('propStrDelta-' + m);
+      if (valEl) valEl.textContent = '—';
+      if (deltaEl) { deltaEl.textContent = '—'; deltaEl.className = 'delta-pill delta-flat'; }
+    });
+    // Comp set — show ARI if available
+    updatePropCompSet(d, p);
+    // Dept table
     updateDeptTable(p);
-    // Profit row — from propRow cols 10,11,12
-    setPropProfitRow(gop, ebitda, ebitdaMgn, yoy);
     return;
   }
 
@@ -3071,13 +3133,15 @@ let currentPropTrendMetric = 'revpar';
 function updatePropTrendMetric(metric) {
   currentPropTrendMetric = metric;
   if (currentView === 'portfolio') return;
-  const d = ASTOR_DATA[currentPeriod];
-  if (!d || !d.charts) return;
-  const cd = d.charts[metric];
-  if (!cd) return;
-  updateChart(propertyTrendChart, cd);
-  const titleEl = document.querySelector('#propTrendCardTitle .section-title');
-  if (titleEl) titleEl.textContent = cd.title;
+  // Use live property data if available
+  const liveData = (window.LIVE_PROPERTY_DATA || {})[currentView];
+  const d = liveData ? liveData[currentPeriod] : null;
+  const cd = d?.charts?.[metric];
+  if (cd && cd.labels && cd.labels.length > 0) {
+    updateChart(propertyTrendChart, cd);
+    const titleEl = document.querySelector('#propTrendCardTitle .section-title');
+    if (titleEl) titleEl.textContent = cd.title;
+  }
   document.querySelectorAll('#propTrendMetricSeg button').forEach(b => {
     b.classList.toggle('active', b.dataset.ptm === metric);
   });
