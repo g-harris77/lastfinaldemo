@@ -2044,13 +2044,17 @@ async function loadDataAndRun() {
     const allRows = await fetchAllRows(token, threeYearsAgo());
 
     // Define period date ranges
-    const yd = yesterday();
+    // NOTE: Power Automate runs at 2am and writes the previous day's ProfitSword actuals
+    // stamped with TODAY's date. So "yesterday's actuals" live in today's row.
+    // We use today() as the anchor for Yesterday, and yd as the upper bound for ranges.
+    const td = today();   // today's row = yesterday's actuals
+    const yd = yesterday(); // yesterday's row = day-before-yesterday's actuals
     const ranges = {
-      yesterday: { from: yd,           to: yd           },
-      wtd:       { from: startOfWeek(), to: yd           },
-      mtd:       { from: startOfMonth(), to: yd          },
-      ytd:       { from: startOfYear(),  to: yd          },
-      '3yr':     { from: threeYearsAgo(), to: yd         },
+      yesterday: { from: td,            to: td           },
+      wtd:       { from: startOfWeek(), to: td           },
+      mtd:       { from: startOfMonth(), to: td          },
+      ytd:       { from: startOfYear(),  to: td          },
+      '3yr':     { from: threeYearsAgo(), to: td         },
     };
 
     // Build aggregations for each period + same period last year
