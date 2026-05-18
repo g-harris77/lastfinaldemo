@@ -1677,8 +1677,14 @@ async function fetchAllRows(token, fromDate) {
     'cr2cd_gop',
     'cr2cd_ebitda',
     'cr2cd_noi',
-    'cr2cd_compset_occupied_rooms',
+    'cr2cd_compset_occupancy_pct',
     'cr2cd_compset_total_rooms',
+    'cr2cd_adr',
+    'cr2cd_revpar',
+    'cr2cd_gopmargin',
+    'cr2cd_occupancy_pct',
+    'cr2cd_ebitdamargin',
+    'cr2cd_adrcompset',
   ].join(',');
 
   let url = `${DATAVERSE_URL}/api/data/v9.2/${TABLE}?$filter=${encodeURIComponent(dateFilter)}&$select=${select}&$orderby=cr2cd_date asc&$top=5000`;
@@ -1730,7 +1736,6 @@ function aggregateRows(rows, fromDate, toDate) {
     const gop         = sum('cr2cd_gop');
     const ebitda      = sum('cr2cd_ebitda');
     const noi         = sum('cr2cd_noi');
-    const csOccupied  = sum('cr2cd_compset_occupied_rooms');
     const csRevenue   = sum('cr2cd_compset_total_rooms');
 
     // Recalculate from summed totals (correct for multi-day aggregation)
@@ -1739,7 +1744,8 @@ function aggregateRows(rows, fromDate, toDate) {
     const occ         = available  > 0 ? occupied / available : 0;
     const ebitdaMgn   = revenue    > 0 ? ebitda  / revenue   : 0;
     const gopMgn      = revenue    > 0 ? gop     / revenue   : 0;
-    const csADR       = csOccupied > 0 ? csRevenue / csOccupied : 0;
+    // Use stored compset ADR for ARI calculation (avg across days)
+    const csADR       = propRows.reduce((a, r) => a + (r.cr2cd_adrcompset || 0), 0) / propRows.length;
     const ari         = csADR      > 0 ? (adr / csADR) * 100 : null;
     // Stored calculated columns (available for single-day reference)
     const storedADR      = propRows[0]?.cr2cd_adr || null;
