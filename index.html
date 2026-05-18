@@ -1679,12 +1679,6 @@ async function fetchAllRows(token, fromDate) {
     'cr2cd_noi',
     'cr2cd_compset_occupied_rooms',
     'cr2cd_compset_total_rooms',
-    'cr2cd_adr',
-    'cr2cd_adrcompset',
-    'cr2cd_gopmargin',
-    'cr2cd_occupancy_pct',
-    'cr2cd_revpar',
-    'cr2cd_ebitdamargin',
   ].join(',');
 
   let url = `${DATAVERSE_URL}/api/data/v9.2/${TABLE}?$filter=${encodeURIComponent(dateFilter)}&$select=${select}&$orderby=cr2cd_date asc&$top=5000`;
