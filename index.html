@@ -1083,7 +1083,7 @@
     <span class="control-label">Period</span>
     <div class="seg" id="periodSeg">
       <button data-p="yesterday">Yesterday</button>
-      <button data-p="wtd">WTD</button>
+      <button data-p="wtd">T7D</button>
       <button data-p="mtd" class="active">MTD</button>
       <button data-p="ytd">YTD</button>
       <button data-p="3yr">3YR</button>
@@ -2199,7 +2199,7 @@ function buildPropertyLiveData(tag, allRows, ranges) {
     const ebitdaDelta   = fmtDelta(p.ebitda,   ly?.ebitda);
     const ebitdaMgnDelta= fmtDelta(p.ebitdaMgn,ly?.ebitdaMgn,true);
 
-    const periodLabels = { yesterday: `Yesterday · ${ydStr}`, wtd: 'Week-to-date', mtd: 'Month-to-date', ytd: `Year-to-date · ${yd.getFullYear()}`, '3yr': '3-Year Rolling' };
+    const periodLabels = { yesterday: `Yesterday · ${ydStr}`, wtd: 'Trailing 7 days', mtd: 'Month-to-date', ytd: `Year-to-date · ${yd.getFullYear()}`, '3yr': '3-Year Rolling' };
 
     // Charts: property-specific trend
     let charts = { revpar: { labels:[], actuals:[], budget:[], ly:[], prefix:'$', title:'RevPAR Trend' },
@@ -2302,11 +2302,11 @@ async function loadDataAndRun() {
       }
 
       const ranges = {
-        yesterday: { from: td,                          to: td                           },
-        wtd:       { from: shiftDay(startOfWeek(), 1),  to: td                           },
-        mtd:       { from: shiftDay(startOfMonth(), 1), to: td                           },
-        ytd:       { from: shiftDay(startOfYear(), 1),  to: td                           },
-        '3yr':     { from: shiftDay(threeYearsAgo(), 1),to: td                           },
+        yesterday: { from: td,                           to: td                           },
+        wtd:       { from: shiftDay(td, -6),             to: td                           }, // trailing 7 days
+        mtd:       { from: shiftDay(startOfMonth(), 1),  to: td                           },
+        ytd:       { from: shiftDay(startOfYear(), 1),   to: td                           },
+        '3yr':     { from: shiftDay(threeYearsAgo(), 1), to: td                           },
       };
 
       const rows = window.ALL_ROWS || [];
@@ -2323,8 +2323,8 @@ async function loadDataAndRun() {
       const ydStr       = fmt(yd);
       const mtdStart    = new Date(td.getFullYear(), td.getMonth(), 1);
       const mtdStartStr = fmtShort(mtdStart);
-      const wtdStart    = startOfWeek();
-      const wtdStartStr = fmtShort(wtdStart);
+      const t7dStart    = shiftDay(yd, -6); // trailing 7 business days ending yesterday
+      const t7dStartStr = fmtShort(t7dStart);
 
       // Update "As of" labels (header + control bar)
       const asOfDateEl = document.getElementById('asOfDate');
@@ -2350,9 +2350,9 @@ async function loadDataAndRun() {
           aggs.yesterday, lyAggs.yesterday, ranges.yesterday.from, ranges.yesterday.to
         ),
         wtd: buildPeriodData(
-          `Week-to-date · ${wtdStartStr}–${fmtShort(yd)}`,
-          `WTD (${wtdStartStr}–${fmtShort(yd)}) · Click row to drill in`,
-          `Daily · ${wtdStartStr}–${fmtShort(yd)} · Actuals vs. Last Year`, 'Total Revenue (WTD)',
+          `Trailing 7 days · ${t7dStartStr}–${fmtShort(yd)}`,
+          `T7D (${t7dStartStr}–${fmtShort(yd)}) · Click row to drill in`,
+          `Daily · ${t7dStartStr}–${fmtShort(yd)} · Actuals vs. Last Year`, 'Total Revenue (T7D)',
           aggs.wtd, lyAggs.wtd, ranges.wtd.from, ranges.wtd.to
         ),
         mtd: buildPeriodData(
@@ -3568,4 +3568,3 @@ applyPropertyPeriod('mtd');
 </script>
 </body>
 </html>
-
