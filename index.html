@@ -1756,17 +1756,14 @@ function aggregateRows(rows, fromDate, toDate) {
     const ebitda      = sum('cr2cd_ebitda');
     const noi         = sum('cr2cd_noi');
 
-    // Use weighted RevPAR and occupancy_pct from stored calculated columns (exact, match ProfitSword)
-    // Weight by available_rooms per row so multi-day aggregation is correct
-    // Revenue = sum(revpar * available_per_row) — exact reconstruction without rounding loss
-    const revenue     = propRows.reduce((a, r) => a + ((r.cr2cd_revpar || 0) * (r.cr2cd_available_rooms || 0)), 0);
-    // Occupied = sum(occ_pct * available_per_row)
-    const occupied    = propRows.reduce((a, r) => a + ((r.cr2cd_occupancy_pct || 0) * (r.cr2cd_available_rooms || 0)), 0);
+    // Use raw stored columns directly — these match ProfitSword exactly
+    const occupied    = sum('cr2cd_occupied_rooms');
+    const revenue     = sum('cr2cd_total_rooms');   // total_rooms = total room revenue in PS/Dataverse
 
-    // ADR, RevPAR, Occ derived from exact reconstructed totals
-    const adr         = occupied   > 0 ? revenue / occupied   : 0;
-    const revpar      = available  > 0 ? revenue / available  : 0;
-    const occ         = available  > 0 ? occupied / available : 0;
+    // Derive metrics from raw totals
+    const adr         = occupied  > 0 ? revenue / occupied  : 0;
+    const revpar      = available > 0 ? revenue / available : 0;
+    const occ         = available > 0 ? occupied / available : 0;
     const ebitdaMgn   = revenue    > 0 ? ebitda  / revenue   : 0;
     const gopMgn      = revenue    > 0 ? gop     / revenue   : 0;
     const csADR       = propRows.reduce((a, r) => a + (r.cr2cd_adrcompset || 0), 0) / (propRows.filter(r => r.cr2cd_adrcompset).length || 1);
