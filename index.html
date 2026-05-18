@@ -2122,46 +2122,12 @@ async function loadDataAndRun() {
       const r = new Date(d); r.setDate(r.getDate() + n); return r;
     }
 
-    const ranges = {
-      yesterday: { from: td,                          to: td                           },
-      wtd:       { from: shiftDay(startOfWeek(), 1),  to: td                           },
-      mtd:       { from: shiftDay(startOfMonth(), 1), to: td                           },
-      ytd:       { from: shiftDay(startOfYear(), 1),  to: td                           },
-      '3yr':     { from: shiftDay(threeYearsAgo(), 1),to: td                           },
-    };
-
-    // Build aggregations for each period + same period last year
-    const aggs = {};
-    const lyAggs = {};
-    for (const [period, { from, to }] of Object.entries(ranges)) {
-      aggs[period]   = aggregateRows(dedupedRows, from, to);
-      lyAggs[period] = aggregateRows(dedupedRows, oneYearAgo(from), oneYearAgo(to));
-    }
-
-    // Build PORTFOLIO_DATA
-    // All labels show BUSINESS dates (stamp date - 1 day), since each row stamped N contains N-1 actuals
-    const fmt = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    const fmtShort = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-
-    // Business date = stamp date - 1
-    const ydStr      = fmt(yd);                                          // "May 17, 2026"
-    const mtdStart   = new Date(td.getFullYear(), td.getMonth(), 1);     // May 1 (business)
-    const mtdStartStr= fmtShort(mtdStart);                               // "May 1"
-    const wtdStart   = startOfWeek();                                    // Sun business date
-    const wtdStartStr= fmtShort(wtdStart);                               // "May 17" etc
-    const ytdStart   = new Date(td.getFullYear(), 0, 1);                 // Jan 1 (business)
-
-    // Update "As of" label with yesterday's business date
-    const asOfEl = document.getElementById('asOfLabel');
-    if (asOfEl) asOfEl.innerHTML = `As of <strong>${ydStr}</strong> · Data through prior day`;
-
     // Deduplicate rows by (tag, date) — keep the last one written (highest etag)
     // Protects against duplicate rows from failed/retried flow runs
     const dedupMap = new Map();
     for (const r of allRows) {
       const key = extractTag(r) + '|' + extractDate(r);
       const existing = dedupMap.get(key);
-      // Keep row with higher etag number (more recent write)
       if (!existing) {
         dedupMap.set(key, r);
       } else {
@@ -2174,6 +2140,34 @@ async function loadDataAndRun() {
     if (dedupedRows.length < allRows.length) {
       console.warn(`Deduped ${allRows.length - dedupedRows.length} duplicate rows from Dataverse`);
     }
+
+    const ranges = {
+      yesterday: { from: td,                          to: td                           },
+      wtd:       { from: shiftDay(startOfWeek(), 1),  to: td                           },
+      mtd:       { from: shiftDay(startOfMonth(), 1), to: td                           },
+      ytd:       { from: shiftDay(startOfYear(), 1),  to: td                           },
+      '3yr':     { from: shiftDay(threeYearsAgo(), 1),to: td                           },
+    };
+
+    const aggs = {};
+    const lyAggs = {};
+    for (const [period, { from, to }] of Object.entries(ranges)) {
+      aggs[period]   = aggregateRows(dedupedRows, from, to);
+      lyAggs[period] = aggregateRows(dedupedRows, oneYearAgo(from), oneYearAgo(to));
+    }
+
+    // Build labels — all show BUSINESS dates (stamp - 1 day)
+    const fmt      = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const fmtShort = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const ydStr       = fmt(yd);
+    const mtdStart    = new Date(td.getFullYear(), td.getMonth(), 1);
+    const mtdStartStr = fmtShort(mtdStart);
+    const wtdStart    = startOfWeek();
+    const wtdStartStr = fmtShort(wtdStart);
+
+    // Update "As of" label
+    const asOfEl = document.getElementById('asOfLabel');
+    if (asOfEl) asOfEl.innerHTML = `As of <strong>${ydStr}</strong> · Data through prior day`;
 
     // Store rows globally FIRST so buildChartData can use them
     window.ALL_ROWS = dedupedRows;
