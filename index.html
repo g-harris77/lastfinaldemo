@@ -1654,9 +1654,13 @@ async function getDataverseToken() {
     });
     return result.accessToken;
   } catch (e) {
-    // Silent failed — try popup
-    const result = await msalInstance.acquireTokenPopup({ scopes: [DATAVERSE_SCOPE] });
-    return result.accessToken;
+    // Silent failed — redirect to re-auth (no popup needed, works in all browsers)
+    await msalInstance.acquireTokenRedirect({
+      scopes: [DATAVERSE_SCOPE],
+      account: accounts[0],
+    });
+    // acquireTokenRedirect navigates away, so this line is never reached
+    throw new Error('Redirecting for auth...');
   }
 }
 
@@ -1669,19 +1673,18 @@ async function fetchAllRows(token, fromDate) {
     'cr2cd_date',
     'cr2cd_occupied_rooms',
     'cr2cd_available_rooms',
-    'cr2cd_total_revenue',
+    'cr2cd_total_rooms',
     'cr2cd_gop',
     'cr2cd_ebitda',
     'cr2cd_noi',
     'cr2cd_compset_occupied_rooms',
-    'cr2cd_compset_revenue',
+    'cr2cd_compset_total_rooms',
     'cr2cd_adr',
-    'cr2cd_revpar',
+    'cr2cd_adrcompset',
+    'cr2cd_gopmargin',
     'cr2cd_occupancy_pct',
-    'cr2cd_ebitda_margin',
-    'cr2cd_gop_margin',
-    'cr2cd_compset_adr',
-    'cr2cd_ari',
+    'cr2cd_revpar',
+    'cr2cd_ebitdamargin',
   ].join(',');
 
   let url = `${DATAVERSE_URL}/api/data/v9.2/${TABLE}?$filter=${encodeURIComponent(dateFilter)}&$select=${select}&$orderby=cr2cd_date asc&$top=5000`;
@@ -1729,13 +1732,14 @@ function aggregateRows(rows, fromDate, toDate) {
     const sum = (key) => propRows.reduce((a, r) => a + (r[key] || 0), 0);
     const occupied    = sum('cr2cd_occupied_rooms');
     const available   = sum('cr2cd_available_rooms');
-    const revenue     = sum('cr2cd_total_revenue');
+    const revenue     = sum('cr2cd_total_rooms');
     const gop         = sum('cr2cd_gop');
     const ebitda      = sum('cr2cd_ebitda');
     const noi         = sum('cr2cd_noi');
     const csOccupied  = sum('cr2cd_compset_occupied_rooms');
-    const csRevenue   = sum('cr2cd_compset_revenue');
+    const csRevenue   = sum('cr2cd_compset_total_rooms');
 
+    // Recalculate from summed totals (correct for multi-day aggregation)
     const adr         = occupied   > 0 ? revenue / occupied   : 0;
     const revpar      = available  > 0 ? revenue / available  : 0;
     const occ         = available  > 0 ? occupied / available : 0;
@@ -1743,6 +1747,13 @@ function aggregateRows(rows, fromDate, toDate) {
     const gopMgn      = revenue    > 0 ? gop     / revenue   : 0;
     const csADR       = csOccupied > 0 ? csRevenue / csOccupied : 0;
     const ari         = csADR      > 0 ? (adr / csADR) * 100 : null;
+    // Stored calculated columns (available for single-day reference)
+    const storedADR      = propRows[0]?.cr2cd_adr || null;
+    const storedRevpar   = propRows[0]?.cr2cd_revpar || null;
+    const storedOcc      = propRows[0]?.cr2cd_occupancy_pct || null;
+    const storedEbitdaMgn = propRows[0]?.cr2cd_ebitdamargin || null;
+    const storedGopMgn   = propRows[0]?.cr2cd_gopmargin || null;
+    const storedCsADR    = propRows[0]?.cr2cd_adrcompset || null;
     // MPI needs comp set occupancy % — not yet available, leave null
     const mpi         = null;
     const rgi         = null;
@@ -1862,7 +1873,7 @@ function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag
       const key = groupFn(parseD(r.cr2cd_date));
       if (!map.has(key)) map.set(key, { revenue: 0, rooms_occ: 0, rooms_avail: 0 });
       const g = map.get(key);
-      g.revenue     += (r.cr2cd_total_revenue || 0);
+      g.revenue     += (r.cr2cd_total_rooms || 0);
       g.rooms_occ   += (r.cr2cd_occupied_rooms || 0);
       g.rooms_avail += (r.cr2cd_available_rooms || 0);
     });
