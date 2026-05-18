@@ -2110,17 +2110,24 @@ async function loadDataAndRun() {
     const allRows = await fetchAllRows(token, threeYearsAgo());
 
     // Define period date ranges
-    // NOTE: Power Automate runs at 2am and writes the previous day's ProfitSword actuals
-    // stamped with TODAY's date. So "yesterday's actuals" live in today's row.
-    // We use today() as the anchor for Yesterday, and yd as the upper bound for ranges.
-    const td = today();   // today's row = yesterday's actuals
-    const yd = yesterday(); // yesterday's row = day-before-yesterday's actuals
+    // NOTE: Power Automate runs at 2am and stamps each row with TODAY's date,
+    // but it contains YESTERDAY's ProfitSword actuals.
+    // So business date N lives in the row stamped N+1.
+    // To fetch May 1–18 actuals, we need rows stamped May 2–19.
+    // We shift all range boundaries forward by 1 day to account for this.
+    const td = today();   // today's stamp = yesterday's actuals (most recent)
+    const yd = yesterday(); // used only for display labels
+
+    function shiftDay(d, n) {
+      const r = new Date(d); r.setDate(r.getDate() + n); return r;
+    }
+
     const ranges = {
-      yesterday: { from: td,            to: td           },
-      wtd:       { from: startOfWeek(), to: td           },
-      mtd:       { from: startOfMonth(), to: td          },
-      ytd:       { from: startOfYear(),  to: td          },
-      '3yr':     { from: threeYearsAgo(), to: td         },
+      yesterday: { from: td,                          to: td                           },
+      wtd:       { from: shiftDay(startOfWeek(), 1),  to: td                           },
+      mtd:       { from: shiftDay(startOfMonth(), 1), to: td                           },
+      ytd:       { from: shiftDay(startOfYear(), 1),  to: td                           },
+      '3yr':     { from: shiftDay(threeYearsAgo(), 1),to: td                           },
     };
 
     // Build aggregations for each period + same period last year
