@@ -1029,20 +1029,7 @@
     <div class="brand-sub">Owner's Dashboard</div>
   </div>
   <div class="topbar-actions">
-    <span class="as-of" id="asOfWrapper">
-      <button class="as-of-btn" id="asOfLabel">
-        As of <strong id="asOfDate">—</strong>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      </button>
-      <div class="date-picker-dropdown" id="datePickerDropdown">
-        <label>View data as of</label>
-        <input type="date" id="anchorDateInput" />
-        <div class="date-picker-footer">
-          <button class="dp-today-btn" id="dpTodayBtn">Reset to today</button>
-          <button class="dp-apply-btn" id="dpApplyBtn">Apply</button>
-        </div>
-      </div>
-    </span>
+    <span class="as-of" id="asOfWrapper">As of <strong id="asOfDateHeader">—</strong></span>
     <button class="btn btn-ghost" title="Notifications">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
     </button>
@@ -1100,6 +1087,21 @@
       <button data-p="mtd" class="active">MTD</button>
       <button data-p="ytd">YTD</button>
       <button data-p="3yr">3YR</button>
+    </div>
+  </div>
+  <div class="control-group" style="position:relative;">
+    <span class="control-label">As of</span>
+    <button class="as-of-btn" id="asOfLabel" style="background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:6px 12px;font-size:13px;font-weight:500;">
+      <strong id="asOfDate">—</strong>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left:4px;opacity:0.5;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    </button>
+    <div class="date-picker-dropdown" id="datePickerDropdown" style="top:calc(100% + 8px);left:0;right:auto;">
+      <label>View data as of</label>
+      <input type="date" id="anchorDateInput" />
+      <div class="date-picker-footer">
+        <button class="dp-today-btn" id="dpTodayBtn">Reset to today</button>
+        <button class="dp-apply-btn" id="dpApplyBtn">Apply</button>
+      </div>
     </div>
   </div>
 </div>
@@ -2324,15 +2326,16 @@ async function loadDataAndRun() {
       const wtdStart    = startOfWeek();
       const wtdStartStr = fmtShort(wtdStart);
 
-      // Update "As of" label
+      // Update "As of" labels (header + control bar)
       const asOfDateEl = document.getElementById('asOfDate');
       if (asOfDateEl) asOfDateEl.textContent = ydStr;
+      const asOfHeaderEl = document.getElementById('asOfDateHeader');
+      if (asOfHeaderEl) asOfHeaderEl.textContent = ydStr;
 
-      // Check if anchor is not today — show indicator
+      // Highlight button if using a custom date
       const isCustom = toDateStr(window._anchorDate) !== toDateStr(new Date());
-      const wrapper = document.getElementById('asOfWrapper');
-      if (wrapper) wrapper.style.outline = isCustom ? '1px solid var(--accent)' : '';
-      if (wrapper) wrapper.style.borderRadius = isCustom ? '6px' : '';
+      const asOfBtn = document.getElementById('asOfLabel');
+      if (asOfBtn) asOfBtn.style.borderColor = isCustom ? 'var(--accent)' : '';
 
       // Build per-property live data for all known properties
       window.LIVE_PROPERTY_DATA = {};
@@ -2371,8 +2374,8 @@ async function loadDataAndRun() {
         ),
       };
 
-      // Re-render the current period view
-      applyPeriod(currentPeriod);
+      // Re-render the current period view (applyPeriod is set on window by runDashboard)
+      if (window.applyPeriod) window.applyPeriod(window.currentPeriod || 'mtd');
     };
 
     // Store rows globally FIRST so buildChartData and recompute can use them
@@ -2968,8 +2971,9 @@ function applyPropertyPeriod(p) {
 }
 
 
-function applyPeriod(p) {
+window.applyPeriod = function applyPeriod(p) {
   currentPeriod = p;
+  window.currentPeriod = p;
   if (currentView === 'portfolio') {
     applyPortfolioPeriod(p);
   } else {
@@ -3525,7 +3529,7 @@ occKpiCard.addEventListener('click', () => {
 
   // Close on outside click
   document.addEventListener('click', (e) => {
-    if (!document.getElementById('asOfWrapper').contains(e.target)) {
+    if (!btn.contains(e.target) && !dropdown.contains(e.target)) {
       dropdown.classList.remove('open');
     }
   });
@@ -3564,3 +3568,4 @@ applyPropertyPeriod('mtd');
 </script>
 </body>
 </html>
+
