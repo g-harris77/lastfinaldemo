@@ -943,7 +943,7 @@
     <div class="brand-sub">Owner's Dashboard</div>
   </div>
   <div class="topbar-actions">
-    <span class="as-of">As of <strong>Apr 28, 2026</strong> · 6:14 AM CT</span>
+    <span class="as-of" id="asOfLabel">As of <strong>—</strong></span>
     <button class="btn btn-ghost" title="Notifications">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
     </button>
@@ -2139,7 +2139,22 @@ async function loadDataAndRun() {
     }
 
     // Build PORTFOLIO_DATA
-    const ydStr = yd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    // All labels show BUSINESS dates (stamp date - 1 day), since each row stamped N contains N-1 actuals
+    const fmt = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const fmtShort = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+    // Business date = stamp date - 1
+    const ydStr      = fmt(yd);                                          // "May 17, 2026"
+    const mtdStart   = new Date(td.getFullYear(), td.getMonth(), 1);     // May 1 (business)
+    const mtdStartStr= fmtShort(mtdStart);                               // "May 1"
+    const wtdStart   = startOfWeek();                                    // Sun business date
+    const wtdStartStr= fmtShort(wtdStart);                               // "May 17" etc
+    const ytdStart   = new Date(td.getFullYear(), 0, 1);                 // Jan 1 (business)
+
+    // Update "As of" label with yesterday's business date
+    const asOfEl = document.getElementById('asOfLabel');
+    if (asOfEl) asOfEl.innerHTML = `As of <strong>${ydStr}</strong> · Data through prior day`;
+
     // Store rows globally FIRST so buildChartData can use them
     window.ALL_ROWS = allRows;
 
@@ -2156,19 +2171,21 @@ async function loadDataAndRun() {
         aggs.yesterday, lyAggs.yesterday, ranges.yesterday.from, ranges.yesterday.to
       ),
       wtd: buildPeriodData(
-        'Week-to-date', 'Week-to-date · Click row to drill in',
-        'Daily · WTD · Actuals vs. Last Year', 'Total Revenue (WTD)',
+        `Week-to-date · ${wtdStartStr}–${fmtShort(yd)}`,
+        `WTD (${wtdStartStr}–${fmtShort(yd)}) · Click row to drill in`,
+        `Daily · ${wtdStartStr}–${fmtShort(yd)} · Actuals vs. Last Year`, 'Total Revenue (WTD)',
         aggs.wtd, lyAggs.wtd, ranges.wtd.from, ranges.wtd.to
       ),
       mtd: buildPeriodData(
-        `Month-to-date · ${yd.toLocaleDateString('en-US',{month:'long',year:'numeric'})}`,
-        'Month-to-date · Click row to drill in',
-        'Daily · MTD · Actuals vs. Last Year', 'Total Revenue (MTD)',
+        `Month-to-date · ${mtdStartStr}–${fmtShort(yd)}`,
+        `MTD (${mtdStartStr}–${fmtShort(yd)}) · Click row to drill in`,
+        `Daily · ${mtdStartStr}–${fmtShort(yd)} · Actuals vs. Last Year`, 'Total Revenue (MTD)',
         aggs.mtd, lyAggs.mtd, ranges.mtd.from, ranges.mtd.to
       ),
       ytd: buildPeriodData(
-        `Year-to-date · ${yd.getFullYear()}`, 'Year-to-date · Click row to drill in',
-        'Weekly · YTD · Actuals vs. Last Year', 'Total Revenue (YTD)',
+        `Year-to-date · Jan 1–${fmtShort(yd)}, ${yd.getFullYear()}`,
+        `YTD (Jan 1–${fmtShort(yd)}) · Click row to drill in`,
+        `Weekly · Jan 1–${fmtShort(yd)} · Actuals vs. Last Year`, 'Total Revenue (YTD)',
         aggs.ytd, lyAggs.ytd, ranges.ytd.from, ranges.ytd.to
       ),
       '3yr': buildPeriodData(
