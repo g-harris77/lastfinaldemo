@@ -2134,8 +2134,8 @@ async function loadDataAndRun() {
     const aggs = {};
     const lyAggs = {};
     for (const [period, { from, to }] of Object.entries(ranges)) {
-      aggs[period]   = aggregateRows(allRows, from, to);
-      lyAggs[period] = aggregateRows(allRows, oneYearAgo(from), oneYearAgo(to));
+      aggs[period]   = aggregateRows(dedupedRows, from, to);
+      lyAggs[period] = aggregateRows(dedupedRows, oneYearAgo(from), oneYearAgo(to));
     }
 
     // Build PORTFOLIO_DATA
@@ -2155,13 +2155,33 @@ async function loadDataAndRun() {
     const asOfEl = document.getElementById('asOfLabel');
     if (asOfEl) asOfEl.innerHTML = `As of <strong>${ydStr}</strong> · Data through prior day`;
 
+    // Deduplicate rows by (tag, date) — keep the last one written (highest etag)
+    // Protects against duplicate rows from failed/retried flow runs
+    const dedupMap = new Map();
+    for (const r of allRows) {
+      const key = extractTag(r) + '|' + extractDate(r);
+      const existing = dedupMap.get(key);
+      // Keep row with higher etag number (more recent write)
+      if (!existing) {
+        dedupMap.set(key, r);
+      } else {
+        const existingEtag = parseInt((existing['@odata.etag'] || '').replace(/\D/g, '')) || 0;
+        const newEtag = parseInt((r['@odata.etag'] || '').replace(/\D/g, '')) || 0;
+        if (newEtag > existingEtag) dedupMap.set(key, r);
+      }
+    }
+    const dedupedRows = [...dedupMap.values()];
+    if (dedupedRows.length < allRows.length) {
+      console.warn(`Deduped ${allRows.length - dedupedRows.length} duplicate rows from Dataverse`);
+    }
+
     // Store rows globally FIRST so buildChartData can use them
-    window.ALL_ROWS = allRows;
+    window.ALL_ROWS = dedupedRows;
 
     // Build per-property live data for all known properties
     window.LIVE_PROPERTY_DATA = {};
     for (const tag of Object.keys(PROPERTY_META)) {
-      window.LIVE_PROPERTY_DATA[tag] = buildPropertyLiveData(tag, allRows, ranges);
+      window.LIVE_PROPERTY_DATA[tag] = buildPropertyLiveData(tag, dedupedRows, ranges);
     }
 
     window.LIVE_PORTFOLIO_DATA = {
