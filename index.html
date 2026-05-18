@@ -2754,10 +2754,6 @@ function applyPropertyPeriod(p) {
     if (ftBadge) { ftBadge.textContent = pf.flowthrough.badge; ftBadge.className = 'delta-pill ' + (pf.flowthrough.badgeUp ? 'delta-up' : 'delta-down'); }
     const ftDetail = document.querySelector('[data-bind="a.flowthrough.detail"]');
     if (ftDetail) ftDetail.textContent = pf.flowthrough.detail;
-  } else if (row) {
-    // Other properties — from propRows
-    const [,,, , , , , , , , gop, ebitda, ebitdaMgn, yoy] = row;
-    setPropProfitRow(gop, ebitda, ebitdaMgn, yoy);
   }
 }
 
