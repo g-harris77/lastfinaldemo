@@ -1561,394 +1561,527 @@ msalInstance.initialize().then(() => {
   return msalInstance.handleRedirectPromise();
 }).then((response) => {
   if (response && response.account) {
-    runDashboard();
+    loadDataAndRun();
     return;
   }
   const accounts = msalInstance.getAllAccounts();
   if (accounts.length === 0) {
     document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0B0E14;color:#ECEFF4;font-family:Inter,sans-serif;flex-direction:column;"><h1>Sign in required</h1><button id="loginBtn" style="margin-top:20px;padding:10px 20px;background:#D4A574;color:#1a1208;border:none;border-radius:7px;cursor:pointer;font-size:14px;">Sign in with Microsoft</button></div>';
     document.getElementById('loginBtn').addEventListener('click', () => {
-      msalInstance.loginRedirect({ scopes: ['User.Read'] });
+      msalInstance.loginRedirect({ scopes: ['https://org185b8cca.crm.dynamics.com/.default'] });
     });
     return;
   }
-  runDashboard();
+  loadDataAndRun();
 }).catch(err => console.error('Auth error:', err));
 
-function runDashboard() {
-// ========== CHART DEFAULTS ==========
-Chart.defaults.color = '#9AA5B8';
-Chart.defaults.borderColor = '#1A222D';
-Chart.defaults.font.family = 'Inter';
+// ========== DATAVERSE DATA LAYER ==========
+// Replaces hardcoded PORTFOLIO_DATA with live data from Dataverse.
+// Drop this block into the dashboard BEFORE the PORTFOLIO_DATA declaration,
+// then replace the PORTFOLIO_DATA const with: const PORTFOLIO_DATA = {};
+// and replace the runDashboard() call with: loadDataAndRun();
 
-const ACCENT = '#D4A574';
-const INFO = '#60A5FA';
-const SUBTLE = '#6B7588';
+const DATAVERSE_URL = 'https://org185b8cca.api.crm.dynamics.com';
+const DATAVERSE_SCOPE = 'https://org185b8cca.crm.dynamics.com/.default';
+const TABLE = 'cr2cd_daily_metricses';
 
-// ========== PORTFOLIO PERIOD DATA ==========
-const PORTFOLIO_DATA = {
-  yesterday: {
-    label: "Yesterday · Apr 27, 2026",
-    perfSub: "Yesterday · Portfolio rollup",
-    propsSub: "Yesterday (Apr 27) · Click row to drill in",
-    trendSub: "Hourly · Apr 27, 2026 · Actuals vs. Budget vs. LY",
-    revparLabel: "RevPAR",
-    totalRevLabel: "Total Revenue (Yesterday)",
-    kpi: {
-      revpar: { value: '$148.20', budget: '+1.2%', ly: '+9.4%', budgetUp: true, lyUp: true },
-      adr: { value: '$192.30', budget: '+2.0%', ly: '+6.7%', budgetUp: true, lyUp: true },
-      occ: { value: '77.1%', budget: '-0.4pts', ly: '+2.0pts', budgetUp: false, lyUp: true },
-      totalrev: { value: '$186.4K', budget: '+1.4%', ly: '+8.1%', budgetUp: true, lyUp: true }
-    },
-    str: {
-      MPI: { value: '100.4', delta: '▲ 0.2', up: true },
-      ARI: { value: '101.8', delta: '▲ 0.6', up: true },
-      RGI: { value: '103.1', delta: '▲ 1.2', up: true },
-      chartData: {
-        MPI: [95.0,95.8,96.6,97.8,97.4,98.6,99.8,99.2,99.8,100.4,99.8,100.4,100.4],
-        ARI: [98.2,98.8,99.4,100.0,99.6,100.4,101.2,100.8,101.0,101.8,101.2,101.9,101.8],
-        RGI: [97.2,98.0,99.0,100.0,99.6,100.8,102.0,101.4,102.0,103.1,102.4,103.2,103.1]
-      }
-    },
-    perfRows: [
-      ['OCC Rooms Sold', '967', '985', '894', ['-1.8%', false], ['+8.2%', true]],
-      ['OOO Rooms', '5', '3', '8', ['+67%', false], ['-38%', true]],
-      ['Comp Set Rooms Sold', '2,801', '—', '2,693', ['—', null], ['+4.0%', true]],
-      ['ADR', '$192.30', '$188.50', '$180.20', ['+2.0%', true], ['+6.7%', true]],
-      ['RevPAR', '$148.20', '$146.43', '$135.40', ['+1.2%', true], ['+9.4%', true]],
-      ['Total Rooms Rev', '$186K', '$185K', '$170K', ['+0.5%', true], ['+9.4%', true]],
-      ['Total Property Rev', '$186.4K', '$183.9K', '$172.4K', ['+1.4%', true], ['+8.1%', true], 'total']
-    ],
-    propRows: [
-      // code, name, meta, revpar, occ, adr, totalrev, mpi, ari, rgi, gop, ebitda, ebitdaMgn, yoy
-      ['ASTOR','Holiday Inn Express Astoria','134 rms','$156.20','85.6%','$182.50','$20.9K','109.2','100.1','108.4','$6.2K','$4.8K','22.9%',['+11.2%', true]],
-      ['BNAGV','Tru by Hilton Goodlettsville','98 rms','$132.40','88.8%','$149.10','$13.0K','103.4','101.8','102.3','$3.8K','$2.9K','22.3%',['+5.8%', true]],
-      ['BOIGI','Hilton Garden Inn Boise Spectrum','137 rms','$162.10','100%','$162.10','$22.2K','106.4','103.2','105.7','$7.1K','$5.4K','24.3%',['+8.1%', true]],
-      ['BOIRI','Residence Inn by Marriott','104 rms','$185.10','98.1%','$188.70','$19.6K','111.8','108.4','110.2','$6.4K','$5.0K','25.5%',['+12.4%', true]],
-      ['BOISH','Springhill Suites Boise West Eagle','119 rms','$138.80','92.4%','$150.20','$17.9K','99.4','97.8','98.2','$5.1K','$3.8K','21.2%',['-1.8%', false]],
-      ['BOISP','Hampton Inn & Suites Boise Spectrum','133 rms','$168.40','100%','$168.40','$22.4K','107.2','104.6','106.1','$7.3K','$5.6K','25.0%',['+7.4%', true]],
-      ['BZNFC','Home2 Suites Bozeman Four Corners','100 rms','$82.10','50.0%','$164.20','$8.2K','98.2','96.4','97.4','$2.1K','$1.5K','18.3%',['+6.2%', true]],
-      ['CDAID','Hampton Inn & Suites Coeur d\'Alene','124 rms','$138.50','82.3%','$168.30','$17.2K','104.6','102.8','103.8','$5.3K','$4.0K','23.3%',['+8.9%', true]],
-      ['DALFB','DoubleTree Dallas-Farmers Branch','160 rms','$182.20','95.0%','$191.80','$29.1K','105.2','103.6','104.5','$9.6K','$7.4K','25.4%',['+5.3%', true]],
-      ['LASET','Hampton Inn & Suites Las Vegas Airport','129 rms','$149.20','79.1%','$188.60','$19.2K','102.0','100.4','101.2','$5.8K','$4.4K','22.9%',['+3.8%', true]],
-      ['LASHE','Hilton Garden Inn Henderson','139 rms','$177.40','99.3%','$178.60','$24.7K','106.6','104.8','105.9','$8.2K','$6.3K','25.5%',['+6.7%', true]],
-      ['LG52840','La Quinta Twin Falls','101 rms','$148.30','96.0%','$154.50','$15.0K','103.8','102.0','103.1','$4.6K','$3.5K','23.3%',['+7.2%', true]],
-      ['LQ52836','La Quinta Coeur d\'Alene','118 rms','$78.40','46.6%','$168.20','$9.2K','101.2','99.2','100.4','$2.4K','$1.7K','18.5%',['+4.1%', true]],
-      ['MSOGI','Hilton Garden Inn Missoula','146 rms','$162.80','92.5%','$176.00','$23.8K','105.4','103.6','104.7','$7.8K','$6.0K','25.2%',['+6.5%', true]],
-      ['OR113','Comfort Suites Redmond Airport','92 rms','$106.40','65.2%','$163.20','$9.8K','102.6','100.6','101.8','$2.9K','$2.1K','21.4%',['+5.2%', true]],
-      ['PDXRE','River\'s Edge Portland, Tapestry','112 rms','$112.90','67.0%','$168.50','$12.6K','103.0','101.2','102.3','$3.6K','$2.7K','21.4%',['+4.8%', true]],
-      ['PDXSH','Hampton Inn & Suites Sherwood','73 rms','$110.70','65.8%','$168.20','$8.1K','102.4','100.4','101.6','$2.3K','$1.7K','21.0%',['+3.9%', true]],
-      ['PDXTG','Hampton Inn & Suites Portland Tigard','152 rms','$101.80','60.5%','$168.30','$15.5K','101.0','99.0','100.2','$4.2K','$3.1K','20.0%',['+2.1%', true]],
-      ['PHXRU','Tru by Hilton Gilbert','98 rms','$63.50','37.8%','$167.90','$6.2K','99.8','98.0','99.1','$1.5K','$1.0K','16.1%',['-0.8%', false]],
-      ['RDMBE','Hampton Inn & Suites Bend','114 rms','$126.60','75.4%','$167.90','$14.4K','103.8','102.2','103.2','$4.4K','$3.3K','22.9%',['+5.8%', true]],
-      ['RDMBO','Hilton Garden Inn Bend','96 rms','$120.50','71.9%','$167.60','$11.6K','102.2','100.2','101.4','$3.4K','$2.5K','21.6%',['+3.2%', true]],
-      ['RDMNB','The Newberry Bend','117 rms','$97.10','58.1%','$167.10','$11.4K','103.4','101.6','102.8','$3.2K','$2.3K','20.2%',['+4.4%', true]],
-      ['SCCDT','DoubleTree Spokane City Center','375 rms','$128.10','76.3%','$167.90','$48.0K','104.2','102.4','103.6','$15.4K','$11.8K','24.6%',['+5.1%', true]],
-      ['SLCDW','Hilton Garden Inn SLC Downtown','132 rms','$165.20','98.5%','$167.70','$21.8K','105.6','103.8','104.9','$7.2K','$5.5K','25.2%',['+6.8%', true]],
-      ['SLCLE','Springhill Suites Lehi','94 rms','$0.00','0%','—','—','—','—','—','—','—','—',['-100%', false]],
-      ['SLCLI','Courtyard by Marriott Lehi','97 rms','$136.10','81.4%','$167.20','$13.2K','102.6','100.6','101.9','$3.9K','$2.9K','22.0%',['+3.5%', true]]
-    ],
-    charts: {
-      revpar: { labels: ['12a','3a','6a','9a','12p','3p','6p','9p','11p'], actuals: [142,141,144,148,150,151,150,149,148], budget: [146,146,146,146,146,146,146,146,146], ly: [134,133,135,138,139,140,138,137,135], prefix:'$', title:'RevPAR Trend' },
-      adr:    { labels: ['12a','3a','6a','9a','12p','3p','6p','9p','11p'], actuals: [190,189,191,193,194,195,193,192,192], budget: [188,188,188,188,188,188,188,188,188], ly: [179,178,180,182,183,184,182,181,180], prefix:'$', title:'ADR Trend' },
-      totalrev:{ labels: ['12a','3a','6a','9a','12p','3p','6p','9p','11p'], actuals: [22,21,22,24,25,25,24,23,23], budget: [23,23,23,23,23,23,23,23,23], ly: [20,19,20,22,22,23,21,20,20], prefix:'$', suffix:'K', title:'Total Revenue Trend' }
-    },
-    profit: {
-      gop:       { value: '$47.1K', budget: '+3.2%', ly: '+11.4%', budgetUp: true, lyUp: true },
-      ebitda:    { value: '$36.2K', budget: '+2.8%', ly: '+10.6%', budgetUp: true, lyUp: true },
-      ebitdaMgn: { value: '19.4%',  budget: '+0.4pts', ly: '+1.8pts', budgetUp: true, lyUp: true },
-      flowthrough: { value: '62.4%', badge: 'Above Target', detail: '+$14.2K / +$22.8K rev', badgeUp: true }
-    }
-  },
-  wtd: {
-    label: "Week-to-date · Apr 22–28",
-    perfSub: "Week-to-date · Portfolio rollup",
-    propsSub: "Week-to-date · Click row to drill in",
-    trendSub: "Daily · Apr 22–28 · Actuals vs. Budget vs. LY",
-    revparLabel: "RevPAR",
-    totalRevLabel: "Total Revenue (WTD)",
-    kpi: {
-      revpar: { value: '$144.85', budget: '-0.8%', ly: '+8.7%', budgetUp: false, lyUp: true },
-      adr: { value: '$190.85', budget: '+1.5%', ly: '+5.6%', budgetUp: true, lyUp: true },
-      occ: { value: '75.9%', budget: '-1.7pts', ly: '+2.2pts', budgetUp: false, lyUp: true },
-      totalrev: { value: '$1.12M', budget: '+0.4%', ly: '+7.2%', budgetUp: true, lyUp: true }
-    },
-    perfRows: [
-      ['OCC Rooms Sold', '6,772', '7,028', '6,358', ['-3.6%', false], ['+6.5%', true]],
-      ['OOO Rooms', '32', '21', '52', ['+52%', false], ['-38%', true]],
-      ['Comp Set Rooms Sold', '19,610', '—', '18,894', ['—', null], ['+3.8%', true]],
-      ['ADR', '$190.85', '$186.90', '$180.70', ['+2.1%', true], ['+5.6%', true]],
-      ['RevPAR', '$144.85', '$146.06', '$133.20', ['-0.8%', false], ['+8.7%', true]],
-      ['Total Rooms Rev', '$1.29M', '$1.31M', '$1.15M', ['-1.5%', false], ['+12.2%', true]],
-      ['Total Property Rev', '$1.12M', '$1.11M', '$1.05M', ['+0.9%', true], ['+7.2%', true], 'total']
-    ],
-    propRows: [
-      ['ASTOR','Holiday Inn Express Astoria','134 rms','$148.40','82.5%','$179.85','$144.9K','108.4','99.4','107.2','$42.1K','$32.4K','22.4%',['+10.1%', true]],
-      ['BNAGV','Tru by Hilton Goodlettsville','98 rms','$128.80','86.2%','$149.40','$88.2K','103.8','102.2','101.8','$25.2K','$19.2K','21.8%',['+5.2%', true]],
-      ['BOIGI','Hilton Garden Inn Boise Spectrum','137 rms','$155.20','96.4%','$161.00','$151.0K','106.8','104.2','103.9','$46.8K','$35.8K','23.7%',['+7.4%', true]],
-      ['BOIRI','Residence Inn by Marriott','104 rms','$179.30','95.6%','$187.60','$133.2K','112.2','109.0','110.4','$42.4K','$32.8K','24.6%',['+11.8%', true]],
-      ['BOISH','Springhill Suites Boise West Eagle','119 rms','$135.40','89.1%','$151.90','$120.8K','99.8','98.2','97.6','$33.4K','$25.2K','20.9%',['-2.1%', false]],
-      ['BOISP','Hampton Inn & Suites Boise Spectrum','133 rms','$162.10','97.4%','$166.50','$152.2K','107.6','105.0','105.8','$47.8K','$36.6K','24.0%',['+7.0%', true]],
-      ['BZNFC','Home2 Suites Bozeman Four Corners','100 rms','$78.60','48.2%','$163.10','$55.6K','98.6','96.8','96.9','$13.4K','$9.8K','17.6%',['+5.8%', true]],
-      ['CDAID','Hampton Inn & Suites Coeur d\'Alene','124 rms','$134.20','79.8%','$168.20','$117.0K','105.0','103.2','103.4','$35.2K','$26.8K','22.9%',['+8.3%', true]],
-      ['DALFB','DoubleTree Dallas-Farmers Branch','160 rms','$176.40','93.2%','$189.30','$197.8K','105.6','104.0','104.1','$63.2K','$48.4K','24.5%',['+5.0%', true]],
-      ['LASET','Hampton Inn & Suites Las Vegas Airport','129 rms','$143.80','76.4%','$188.20','$130.8K','102.4','100.8','100.8','$38.6K','$29.2K','22.3%',['+3.4%', true]],
-      ['LASHE','Hilton Garden Inn Henderson','139 rms','$172.10','96.8%','$177.80','$167.8K','107.0','105.2','105.4','$54.2K','$41.6K','24.8%',['+6.2%', true]],
-      ['LG52840','La Quinta Twin Falls','101 rms','$143.90','93.2%','$154.40','$101.8K','104.2','102.4','102.8','$30.4K','$23.0K','22.6%',['+6.8%', true]],
-      ['LQ52836','La Quinta Coeur d\'Alene','118 rms','$75.20','44.8%','$167.90','$62.2K','101.6','99.6','100.1','$15.8K','$11.4K','18.3%',['+3.7%', true]],
-      ['MSOGI','Hilton Garden Inn Missoula','146 rms','$157.40','89.6%','$175.70','$161.6K','105.8','104.0','104.3','$51.6K','$39.4K','24.4%',['+6.1%', true]],
-      ['OR113','Comfort Suites Redmond Airport','92 rms','$102.80','63.4%','$162.20','$66.6K','103.0','101.0','101.4','$19.2K','$14.2K','21.3%',['+4.8%', true]],
-      ['PDXRE','River\'s Edge Portland, Tapestry','112 rms','$109.40','64.8%','$168.80','$85.6K','103.4','101.6','101.9','$24.2K','$18.0K','21.0%',['+4.4%', true]],
-      ['PDXSH','Hampton Inn & Suites Sherwood','73 rms','$107.40','64.0%','$167.80','$55.2K','102.8','100.8','101.2','$15.4K','$11.4K','20.7%',['+3.5%', true]],
-      ['PDXTG','Hampton Inn & Suites Portland Tigard','152 rms','$98.60','58.6%','$168.30','$105.2K','101.4','99.4','99.8','$27.8K','$20.4K','19.4%',['+1.8%', true]],
-      ['PHXRU','Tru by Hilton Gilbert','98 rms','$61.40','36.6%','$167.80','$41.8K','100.2','98.4','98.7','$9.8K','$6.8K','16.3%',['-1.2%', false]],
-      ['RDMBE','Hampton Inn & Suites Bend','114 rms','$122.30','73.0%','$167.50','$97.8K','104.2','102.6','102.8','$29.6K','$22.4K','22.9%',['+5.4%', true]],
-      ['RDMBO','Hilton Garden Inn Bend','96 rms','$116.90','69.8%','$167.50','$78.6K','102.6','100.6','101.0','$22.4K','$16.6K','21.1%',['+2.8%', true]],
-      ['RDMNB','The Newberry Bend','117 rms','$94.00','56.4%','$166.70','$77.4K','103.8','102.0','102.4','$21.4K','$15.6K','20.2%',['+4.0%', true]],
-      ['SCCDT','DoubleTree Spokane City Center','375 rms','$124.40','74.2%','$167.70','$326.4K','104.6','102.8','103.2','$104.8K','$80.2K','24.6%',['+4.7%', true]],
-      ['SLCDW','Hilton Garden Inn SLC Downtown','132 rms','$160.10','95.8%','$167.10','$148.2K','106.0','104.2','104.5','$47.4K','$36.2K','24.4%',['+6.4%', true]],
-      ['SLCLE','Springhill Suites Lehi','94 rms','$12.40','7.4%','$167.60','$8.2K','—','—','—','—','—','—',['-88%', false]],
-      ['SLCLI','Courtyard by Marriott Lehi','97 rms','$131.90','79.0%','$167.00','$89.6K','103.0','101.0','101.5','$26.2K','$19.6K','21.9%',['+3.1%', true]]
-    ],
-    str: {
-      MPI: { value: '100.8', delta: '▲ 0.3', up: true },
-      ARI: { value: '102.0', delta: '▲ 0.7', up: true },
-      RGI: { value: '103.4', delta: '▲ 1.4', up: true },
-      chartData: {
-        MPI: [99.0,99.2,99.8,100.4,100.6,100.8,100.8],
-        ARI: [100.2,100.8,101.4,102.0,102.2,102.0,102.0],
-        RGI: [99.8,100.4,101.6,102.4,102.9,103.2,103.4]
-      }
-    },
-    charts: {
-      revpar:   { labels: ['Apr 22','Apr 23','Apr 24','Apr 25','Apr 26','Apr 27','Apr 28'], actuals: [141,143,146,149,141,142,148], budget: [146,146,146,146,146,146,146], ly: [131,132,135,138,130,131,135], prefix:'$', title:'RevPAR Trend' },
-      adr:      { labels: ['Apr 22','Apr 23','Apr 24','Apr 25','Apr 26','Apr 27','Apr 28'], actuals: [188,190,192,194,188,191,192], budget: [187,187,187,187,187,187,187], ly: [179,181,183,185,178,181,182], prefix:'$', title:'ADR Trend' },
-      totalrev: { labels: ['Apr 22','Apr 23','Apr 24','Apr 25','Apr 26','Apr 27','Apr 28'], actuals: [1.04,1.06,1.08,1.11,1.05,1.06,1.12], budget: [1.09,1.09,1.09,1.09,1.09,1.09,1.09], ly: [0.97,0.99,1.01,1.04,0.98,0.99,1.05], prefix:'$', suffix:'M', title:'Total Revenue Trend' }
-    },
-    profit: {
-      gop:       { value: '$325K', budget: '+1.8%', ly: '+9.2%', budgetUp: true, lyUp: true },
-      ebitda:    { value: '$248K', budget: '+1.4%', ly: '+8.6%', budgetUp: true, lyUp: true },
-      ebitdaMgn: { value: '22.1%',  budget: '+0.2pts', ly: '+1.4pts', budgetUp: true, lyUp: true },
-      flowthrough: { value: '58.3%', badge: 'On Target', detail: '+$21.4K / +$36.7K rev', badgeUp: true }
-    }
-  },
-  mtd: {
-    label: "Month-to-date · April 2026",
-    perfSub: "Month-to-date · Portfolio rollup",
-    propsSub: "Month-to-date · Click row to drill in",
-    trendSub: "Daily · Last 30 days · Actuals vs. Budget vs. LY",
-    revparLabel: "RevPAR",
-    totalRevLabel: "Total Revenue (MTD)",
-    kpi: {
-      revpar: { value: '$142.18', budget: '-2.1%', ly: '+8.2%', budgetUp: false, lyUp: true },
-      adr: { value: '$189.45', budget: '+1.2%', ly: '+5.1%', budgetUp: true, lyUp: true },
-      occ: { value: '76.6%', budget: '+16.5pts', ly: '+13.2pts', budgetUp: true, lyUp: true },
-      totalrev: { value: '$4.82M', budget: '+0.8%', ly: '+6.3%', budgetUp: true, lyUp: true }
-    },
-    perfRows: [
-      ['OCC Rooms Sold', '29,847', '30,847', '28,103', ['-3.2%', false], ['+6.2%', true]],
-      ['OOO Rooms', '142', '90', '218', ['+58%', false], ['-35%', true]],
-      ['Comp Set Rooms Sold', '86,419', '—', '82,940', ['—', null], ['+4.2%', true]],
-      ['ADR', '$189.45', '$187.20', '$180.20', ['+1.2%', true], ['+5.1%', true]],
-      ['RevPAR', '$142.18', '$145.20', '$131.40', ['-2.1%', false], ['+8.2%', true]],
-      ['Total Rooms Rev', '$5.65M', '$5.77M', '$5.06M', ['-2.1%', false], ['+11.7%', true]],
-      ['Total Property Rev', '$4.82M', '$4.78M', '$4.53M', ['+0.8%', true], ['+6.3%', true], 'total']
-    ],
-    propRows: [
-      ['ASTOR','Holiday Inn Express Astoria','134 rms','$143.55','81.1%','$176.90','$562K','108.6','99.8','108.0','$172K','$128K','22.8%',['+9.4%', true]],
-      ['BNAGV','Tru by Hilton Goodlettsville','98 rms','$124.18','88.8%','$139.80','$377K','103.4','102.0','102.1','$104K','$79K','21.0%',['+4.6%', true]],
-      ['BOIGI','Hilton Garden Inn Boise Spectrum','137 rms','$148.92','100%','$148.92','$646K','106.0','104.2','104.2','$193K','$148K','22.9%',['+6.3%', true]],
-      ['BOIRI','Residence Inn by Marriott','104 rms','$174.10','98.1%','$177.50','$569K','112.4','109.0','110.6','$175K','$135K','23.7%',['+12.4%', true]],
-      ['BOISH','Springhill Suites Boise West Eagle','119 rms','$132.87','92.4%','$143.80','$516K','99.6','98.0','96.7','$142K','$107K','20.7%',['-2.8%', false]],
-      ['BOISP','Hampton Inn & Suites Boise Spectrum','133 rms','$155.30','100%','$155.30','$651K','107.4','105.0','105.4','$196K','$150K','23.0%',['+6.8%', true]],
-      ['BZNFC','Home2 Suites Bozeman Four Corners','100 rms','$74.20','50.0%','$148.40','$237K','98.4','96.6','96.2','$55K','$39K','16.5%',['+5.4%', true]],
-      ['CDAID','Hampton Inn & Suites Coeur d\'Alene','124 rms','$128.80','82.3%','$156.50','$499K','104.8','103.0','103.1','$143K','$108K','21.6%',['+7.8%', true]],
-      ['DALFB','DoubleTree Dallas-Farmers Branch','160 rms','$168.60','95.0%','$177.50','$847K','105.4','103.8','103.8','$256K','$196K','23.1%',['+4.6%', true]],
-      ['LASET','Hampton Inn & Suites Las Vegas Airport','129 rms','$136.50','79.1%','$172.60','$559K','102.2','100.6','100.5','$158K','$119K','21.3%',['+3.1%', true]],
-      ['LASHE','Hilton Garden Inn Henderson','139 rms','$163.20','99.3%','$164.30','$717K','106.8','105.2','104.8','$219K','$168K','23.4%',['+5.9%', true]],
-      ['LG52840','La Quinta Twin Falls','101 rms','$137.10','96.0%','$142.80','$433K','104.0','102.4','102.4','$124K','$94K','21.7%',['+6.4%', true]],
-      ['LQ52836','La Quinta Coeur d\'Alene','118 rms','$71.40','46.6%','$153.20','$264K','101.4','99.4','99.8','$64K','$46K','17.4%',['+3.3%', true]],
-      ['MSOGI','Hilton Garden Inn Missoula','146 rms','$150.20','92.5%','$162.40','$692K','105.6','103.8','103.9','$208K','$160K','23.1%',['+5.7%', true]],
-      ['OR113','Comfort Suites Redmond Airport','92 rms','$97.60','65.2%','$149.70','$284K','102.8','100.8','101.1','$78K','$58K','20.4%',['+4.2%', true]],
-      ['PDXRE','River\'s Edge Portland, Tapestry','112 rms','$104.20','67.0%','$155.50','$365K','103.2','101.4','101.6','$99K','$74K','20.3%',['+4.0%', true]],
-      ['PDXSH','Hampton Inn & Suites Sherwood','73 rms','$102.10','65.8%','$155.20','$236K','102.6','100.6','101.0','$63K','$47K','19.9%',['+3.2%', true]],
-      ['PDXTG','Hampton Inn & Suites Portland Tigard','152 rms','$93.40','60.5%','$154.40','$448K','101.2','99.2','99.5','$113K','$83K','18.5%',['+1.5%', true]],
-      ['PHXRU','Tru by Hilton Gilbert','98 rms','$58.10','37.8%','$153.70','$178K','100.0','98.2','98.4','$40K','$28K','15.7%',['-1.4%', false]],
-      ['RDMBE','Hampton Inn & Suites Bend','114 rms','$116.40','75.4%','$154.40','$418K','104.0','102.4','102.5','$119K','$90K','21.5%',['+5.1%', true]],
-      ['RDMBO','Hilton Garden Inn Bend','96 rms','$110.70','71.9%','$154.00','$335K','102.4','100.4','100.7','$92K','$68K','20.3%',['+2.4%', true]],
-      ['RDMNB','The Newberry Bend','117 rms','$89.30','58.1%','$153.70','$330K','103.6','101.8','102.1','$88K','$65K','19.7%',['+3.6%', true]],
-      ['SCCDT','DoubleTree Spokane City Center','375 rms','$118.10','76.3%','$154.80','$1.39M','104.4','102.6','102.9','$431K','$330K','23.7%',['+4.3%', true]],
-      ['SLCDW','Hilton Garden Inn SLC Downtown','132 rms','$152.10','98.5%','$154.40','$632K','105.8','104.0','104.2','$192K','$147K','23.3%',['+6.1%', true]],
-      ['SLCLE','Springhill Suites Lehi','94 rms','$0.00','0%','—','—','—','—','—','—','—','—',['-100%', false]],
-      ['SLCLI','Courtyard by Marriott Lehi','97 rms','$125.50','81.4%','$154.20','$383K','102.8','100.8','101.2','$107K','$80K','20.9%',['+2.9%', true]]
-    ],
-    str: {
-      MPI: { value: '101.7', delta: '▲ 0.5', up: true },
-      ARI: { value: '102.5', delta: '▲ 0.9', up: true },
-      RGI: { value: '104.2', delta: '▲ 1.8', up: true },
-      chartData: {
-        MPI: [98.2,98.6,99.0,100.2,101.0,101.4,101.7,101.5,101.6,101.7,101.4,101.7,101.7],
-        ARI: [100.1,100.8,101.2,102.4,102.6,102.4,102.8,102.6,102.5,102.7,102.3,102.6,102.5],
-        RGI: [99.4,100.1,100.8,102.0,103.1,103.2,103.8,104.0,103.8,104.2,103.6,104.3,104.2]
-      }
-    },
-    charts: {
-      revpar:   { labels: Array.from({length:30},(_,i)=>`${i+1}`), actuals: [128,134,131,140,142,138,145,141,143,148,144,140,137,141,138,143,146,148,144,141,138,142,145,148,150,144,140,138,141,142], budget: Array.from({length:30},()=>145), ly: [120,125,122,130,131,128,135,131,132,138,134,129,127,130,128,133,135,138,134,131,128,132,135,138,140,134,130,128,131,131], prefix:'$', title:'RevPAR Trend' },
-      adr:      { labels: Array.from({length:30},(_,i)=>`${i+1}`), actuals: [185,188,186,190,192,188,194,190,191,194,191,188,186,190,188,191,193,195,191,189,187,190,192,195,197,191,188,186,190,189], budget: Array.from({length:30},()=>187), ly: [176,179,177,182,183,180,185,182,183,187,184,180,178,182,180,183,185,187,183,181,179,182,185,187,189,184,181,179,182,181], prefix:'$', title:'ADR Trend' },
-      totalrev: { labels: Array.from({length:30},(_,i)=>`${i+1}`), actuals: [152,158,155,165,167,162,171,166,169,174,170,164,162,166,163,168,172,175,170,166,163,167,172,175,178,170,165,162,166,167], budget: Array.from({length:30},()=>160), ly: [141,147,144,153,154,151,158,154,155,162,158,152,150,153,151,156,158,161,163,157,153,150,154,154], prefix:'$', suffix:'K', title:'Total Revenue Trend' }
-    },
-    profit: {
-      gop:       { value: '$1.09M', budget: '+2.4%', ly: '+8.8%', budgetUp: true, lyUp: true },
-      ebitda:    { value: '$836K',  budget: '+2.0%', ly: '+8.2%', budgetUp: true, lyUp: true },
-      ebitdaMgn: { value: '17.3%',  budget: '+0.3pts', ly: '+1.2pts', budgetUp: true, lyUp: true },
-      flowthrough: { value: '57.4%', badge: 'On Target', detail: '+$70.2K / +$122K rev', badgeUp: true }
-    }
-  },
-  ytd: {
-    label: "Year-to-date · 2026",
-    perfSub: "Year-to-date · Portfolio rollup",
-    propsSub: "Year-to-date · Click row to drill in",
-    trendSub: "Weekly · Jan–Apr 2026 · Actuals vs. Budget vs. LY",
-    revparLabel: "RevPAR",
-    totalRevLabel: "Total Revenue (YTD)",
-    kpi: {
-      revpar: { value: '$138.52', budget: '+0.4%', ly: '+6.8%', budgetUp: true, lyUp: true },
-      adr: { value: '$184.62', budget: '+1.0%', ly: '+4.8%', budgetUp: true, lyUp: true },
-      occ: { value: '75.0%', budget: '-0.4pts', ly: '+1.4pts', budgetUp: false, lyUp: true },
-      totalrev: { value: '$19.4M', budget: '+1.1%', ly: '+5.6%', budgetUp: true, lyUp: true }
-    },
-    perfRows: [
-      ['OCC Rooms Sold', '117,520', '118,012', '110,318', ['-0.4%', false], ['+6.5%', true]],
-      ['OOO Rooms', '482', '420', '742', ['+15%', false], ['-35%', true]],
-      ['Comp Set Rooms Sold', '341,608', '—', '328,920', ['—', null], ['+3.9%', true]],
-      ['ADR', '$184.62', '$183.10', '$176.20', ['+0.8%', true], ['+4.8%', true]],
-      ['RevPAR', '$138.52', '$137.96', '$129.65', ['+0.4%', true], ['+6.8%', true]],
-      ['Total Rooms Rev', '$21.7M', '$21.6M', '$19.4M', ['+0.5%', true], ['+11.9%', true]],
-      ['Total Property Rev', '$19.4M', '$19.2M', '$18.4M', ['+1.0%', true], ['+5.6%', true], 'total']
-    ],
-    propRows: [
-      ['ASTOR','Holiday Inn Express Astoria','134 rms','$128.85','74.7%','$172.40','$2.13M','106.0','99.2','105.2','$618K','$472K','22.2%',['+7.8%', true]],
-      ['BNAGV','Tru by Hilton Goodlettsville','98 rms','$118.40','81.4%','$145.40','$1.42M','103.8','102.0','100.8','$392K','$296K','20.8%',['+3.4%', true]],
-      ['BOIGI','Hilton Garden Inn Boise Spectrum','137 rms','$140.10','86.2%','$162.50','$2.46M','106.2','104.4','102.6','$730K','$556K','22.6%',['+5.7%', true]],
-      ['BOIRI','Residence Inn by Marriott','104 rms','$161.80','91.4%','$177.00','$2.16M','112.8','109.2','108.4','$652K','$498K','23.1%',['+10.2%', true]],
-      ['BOISH','Springhill Suites Boise West Eagle','119 rms','$129.50','84.2%','$153.80','$1.96M','99.8','98.2','98.1','$534K','$400K','20.4%',['-1.4%', false]],
-      ['BOISP','Hampton Inn & Suites Boise Spectrum','133 rms','$143.60','88.4%','$162.40','$2.47M','107.6','105.2','104.1','$740K','$564K','22.8%',['+5.9%', true]],
-      ['BZNFC','Home2 Suites Bozeman Four Corners','100 rms','$62.10','42.8%','$145.10','$0.90M','98.6','96.8','95.8','$210K','$148K','16.4%',['+4.2%', true]],
-      ['CDAID','Hampton Inn & Suites Coeur d\'Alene','124 rms','$116.20','73.1%','$158.90','$1.90M','105.2','103.4','102.2','$548K','$414K','21.8%',['+6.9%', true]],
-      ['DALFB','DoubleTree Dallas-Farmers Branch','160 rms','$152.40','86.8%','$175.60','$3.22M','105.6','104.0','103.2','$970K','$742K','23.0%',['+4.0%', true]],
-      ['LASET','Hampton Inn & Suites Las Vegas Airport','129 rms','$122.40','70.8%','$172.90','$2.12M','102.4','100.8','99.8','$600K','$452K','21.3%',['+2.6%', true]],
-      ['LASHE','Hilton Garden Inn Henderson','139 rms','$147.60','89.4%','$165.10','$2.72M','107.0','105.4','104.1','$826K','$632K','23.2%',['+5.2%', true]],
-      ['LG52840','La Quinta Twin Falls','101 rms','$122.80','84.2%','$145.80','$1.64M','104.2','102.6','101.6','$470K','$354K','21.6%',['+5.6%', true]],
-      ['LQ52836','La Quinta Coeur d\'Alene','118 rms','$60.80','38.4%','$158.30','$1.00M','101.6','99.6','99.2','$242K','$174K','17.4%',['+2.8%', true]],
-      ['MSOGI','Hilton Garden Inn Missoula','146 rms','$134.20','81.2%','$165.30','$2.62M','105.8','104.0','103.1','$790K','$604K','23.1%',['+5.0%', true]],
-      ['OR113','Comfort Suites Redmond Airport','92 rms','$86.40','57.8%','$149.50','$1.08M','103.0','101.0','100.4','$296K','$220K','20.4%',['+3.6%', true]],
-      ['PDXRE','River\'s Edge Portland, Tapestry','112 rms','$92.10','58.4%','$157.70','$1.38M','103.4','101.6','100.8','$376K','$280K','20.3%',['+3.2%', true]],
-      ['PDXSH','Hampton Inn & Suites Sherwood','73 rms','$90.40','57.4%','$157.50','$0.90M','102.8','100.8','100.2','$240K','$178K','19.8%',['+2.7%', true]],
-      ['PDXTG','Hampton Inn & Suites Portland Tigard','152 rms','$82.80','52.2%','$158.60','$1.70M','101.4','99.4','98.8','$428K','$314K','18.5%',['+1.1%', true]],
-      ['PHXRU','Tru by Hilton Gilbert','98 rms','$50.60','32.4%','$156.20','$0.68M','100.2','98.4','97.6','$152K','$106K','15.6%',['-2.1%', false]],
-      ['RDMBE','Hampton Inn & Suites Bend','114 rms','$102.80','66.2%','$155.30','$1.59M','104.2','102.6','101.8','$450K','$340K','21.4%',['+4.4%', true]],
-      ['RDMBO','Hilton Garden Inn Bend','96 rms','$97.60','62.8%','$155.40','$1.27M','102.6','100.6','100.1','$350K','$260K','20.5%',['+1.8%', true]],
-      ['RDMNB','The Newberry Bend','117 rms','$78.40','50.4%','$155.60','$1.25M','103.8','102.0','101.4','$336K','$248K','19.8%',['+2.9%', true]],
-      ['SCCDT','DoubleTree Spokane City Center','375 rms','$104.10','66.8%','$155.80','$5.28M','104.6','102.8','102.2','$1.64M','$1.26M','23.9%',['+3.7%', true]],
-      ['SLCDW','Hilton Garden Inn SLC Downtown','132 rms','$136.40','88.2%','$154.60','$2.40M','106.0','104.2','103.5','$726K','$556K','23.2%',['+5.4%', true]],
-      ['SLCLE','Springhill Suites Lehi','94 rms','$24.80','16.2%','$153.10','$0.30M','—','—','—','—','—','—',['-68%', false]],
-      ['SLCLI','Courtyard by Marriott Lehi','97 rms','$111.40','72.4%','$153.90','$1.46M','103.0','101.0','100.5','$406K','$300K','20.5%',['+2.2%', true]]
-    ],
-    str: {
-      MPI: { value: '101.7', delta: '▲ 0.6', up: true },
-      ARI: { value: '102.2', delta: '▲ 0.8', up: true },
-      RGI: { value: '103.8', delta: '▲ 1.5', up: true },
-      chartData: {
-        MPI: [96.2,97.0,98.1,99.4,98.8,100.2,101.5,100.9,101.4,101.7,101.2,101.8,101.7],
-        ARI: [99.1,99.8,100.4,101.0,100.6,101.4,102.2,101.8,102.1,102.5,102.0,102.6,102.2],
-        RGI: [98.4,99.1,100.3,101.2,100.8,102.1,103.4,102.9,103.8,104.2,103.7,104.5,103.8]
-      }
-    },
-    charts: {
-      revpar:   { labels: ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13','W14','W15','W16','W17'], actuals: [122,126,128,131,134,136,135,138,140,142,141,138,135,138,140,144,142], budget: Array.from({length:17},()=>138), ly: [115,118,120,124,126,128,127,130,131,133,132,130,127,130,131,134,132], prefix:'$', title:'RevPAR Trend' },
-      adr:      { labels: ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13','W14','W15','W16','W17'], actuals: [180,183,184,186,188,190,189,191,192,184,183,181,179,182,184,185,184], budget: Array.from({length:17},()=>183), ly: [172,175,176,178,180,182,181,183,184,176,175,173,171,174,176,177,176], prefix:'$', title:'ADR Trend' },
-      totalrev: { labels: ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13','W14','W15','W16','W17'], actuals: [4.2,4.4,4.5,4.6,4.7,4.8,4.75,4.9,5.0,4.8,4.75,4.6,4.5,4.7,4.8,4.9,4.82], budget: Array.from({length:17},()=>4.78), ly: [3.9,4.1,4.2,4.3,4.4,4.5,4.45,4.6,4.7,4.5,4.45,4.3,4.2,4.4,4.5,4.6,4.53], prefix:'$', suffix:'M', title:'Total Revenue Trend' }
-    },
-    profit: {
-      gop:       { value: '$4.48M', budget: '+1.1%', ly: '+7.2%', budgetUp: true, lyUp: true },
-      ebitda:    { value: '$3.44M', budget: '+0.8%', ly: '+6.6%', budgetUp: true, lyUp: true },
-      ebitdaMgn: { value: '17.7%',  budget: '+0.1pts', ly: '+1.0pts', budgetUp: true, lyUp: true },
-      flowthrough: { value: '56.8%', badge: 'On Target', detail: '+$242K / +$426K rev', badgeUp: true }
-    }
-  },
-  '3yr': {
-    label: "3-Year Rolling · 2024–2026",
-    perfSub: "3-Year Rolling · Portfolio rollup",
-    propsSub: "3-Year Rolling · Click row to drill in",
-    trendSub: "Quarterly · Q1 2024–Q1 2026 · Actuals vs. Budget vs. Prior 3YR",
-    revparLabel: "RevPAR",
-    totalRevLabel: "Total Revenue (3YR)",
-    kpi: {
-      revpar: { value: '$131.40', budget: '+2.2%', ly: '+9.4%', budgetUp: true, lyUp: true },
-      adr: { value: '$176.80', budget: '+1.8%', ly: '+6.2%', budgetUp: true, lyUp: true },
-      occ: { value: '74.3%', budget: '+0.2pts', ly: '+2.1pts', budgetUp: true, lyUp: true },
-      totalrev: { value: '$68.2M', budget: '+2.4%', ly: '+8.8%', budgetUp: true, lyUp: true }
-    },
-    perfRows: [
-      ['OCC Rooms Sold', '384,612', '382,000', '356,214', ['+0.7%', true], ['+8.0%', true]],
-      ['OOO Rooms', '1,580', '1,480', '2,410', ['+6.8%', false], ['-34%', true]],
-      ['Comp Set Rooms Sold', '1,104,820', '—', '1,028,440', ['—', null], ['+7.4%', true]],
-      ['ADR', '$176.80', '$173.70', '$166.50', ['+1.8%', true], ['+6.2%', true]],
-      ['RevPAR', '$131.40', '$128.60', '$120.10', ['+2.2%', true], ['+9.4%', true]],
-      ['Total Rooms Rev', '$71.8M', '$70.2M', '$62.6M', ['+2.3%', true], ['+14.7%', true]],
-      ['Total Property Rev', '$68.2M', '$66.6M', '$62.7M', ['+2.4%', true], ['+8.8%', true], 'total']
-    ],
-    propRows: [
-      ['ASTOR','Holiday Inn Express Astoria','134 rms','$122.10','73.8%','$165.50','$7.28M','105.2','98.6','104.4','$2.08M','$1.56M','21.4%',['+8.6%', true]],
-      ['BNAGV','Tru by Hilton Goodlettsville','98 rms','$112.20','80.6%','$139.30','$4.80M','103.2','101.4','100.2','$1.30M','$980K','20.4%',['+4.0%', true]],
-      ['BOIGI','Hilton Garden Inn Boise Spectrum','137 rms','$133.40','85.4%','$156.20','$8.42M','105.8','104.0','102.0','$2.48M','$1.88M','22.3%',['+6.4%', true]],
-      ['BOIRI','Residence Inn by Marriott','104 rms','$154.60','90.8%','$170.30','$7.40M','112.0','108.6','107.8','$2.22M','$1.68M','22.7%',['+11.0%', true]],
-      ['BOISH','Springhill Suites Boise West Eagle','119 rms','$122.80','83.4%','$147.40','$6.62M','99.4','97.8','97.6','$1.78M','$1.32M','19.9%',['-0.8%', false]],
-      ['BOISP','Hampton Inn & Suites Boise Spectrum','133 rms','$136.40','87.6%','$155.70','$8.48M','107.0','104.6','103.4','$2.52M','$1.92M','22.6%',['+6.2%', true]],
-      ['BZNFC','Home2 Suites Bozeman Four Corners','100 rms','$59.20','41.8%','$141.60','$3.06M','98.0','96.2','95.2','$710K','$500K','16.3%',['+5.0%', true]],
-      ['CDAID','Hampton Inn & Suites Coeur d\'Alene','124 rms','$110.40','72.2%','$152.90','$6.48M','104.6','102.8','101.6','$1.86M','$1.40M','21.6%',['+7.4%', true]],
-      ['DALFB','DoubleTree Dallas-Farmers Branch','160 rms','$145.20','86.0%','$168.90','$11.0M','104.8','103.2','102.6','$3.30M','$2.52M','22.9%',['+4.6%', true]],
-      ['LASET','Hampton Inn & Suites Las Vegas Airport','129 rms','$116.20','69.8%','$166.40','$7.22M','101.8','100.2','99.2','$2.02M','$1.52M','21.0%',['+3.2%', true]],
-      ['LASHE','Hilton Garden Inn Henderson','139 rms','$140.40','88.6%','$158.40','$9.28M','106.4','104.8','103.4','$2.80M','$2.14M','23.0%',['+5.8%', true]],
-      ['LG52840','La Quinta Twin Falls','101 rms','$116.80','83.4%','$140.10','$5.58M','103.6','102.0','101.0','$1.60M','$1.20M','21.5%',['+6.0%', true]],
-      ['LQ52836','La Quinta Coeur d\'Alene','118 rms','$57.80','37.6%','$153.70','$3.40M','101.0','99.0','98.6','$820K','$590K','17.4%',['+3.4%', true]],
-      ['MSOGI','Hilton Garden Inn Missoula','146 rms','$127.60','80.4%','$158.70','$8.96M','105.2','103.4','102.6','$2.68M','$2.04M','22.8%',['+5.6%', true]],
-      ['OR113','Comfort Suites Redmond Airport','92 rms','$82.20','56.8%','$144.70','$3.68M','102.4','100.4','99.8','$1.00M','$748K','20.3%',['+4.2%', true]],
-      ['PDXRE','River\'s Edge Portland, Tapestry','112 rms','$87.80','57.6%','$152.40','$4.70M','102.8','101.0','100.2','$1.28M','$950K','20.2%',['+3.8%', true]],
-      ['PDXSH','Hampton Inn & Suites Sherwood','73 rms','$86.00','56.6%','$151.90','$3.06M','102.2','100.2','99.6','$820K','$610K','19.9%',['+3.2%', true]],
-      ['PDXTG','Hampton Inn & Suites Portland Tigard','152 rms','$78.60','51.4%','$152.90','$5.78M','100.8','98.8','98.2','$1.46M','$1.07M','18.5%',['+1.6%', true]],
-      ['PHXRU','Tru by Hilton Gilbert','98 rms','$48.20','31.6%','$152.50','$2.32M','99.6','97.8','97.0','$520K','$364K','15.7%',['-1.6%', false]],
-      ['RDMBE','Hampton Inn & Suites Bend','114 rms','$97.60','65.4%','$149.20','$5.44M','103.6','102.0','101.2','$1.54M','$1.16M','21.3%',['+5.0%', true]],
-      ['RDMBO','Hilton Garden Inn Bend','96 rms','$92.80','61.8%','$150.20','$4.34M','102.0','100.0','99.6','$1.18M','$882K','20.3%',['+2.4%', true]],
-      ['RDMNB','The Newberry Bend','117 rms','$74.60','49.6%','$150.40','$4.26M','103.2','101.4','100.8','$1.14M','$844K','19.8%',['+3.4%', true]],
-      ['SCCDT','DoubleTree Spokane City Center','375 rms','$98.80','65.8%','$150.10','$18.0M','104.0','102.2','101.6','$5.58M','$4.28M','23.8%',['+4.2%', true]],
-      ['SLCDW','Hilton Garden Inn SLC Downtown','132 rms','$129.60','87.4%','$148.30','$8.20M','105.4','103.6','102.8','$2.48M','$1.90M','23.2%',['+6.0%', true]],
-      ['SLCLE','Springhill Suites Lehi','94 rms','$23.80','15.6%','$152.60','$1.04M','—','—','—','—','—','—',['-62%', false]],
-      ['SLCLI','Courtyard by Marriott Lehi','97 rms','$105.80','70.8%','$149.40','$4.98M','102.4','100.4','100.0','$1.38M','$1.02M','20.5%',['+2.8%', true]]
-    ],
-    str: {
-      MPI: { value: '103.4', delta: '▲ 2.1', up: true },
-      ARI: { value: '101.8', delta: '▲ 1.2', up: true },
-      RGI: { value: '104.8', delta: '▲ 2.6', up: true },
-      chartData: {
-        MPI: [99.2,100.1,101.0,102.2,101.8,102.4,103.0,102.6,103.2,103.8,103.2,103.6,103.4],
-        ARI: [99.8,100.2,100.6,101.2,100.8,101.4,101.8,101.4,101.8,102.2,101.6,102.0,101.8],
-        RGI: [100.4,101.2,102.0,103.2,102.8,103.6,104.4,103.8,104.6,105.2,104.6,105.0,104.8]
-      }
-    },
-    charts: {
-      revpar:   { labels: ['Q1\'24','Q2\'24','Q3\'24','Q4\'24','Q1\'25','Q2\'25','Q3\'25','Q4\'25','Q1\'26'], actuals: [108,124,138,118,116,136,148,124,129], budget: Array.from({length:9},()=>126), ly: [99,114,128,108,108,125,138,114,120], prefix:'$', title:'RevPAR Trend (3-Year)' },
-      adr:      { labels: ['Q1\'24','Q2\'24','Q3\'24','Q4\'24','Q1\'25','Q2\'25','Q3\'25','Q4\'25','Q1\'26'], actuals: [163,175,186,169,168,180,192,172,175], budget: Array.from({length:9},()=>170), ly: [155,166,178,160,160,172,184,163,167], prefix:'$', title:'ADR Trend (3-Year)' },
-      totalrev: { labels: ['Q1\'24','Q2\'24','Q3\'24','Q4\'24','Q1\'25','Q2\'25','Q3\'25','Q4\'25','Q1\'26'], actuals: [14.2,17.8,20.4,15.6,15.8,19.2,22.0,16.4,17.1], budget: Array.from({length:9},()=>16.8), ly: [13.0,16.4,18.8,14.2,14.6,17.8,20.4,15.0,15.8], prefix:'$', suffix:'M', title:'Total Revenue Trend (3-Year)' }
-    },
-    profit: {
-      gop:       { value: '$15.82M', budget: '+2.4%', ly: '+9.6%', budgetUp: true, lyUp: true },
-      ebitda:    { value: '$12.08M', budget: '+1.8%', ly: '+8.8%', budgetUp: true, lyUp: true },
-      ebitdaMgn: { value: '17.7%',  budget: '+0.2pts', ly: '+1.2pts', budgetUp: true, lyUp: true },
-      flowthrough: { value: '57.2%', badge: 'On Target', detail: '+$872K / +$1.52M rev', badgeUp: true }
-    }
-  }
+// Static property metadata
+const PROPERTY_META = {
+  ASTOR:   { name: 'Holiday Inn Express Astoria',              brand: 'IHG',      brandType: 'Holiday Inn Express',     address: '38-05 Northern Blvd, Astoria, NY',  type: 'Limited-service', rooms: 134, gm: 'Sarah Chen' },
+  BNAGV:   { name: 'Tru by Hilton Goodlettsville Nashville',   brand: 'Hilton',   brandType: 'Tru by Hilton',           address: 'Goodlettsville, TN',                type: 'Limited-service', rooms: 98,  gm: 'Marcus Johnson' },
+  BOIGI:   { name: 'Hilton Garden Inn Boise Spectrum',         brand: 'Hilton',   brandType: 'Hilton Garden Inn',       address: 'Boise, ID',                         type: 'Select-service',  rooms: 137, gm: 'Lisa Park' },
+  BOIRI:   { name: 'Residence Inn by Marriott Boise',          brand: 'Marriott', brandType: 'Residence Inn',           address: 'Boise, ID',                         type: 'Extended-stay',   rooms: 104, gm: 'David Kim' },
+  BOISH:   { name: 'Springhill Suites Boise West Eagle',       brand: 'Marriott', brandType: 'Springhill Suites',       address: 'Eagle, ID',                         type: 'Extended-stay',   rooms: 119, gm: 'Rachel Torres' },
+  BOISP:   { name: 'Hampton Inn & Suites Boise Spectrum',      brand: 'Hilton',   brandType: 'Hampton Inn & Suites',    address: 'Boise, ID',                         type: 'Select-service',  rooms: 133, gm: 'Carlos Reyes' },
+  BZNFC:   { name: 'Home2 Suites Bozeman Four Corners',        brand: 'Hilton',   brandType: 'Home2 Suites',            address: 'Bozeman, MT',                       type: 'Extended-stay',   rooms: 100, gm: 'Amy Wilson' },
+  CDAID:   { name: "Hampton Inn & Suites Coeur d'Alene",       brand: 'Hilton',   brandType: 'Hampton Inn & Suites',    address: "Coeur d'Alene, ID",                 type: 'Select-service',  rooms: 124, gm: 'Tom Bradley' },
+  DALFB:   { name: 'DoubleTree Dallas-Farmers Branch',         brand: 'Hilton',   brandType: 'DoubleTree',              address: 'Farmers Branch, TX',                type: 'Full-service',    rooms: 160, gm: 'Nina Patel' },
+  LASET:   { name: 'Hampton Inn & Suites Las Vegas Airport',   brand: 'Hilton',   brandType: 'Hampton Inn & Suites',    address: 'Las Vegas, NV',                     type: 'Select-service',  rooms: 129, gm: 'James Carter' },
+  LASHE:   { name: 'Hilton Garden Inn Henderson',              brand: 'Hilton',   brandType: 'Hilton Garden Inn',       address: 'Henderson, NV',                     type: 'Select-service',  rooms: 139, gm: 'Diane Moore' },
+  LG52840: { name: 'La Quinta Inn Twin Falls',                 brand: 'Wyndham',  brandType: 'La Quinta',               address: 'Twin Falls, ID',                    type: 'Limited-service', rooms: 101, gm: 'Steve Allen' },
+  LQ52836: { name: "La Quinta Inn Coeur d'Alene",              brand: 'Wyndham',  brandType: 'La Quinta',               address: "Coeur d'Alene, ID",                 type: 'Limited-service', rooms: 118, gm: 'Maria Garcia' },
+  MSOGI:   { name: 'Hilton Garden Inn Missoula',               brand: 'Hilton',   brandType: 'Hilton Garden Inn',       address: 'Missoula, MT',                      type: 'Select-service',  rooms: 146, gm: 'Brian Lee' },
+  OR113:   { name: 'Comfort Suites Redmond Airport',           brand: 'Choice',   brandType: 'Comfort Suites',          address: 'Redmond, OR',                       type: 'Limited-service', rooms: 92,  gm: 'Sandra White' },
+  PDXRE:   { name: "River's Edge Portland, Tapestry Collection", brand: 'IHG',   brandType: 'Tapestry Collection',     address: 'Portland, OR',                      type: 'Full-service',    rooms: 112, gm: 'Kevin Brown' },
+  PDXSH:   { name: 'Hampton Inn & Suites Sherwood',            brand: 'Hilton',   brandType: 'Hampton Inn & Suites',    address: 'Sherwood, OR',                      type: 'Select-service',  rooms: 73,  gm: 'Julie Chen' },
+  PDXTG:   { name: 'Hampton Inn & Suites Portland Tigard',     brand: 'Hilton',   brandType: 'Hampton Inn & Suites',    address: 'Tigard, OR',                        type: 'Select-service',  rooms: 152, gm: 'Paul Davis' },
+  PHXRU:   { name: 'Tru by Hilton Gilbert',                    brand: 'Hilton',   brandType: 'Tru by Hilton',           address: 'Gilbert, AZ',                       type: 'Limited-service', rooms: 98,  gm: 'Megan Hill' },
+  RDMBE:   { name: 'Hampton Inn & Suites Bend',                brand: 'Hilton',   brandType: 'Hampton Inn & Suites',    address: 'Bend, OR',                          type: 'Select-service',  rooms: 114, gm: 'Robert Flores' },
+  RDMBO:   { name: 'Hilton Garden Inn Bend',                   brand: 'Hilton',   brandType: 'Hilton Garden Inn',       address: 'Bend, OR',                          type: 'Select-service',  rooms: 96,  gm: 'Cindy Adams' },
+  RDMNB:   { name: 'The Newberry Bend',                        brand: 'IHG',      brandType: 'Tapestry Collection',     address: 'Bend, OR',                          type: 'Full-service',    rooms: 117, gm: 'Frank Scott' },
+  SCCDT:   { name: 'DoubleTree Spokane City Center',           brand: 'Hilton',   brandType: 'DoubleTree',              address: 'Spokane, WA',                       type: 'Full-service',    rooms: 375, gm: 'Laura Evans' },
+  SLCDW:   { name: 'Hilton Garden Inn SLC Downtown',           brand: 'Hilton',   brandType: 'Hilton Garden Inn',       address: 'Salt Lake City, UT',                type: 'Select-service',  rooms: 132, gm: 'Michael Young' },
+  SLCLE:   { name: 'Springhill Suites Lehi',                   brand: 'Marriott', brandType: 'Springhill Suites',       address: 'Lehi, UT',                          type: 'Extended-stay',   rooms: 94,  gm: 'Patricia King' },
+  SLCLI:   { name: 'Courtyard by Marriott Lehi',               brand: 'Marriott', brandType: 'Courtyard',               address: 'Lehi, UT',                          type: 'Select-service',  rooms: 97,  gm: 'Daniel Cruz' },
 };
+
+// ---- Date helpers ----
+function toDateStr(d) {
+  // Returns YYYY-MM-DD from a Date object
+  return d.toISOString().slice(0, 10);
+}
+function today() { return new Date(); }
+function yesterday() {
+  const d = new Date(); d.setDate(d.getDate() - 1); return d;
+}
+function startOfWeek() {
+  const d = new Date();
+  const day = d.getDay(); // 0=Sun
+  d.setDate(d.getDate() - (day === 0 ? 6 : day - 1)); // Monday
+  return d;
+}
+function startOfMonth() {
+  const d = new Date(); d.setDate(1); return d;
+}
+function startOfYear() {
+  const d = new Date(); d.setMonth(0); d.setDate(1); return d;
+}
+function threeYearsAgo() {
+  const d = new Date(); d.setFullYear(d.getFullYear() - 3); return d;
+}
+function oneYearAgo(d) {
+  const r = new Date(d); r.setFullYear(r.getFullYear() - 1); return r;
+}
+
+// ---- Get Dataverse token via MSAL ----
+async function getDataverseToken() {
+  const accounts = msalInstance.getAllAccounts();
+  if (!accounts.length) throw new Error('No MSAL account');
+  try {
+    const result = await msalInstance.acquireTokenSilent({
+      scopes: [DATAVERSE_SCOPE],
+      account: accounts[0],
+    });
+    return result.accessToken;
+  } catch (e) {
+    // Silent failed — try popup
+    const result = await msalInstance.acquireTokenPopup({ scopes: [DATAVERSE_SCOPE] });
+    return result.accessToken;
+  }
+}
+
+// ---- Fetch all rows from Dataverse with pagination ----
+async function fetchAllRows(token, fromDate) {
+  const dateFilter = `cr2cd_date ge ${toDateStr(fromDate)}`;
+  const select = [
+    'cr2cd_sitetag',
+    'cr2cd_property_name',
+    'cr2cd_date',
+    'cr2cd_occupied_rooms',
+    'cr2cd_available_rooms',
+    'cr2cd_total_revenue',
+    'cr2cd_gop',
+    'cr2cd_ebitda',
+    'cr2cd_noi',
+    'cr2cd_compset_occupied_rooms',
+    'cr2cd_compset_revenue',
+    'cr2cd_adr',
+    'cr2cd_revpar',
+    'cr2cd_occupancy_pct',
+    'cr2cd_ebitda_margin',
+    'cr2cd_gop_margin',
+    'cr2cd_compset_adr',
+    'cr2cd_ari',
+  ].join(',');
+
+  let url = `${DATAVERSE_URL}/api/data/v9.2/${TABLE}?$filter=${encodeURIComponent(dateFilter)}&$select=${select}&$orderby=cr2cd_date asc&$top=5000`;
+  let allRows = [];
+
+  while (url) {
+    const resp = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'OData-MaxVersion': '4.0',
+        'OData-Version': '4.0',
+        'Accept': 'application/json',
+        'Prefer': 'odata.maxpagesize=5000',
+      }
+    });
+    if (!resp.ok) throw new Error(`Dataverse fetch failed: ${resp.status}`);
+    const data = await resp.json();
+    allRows = allRows.concat(data.value);
+    // Follow pagination link if present
+    url = data['@odata.nextLink'] || null;
+  }
+  return allRows;
+}
+
+// ---- Aggregate rows for a date range ----
+function aggregateRows(rows, fromDate, toDate) {
+  // Filter to date range
+  const from = toDateStr(fromDate);
+  const to = toDateStr(toDate);
+  const filtered = rows.filter(r => r.cr2cd_date >= from && r.cr2cd_date <= to);
+
+  if (!filtered.length) return null;
+
+  // Group by property
+  const byProp = {};
+  for (const r of filtered) {
+    const tag = r.cr2cd_sitetag;
+    if (!byProp[tag]) byProp[tag] = [];
+    byProp[tag].push(r);
+  }
+
+  // Aggregate each property
+  const propAgg = {};
+  for (const [tag, propRows] of Object.entries(byProp)) {
+    const sum = (key) => propRows.reduce((a, r) => a + (r[key] || 0), 0);
+    const occupied    = sum('cr2cd_occupied_rooms');
+    const available   = sum('cr2cd_available_rooms');
+    const revenue     = sum('cr2cd_total_revenue');
+    const gop         = sum('cr2cd_gop');
+    const ebitda      = sum('cr2cd_ebitda');
+    const noi         = sum('cr2cd_noi');
+    const csOccupied  = sum('cr2cd_compset_occupied_rooms');
+    const csRevenue   = sum('cr2cd_compset_revenue');
+
+    const adr         = occupied   > 0 ? revenue / occupied   : 0;
+    const revpar      = available  > 0 ? revenue / available  : 0;
+    const occ         = available  > 0 ? occupied / available : 0;
+    const ebitdaMgn   = revenue    > 0 ? ebitda  / revenue   : 0;
+    const gopMgn      = revenue    > 0 ? gop     / revenue   : 0;
+    const csADR       = csOccupied > 0 ? csRevenue / csOccupied : 0;
+    const ari         = csADR      > 0 ? (adr / csADR) * 100 : null;
+    // MPI needs comp set occupancy % — not yet available, leave null
+    const mpi         = null;
+    const rgi         = null;
+
+    propAgg[tag] = { tag, occupied, available, revenue, gop, ebitda, noi,
+                     adr, revpar, occ, ebitdaMgn, gopMgn,
+                     csOccupied, csRevenue, csADR, ari, mpi, rgi };
+  }
+
+  // Portfolio totals
+  const props = Object.values(propAgg);
+  const totalOccupied  = props.reduce((a, p) => a + p.occupied,  0);
+  const totalAvailable = props.reduce((a, p) => a + p.available, 0);
+  const totalRevenue   = props.reduce((a, p) => a + p.revenue,   0);
+  const totalGOP       = props.reduce((a, p) => a + p.gop,       0);
+  const totalEBITDA    = props.reduce((a, p) => a + p.ebitda,    0);
+
+  const portADR    = totalOccupied  > 0 ? totalRevenue / totalOccupied  : 0;
+  const portRevPAR = totalAvailable > 0 ? totalRevenue / totalAvailable : 0;
+  const portOcc    = totalAvailable > 0 ? totalOccupied / totalAvailable : 0;
+  const portEbitdaMgn = totalRevenue > 0 ? totalEBITDA / totalRevenue : 0;
+
+  return { propAgg, portfolio: { adr: portADR, revpar: portRevPAR, occ: portOcc,
+           revenue: totalRevenue, gop: totalGOP, ebitda: totalEBITDA,
+           ebitdaMgn: portEbitdaMgn } };
+}
+
+// ---- Formatters ----
+function fmtCurrency(n, compact = true) {
+  if (n === null || isNaN(n)) return '—';
+  if (!compact) return '$' + n.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  if (Math.abs(n) >= 1e6) return '$' + (n / 1e6).toFixed(2) + 'M';
+  if (Math.abs(n) >= 1e3) return '$' + (n / 1e3).toFixed(1) + 'K';
+  return '$' + n.toFixed(2);
+}
+function fmtPct(n) {
+  if (n === null || isNaN(n)) return '—';
+  return (n * 100).toFixed(1) + '%';
+}
+function fmtADR(n) {
+  if (!n) return '—';
+  return '$' + n.toFixed(2);
+}
+function fmtIndex(n) {
+  if (n === null) return '—';
+  return n.toFixed(1);
+}
+function fmtDelta(current, prior, isPoints = false) {
+  if (!prior || !current) return { text: '—', up: null };
+  const pct = ((current - prior) / Math.abs(prior)) * 100;
+  const pts = (current - prior) * (isPoints ? 100 : 1);
+  const up = current >= prior;
+  if (isPoints) {
+    return { text: (up ? '+' : '') + pts.toFixed(1) + 'pts', up };
+  }
+  return { text: (up ? '+' : '') + pct.toFixed(1) + '%', up };
+}
+
+// ---- Build propRows array (format expected by renderPropRows) ----
+function buildPropRows(agg, lyAgg) {
+  return Object.keys(PROPERTY_META).map(tag => {
+    const p  = agg?.propAgg?.[tag];
+    const ly = lyAgg?.propAgg?.[tag];
+    const meta = PROPERTY_META[tag];
+
+    if (!p) return [tag, meta.name, `${meta.rooms} rms`,
+      '—','—','—','—','—','—','—','—','—','—',['—', null]];
+
+    const yoy = fmtDelta(p.revpar, ly?.revpar);
+    return [
+      tag,
+      meta.name,
+      `${meta.rooms} rms`,
+      fmtADR(p.revpar),
+      fmtPct(p.occ),
+      fmtADR(p.adr),
+      fmtCurrency(p.revenue),
+      fmtIndex(p.mpi),
+      fmtIndex(p.ari),
+      fmtIndex(p.rgi),
+      fmtCurrency(p.gop),
+      fmtCurrency(p.ebitda),
+      fmtPct(p.ebitdaMgn),
+      [yoy.text, yoy.up],
+    ];
+  });
+}
+
+// ---- Build chart trend data from daily rows ----
+function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag) {
+  // Accept either Date objects or YYYY-MM-DD strings
+  const toD = v => (v instanceof Date) ? v : new Date(v + 'T00:00:00');
+  const parseD = s => (s instanceof Date) ? s : new Date(s + 'T00:00:00');
+  const fmtLabel = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const fmtMonthLabel = d => d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+
+  const fd = toD(fromDate), td = toD(toDate);
+  const lyFd = toD(lyFromDate), lyTd = toD(lyToDate);
+  const dayMs = 86400000;
+  const totalDays = Math.round((td - fd) / dayMs) + 1;
+
+  // Filter rows by date range (and optionally siteTag)
+  function filterRows(rows, start, end) {
+    return rows.filter(r => {
+      const d = parseD(r.cr2cd_date);
+      const inRange = d >= start && d <= end;
+      if (!inRange) return false;
+      if (siteTag) return r.cr2cd_sitetag === siteTag;
+      return true;
+    });
+  }
+
+  // Group rows by bucket key; returns Map<key, {revpar, adr, totalrev}>
+  function groupRows(rows, start, groupFn) {
+    const map = new Map();
+    rows.forEach(r => {
+      const key = groupFn(parseD(r.cr2cd_date));
+      if (!map.has(key)) map.set(key, { revenue: 0, rooms_occ: 0, rooms_avail: 0 });
+      const g = map.get(key);
+      g.revenue     += (r.cr2cd_total_revenue || 0);
+      g.rooms_occ   += (r.cr2cd_occupied_rooms || 0);
+      g.rooms_avail += (r.cr2cd_available_rooms || 0);
+    });
+    return map;
+  }
+
+  // Determine grouping strategy
+  let groupFn, labelFn, lyGroupFn, lyLabelFn;
+  if (totalDays <= 35) {
+    // Daily
+    groupFn   = d => toDateStr(d);
+    labelFn   = d => fmtLabel(new Date(d + 'T00:00:00'));
+    lyGroupFn = d => toDateStr(new Date(d.getTime() + 365 * dayMs));
+    lyLabelFn = labelFn;
+  } else if (totalDays <= 180) {
+    // Weekly (ISO week: Sunday-based)
+    const weekKey = d => {
+      const copy = new Date(d); copy.setHours(0,0,0,0);
+      const day = copy.getDay();
+      copy.setDate(copy.getDate() - day); // start of week (Sunday)
+      return toDateStr(copy);
+    };
+    groupFn   = weekKey;
+    labelFn   = d => fmtLabel(new Date(d + 'T00:00:00'));
+    lyGroupFn = d => weekKey(new Date(d.getTime() + 364 * dayMs)); // 52 weeks
+    lyLabelFn = labelFn;
+  } else {
+    // Monthly
+    groupFn   = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    labelFn   = d => fmtMonthLabel(new Date(d + '-01T00:00:00'));
+    lyGroupFn = d => {
+      const ly = new Date(d); ly.setFullYear(ly.getFullYear() - 1);
+      return `${ly.getFullYear()}-${String(ly.getMonth()+1).padStart(2,'0')}`;
+    };
+    lyLabelFn = labelFn;
+  }
+
+  const actRows = filterRows(allRows, fd, td);
+  const lyRows  = filterRows(allRows, lyFd, lyTd);
+
+  const actMap = groupRows(actRows, fd, groupFn);
+  const lyMap  = groupRows(lyRows, lyFd, d => lyGroupFn(d));
+
+  // Build sorted label list from actuals keys
+  const sortedKeys = [...actMap.keys()].sort();
+  const labels   = sortedKeys.map(k => labelFn(k));
+  const actuals  = sortedKeys.map(k => {
+    const g = actMap.get(k);
+    return g.rooms_avail > 0 ? parseFloat((g.revenue / g.rooms_avail).toFixed(2)) : null;
+  });
+  const actualsADR = sortedKeys.map(k => {
+    const g = actMap.get(k);
+    return g.rooms_occ > 0 ? parseFloat((g.revenue / g.rooms_occ).toFixed(2)) : null;
+  });
+  const actualsRev = sortedKeys.map(k => {
+    const g = actMap.get(k);
+    return parseFloat((g.revenue / 1000).toFixed(1));
+  });
+
+  // Match LY by bucket — shift LY keys forward to match current period keys
+  const lyKeysSorted = [...lyMap.keys()].sort();
+  const lyRevpar = sortedKeys.map((k, i) => {
+    // Try matching by index (aligned period)
+    const lyKey = lyKeysSorted[i];
+    if (!lyKey) return null;
+    const g = lyMap.get(lyKey);
+    return g && g.rooms_avail > 0 ? parseFloat((g.revenue / g.rooms_avail).toFixed(2)) : null;
+  });
+  const lyADR = sortedKeys.map((k, i) => {
+    const lyKey = lyKeysSorted[i];
+    if (!lyKey) return null;
+    const g = lyMap.get(lyKey);
+    return g && g.rooms_occ > 0 ? parseFloat((g.revenue / g.rooms_occ).toFixed(2)) : null;
+  });
+  const lyRev = sortedKeys.map((k, i) => {
+    const lyKey = lyKeysSorted[i];
+    if (!lyKey) return null;
+    const g = lyMap.get(lyKey);
+    return g ? parseFloat((g.revenue / 1000).toFixed(1)) : null;
+  });
+
+  return {
+    revpar:   { labels, actuals, budget: labels.map(() => null), ly: lyRevpar, prefix: '$', suffix: '', title: 'RevPAR Trend' },
+    adr:      { labels, actuals: actualsADR, budget: labels.map(() => null), ly: lyADR, prefix: '$', suffix: '', title: 'ADR Trend' },
+    totalrev: { labels, actuals: actualsRev, budget: labels.map(() => null), ly: lyRev, prefix: '$', suffix: 'K', title: 'Total Revenue Trend' },
+  };
+}
+
+// ---- Build a period data object in PORTFOLIO_DATA shape ----
+function buildPeriodData(label, propsSub, trendSub, totalRevLabel, agg, lyAgg, fromDate, toDate) {
+  if (!agg) return null;
+  const p = agg.portfolio;
+  const ly = lyAgg?.portfolio;
+
+  const revparDelta  = fmtDelta(p.revpar,  ly?.revpar);
+  const adrDelta     = fmtDelta(p.adr,     ly?.adr);
+  const occDelta     = fmtDelta(p.occ,     ly?.occ,    true);
+  const revDelta     = fmtDelta(p.revenue, ly?.revenue);
+  const gopDelta     = fmtDelta(p.gop,     ly?.gop);
+  const ebitdaDelta  = fmtDelta(p.ebitda,  ly?.ebitda);
+  const ebitdaMgnDelta = fmtDelta(p.ebitdaMgn, ly?.ebitdaMgn, true);
+
+  // Build chart data if date ranges provided
+  let charts = {
+    revpar:   { labels: [], actuals: [], budget: [], ly: [], prefix: '$', title: 'RevPAR Trend' },
+    adr:      { labels: [], actuals: [], budget: [], ly: [], prefix: '$', title: 'ADR Trend' },
+    totalrev: { labels: [], actuals: [], budget: [], ly: [], prefix: '$', suffix: 'K', title: 'Total Revenue Trend' },
+  };
+  if (fromDate && toDate && window.ALL_ROWS) {
+    charts = buildChartData(window.ALL_ROWS, fromDate, toDate, oneYearAgo(fromDate), oneYearAgo(toDate), null);
+  }
+
+  return {
+    label, propsSub, trendSub, totalRevLabel,
+    revparLabel: 'RevPAR',
+    perfSub: label + ' · Portfolio rollup',
+    kpi: {
+      revpar:   { value: fmtADR(p.revpar),       budget: '—', ly: revparDelta.text,  budgetUp: false, lyUp: revparDelta.up  },
+      adr:      { value: fmtADR(p.adr),           budget: '—', ly: adrDelta.text,     budgetUp: false, lyUp: adrDelta.up     },
+      occ:      { value: fmtPct(p.occ),           budget: '—', ly: occDelta.text,     budgetUp: false, lyUp: occDelta.up     },
+      totalrev: { value: fmtCurrency(p.revenue),  budget: '—', ly: revDelta.text,     budgetUp: false, lyUp: revDelta.up     },
+    },
+    profit: {
+      gop:        { value: fmtCurrency(p.gop),       budget: '—', ly: gopDelta.text,      budgetUp: false, lyUp: gopDelta.up      },
+      ebitda:     { value: fmtCurrency(p.ebitda),    budget: '—', ly: ebitdaDelta.text,   budgetUp: false, lyUp: ebitdaDelta.up   },
+      ebitdaMgn:  { value: fmtPct(p.ebitdaMgn),     budget: '—', ly: ebitdaMgnDelta.text,budgetUp: false, lyUp: ebitdaMgnDelta.up},
+      flowthrough: { value: '—', badge: '—', detail: '—', badgeUp: true },
+    },
+    str: {
+      MPI: { value: '—', delta: '—', up: true },
+      ARI: { value: '—', delta: '—', up: true },
+      RGI: { value: '—', delta: '—', up: true },
+      chartData: { MPI: [], ARI: [], RGI: [] },
+    },
+    perfRows: [],
+    propRows: buildPropRows(agg, lyAgg),
+    charts,
+  };
+}
+
+// ---- Main entry point ----
+async function loadDataAndRun() {
+  // Show loading state
+  document.body.insertAdjacentHTML('afterbegin',
+    '<div id="dvLoading" style="position:fixed;top:0;left:0;width:100%;height:4px;background:var(--accent);z-index:999;animation:shimmer 1.4s infinite;background-size:200% 100%;"></div>'
+  );
+
+  try {
+    const token = await getDataverseToken();
+
+    // Fetch 3 years of data in one shot (paginated)
+    const allRows = await fetchAllRows(token, threeYearsAgo());
+
+    // Define period date ranges
+    const yd = yesterday();
+    const ranges = {
+      yesterday: { from: yd,           to: yd           },
+      wtd:       { from: startOfWeek(), to: yd           },
+      mtd:       { from: startOfMonth(), to: yd          },
+      ytd:       { from: startOfYear(),  to: yd          },
+      '3yr':     { from: threeYearsAgo(), to: yd         },
+    };
+
+    // Build aggregations for each period + same period last year
+    const aggs = {};
+    const lyAggs = {};
+    for (const [period, { from, to }] of Object.entries(ranges)) {
+      aggs[period]   = aggregateRows(allRows, from, to);
+      lyAggs[period] = aggregateRows(allRows, oneYearAgo(from), oneYearAgo(to));
+    }
+
+    // Build PORTFOLIO_DATA
+    const ydStr = yd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    // Store rows globally FIRST so buildChartData can use them
+    window.ALL_ROWS = allRows;
+
+    window.LIVE_PORTFOLIO_DATA = {
+      yesterday: buildPeriodData(
+        `Yesterday · ${ydStr}`, `Yesterday (${ydStr}) · Click row to drill in`,
+        `Daily · ${ydStr} · Actuals vs. Last Year`, 'Total Revenue (Yesterday)',
+        aggs.yesterday, lyAggs.yesterday, ranges.yesterday.from, ranges.yesterday.to
+      ),
+      wtd: buildPeriodData(
+        'Week-to-date', 'Week-to-date · Click row to drill in',
+        'Daily · WTD · Actuals vs. Last Year', 'Total Revenue (WTD)',
+        aggs.wtd, lyAggs.wtd, ranges.wtd.from, ranges.wtd.to
+      ),
+      mtd: buildPeriodData(
+        `Month-to-date · ${yd.toLocaleDateString('en-US',{month:'long',year:'numeric'})}`,
+        'Month-to-date · Click row to drill in',
+        'Daily · MTD · Actuals vs. Last Year', 'Total Revenue (MTD)',
+        aggs.mtd, lyAggs.mtd, ranges.mtd.from, ranges.mtd.to
+      ),
+      ytd: buildPeriodData(
+        `Year-to-date · ${yd.getFullYear()}`, 'Year-to-date · Click row to drill in',
+        'Weekly · YTD · Actuals vs. Last Year', 'Total Revenue (YTD)',
+        aggs.ytd, lyAggs.ytd, ranges.ytd.from, ranges.ytd.to
+      ),
+      '3yr': buildPeriodData(
+        '3-Year Rolling', '3-Year · Click row to drill in',
+        'Quarterly · 3YR · Actuals vs. Prior Period', 'Total Revenue (3YR)',
+        aggs['3yr'], lyAggs['3yr'], ranges['3yr'].from, ranges['3yr'].to
+      ),
+    };
+
+  } catch (err) {
+    console.error('Dataverse load failed:', err);
+    // Fall through to runDashboard with empty data — hardcoded data still works as fallback
+  } finally {
+    document.getElementById('dvLoading')?.remove();
+  }
+
+  runDashboard();
+}
+
+// ========== PORTFOLIO DATA (live from Dataverse) ==========
+// Populated by loadDataAndRun() above; fallback to empty object
+let PORTFOLIO_DATA = {};
+
 
 // ========== ASTOR PROPERTY PERIOD DATA ==========
 const ASTOR_DATA = {
@@ -2164,6 +2297,16 @@ const ASTOR_DATA = {
   }
 };
 
+function runDashboard() {
+// ========== CHART DEFAULTS ==========
+Chart.defaults.color = '#9AA5B8';
+Chart.defaults.borderColor = '#1A222D';
+Chart.defaults.font.family = 'Inter';
+
+const ACCENT = '#D4A574';
+const INFO = '#60A5FA';
+const SUBTLE = '#6B7588';
+
 // ========== STATE ==========
 let currentView = 'portfolio';   // 'portfolio' or 'ASTOR'
 let currentPeriod = 'mtd';
@@ -2237,14 +2380,14 @@ function renderPropRows(rows) {
   if (btn) {
     btn.addEventListener('click', () => {
       propTableExpanded = !propTableExpanded;
-      const d = PORTFOLIO_DATA[currentPeriod];
+      const d = (window.LIVE_PORTFOLIO_DATA || {})[currentPeriod] || PORTFOLIO_DATA[currentPeriod];
       if (d) renderPropRows(d.propRows);
     });
   }
 })();
 
 function applyPortfolioPeriod(p) {
-  const d = PORTFOLIO_DATA[p];
+  const d = (window.LIVE_PORTFOLIO_DATA || {})[p] || PORTFOLIO_DATA[p];
   if (!d) return;
 
   // KPI cards
@@ -2381,7 +2524,7 @@ function setPropProfitRow(gop, ebitda, ebitdaMgn, yoy) {
 }
 
 function applyPropertyPeriod(p) {
-  const periodData = PORTFOLIO_DATA[p];
+  const periodData = (window.LIVE_PORTFOLIO_DATA || {})[p] || PORTFOLIO_DATA[p];
   const isASTOR = (currentView === 'ASTOR');
   const d = isASTOR ? ASTOR_DATA[p] : null;
 
@@ -2615,35 +2758,6 @@ function applyPeriod(p) {
 }
 
 // Static metadata for all 26 properties — keyed by actual propRow codes
-const PROPERTY_META = {
-  ASTOR:   { name: 'Holiday Inn Express Astoria',              brand: 'IHG',      brandType: 'Holiday Inn Express',     address: '38-05 Northern Blvd, Astoria, NY',  type: 'Limited-service', rooms: 134, gm: 'Sarah Chen' },
-  BNAGV:   { name: 'Tru by Hilton Goodlettsville Nashville',   brand: 'Hilton',   brandType: 'Tru by Hilton',           address: 'Goodlettsville, TN',                type: 'Limited-service', rooms: 98,  gm: 'Marcus Johnson' },
-  BOIGI:   { name: 'Hilton Garden Inn Boise Spectrum',         brand: 'Hilton',   brandType: 'Hilton Garden Inn',       address: 'Boise, ID',                         type: 'Select-service',  rooms: 137, gm: 'Lisa Park' },
-  BOIRI:   { name: 'Residence Inn by Marriott Boise',          brand: 'Marriott', brandType: 'Residence Inn',           address: 'Boise, ID',                         type: 'Extended-stay',   rooms: 104, gm: 'David Kim' },
-  BOISH:   { name: 'Springhill Suites Boise West Eagle',       brand: 'Marriott', brandType: 'Springhill Suites',       address: 'Eagle, ID',                         type: 'Extended-stay',   rooms: 119, gm: 'Rachel Torres' },
-  BOISP:   { name: 'Hampton Inn & Suites Boise Spectrum',      brand: 'Hilton',   brandType: 'Hampton Inn & Suites',    address: 'Boise, ID',                         type: 'Select-service',  rooms: 133, gm: 'Carlos Reyes' },
-  BZNFC:   { name: 'Home2 Suites Bozeman Four Corners',        brand: 'Hilton',   brandType: 'Home2 Suites',            address: 'Bozeman, MT',                       type: 'Extended-stay',   rooms: 100, gm: 'Amy Wilson' },
-  CDAID:   { name: 'Hampton Inn & Suites Coeur d\'Alene',      brand: 'Hilton',   brandType: 'Hampton Inn & Suites',    address: 'Coeur d\'Alene, ID',                type: 'Select-service',  rooms: 124, gm: 'Tom Bradley' },
-  DALFB:   { name: 'DoubleTree Dallas-Farmers Branch',         brand: 'Hilton',   brandType: 'DoubleTree',              address: 'Farmers Branch, TX',                type: 'Full-service',    rooms: 160, gm: 'Nina Patel' },
-  LASET:   { name: 'Hampton Inn & Suites Las Vegas Airport',   brand: 'Hilton',   brandType: 'Hampton Inn & Suites',    address: 'Las Vegas, NV',                     type: 'Select-service',  rooms: 129, gm: 'James Carter' },
-  LASHE:   { name: 'Hilton Garden Inn Henderson',              brand: 'Hilton',   brandType: 'Hilton Garden Inn',       address: 'Henderson, NV',                     type: 'Select-service',  rooms: 139, gm: 'Diane Moore' },
-  LG52840: { name: 'La Quinta Inn Twin Falls',                 brand: 'Wyndham',  brandType: 'La Quinta',               address: 'Twin Falls, ID',                    type: 'Limited-service', rooms: 101, gm: 'Steve Allen' },
-  LQ52836: { name: 'La Quinta Inn Coeur d\'Alene',             brand: 'Wyndham',  brandType: 'La Quinta',               address: 'Coeur d\'Alene, ID',                type: 'Limited-service', rooms: 118, gm: 'Maria Garcia' },
-  MSOGI:   { name: 'Hilton Garden Inn Missoula',               brand: 'Hilton',   brandType: 'Hilton Garden Inn',       address: 'Missoula, MT',                      type: 'Select-service',  rooms: 146, gm: 'Brian Lee' },
-  OR113:   { name: 'Comfort Suites Redmond Airport',           brand: 'Choice',   brandType: 'Comfort Suites',          address: 'Redmond, OR',                       type: 'Limited-service', rooms: 92,  gm: 'Sandra White' },
-  PDXRE:   { name: 'River\'s Edge Portland, Tapestry Collection', brand: 'IHG',  brandType: 'Tapestry Collection',     address: 'Portland, OR',                      type: 'Full-service',    rooms: 112, gm: 'Kevin Brown' },
-  PDXSH:   { name: 'Hampton Inn & Suites Sherwood',            brand: 'Hilton',   brandType: 'Hampton Inn & Suites',    address: 'Sherwood, OR',                      type: 'Select-service',  rooms: 73,  gm: 'Julie Chen' },
-  PDXTG:   { name: 'Hampton Inn & Suites Portland Tigard',     brand: 'Hilton',   brandType: 'Hampton Inn & Suites',    address: 'Tigard, OR',                        type: 'Select-service',  rooms: 152, gm: 'Paul Davis' },
-  PHXRU:   { name: 'Tru by Hilton Gilbert',                    brand: 'Hilton',   brandType: 'Tru by Hilton',           address: 'Gilbert, AZ',                       type: 'Limited-service', rooms: 98,  gm: 'Megan Hill' },
-  RDMBE:   { name: 'Hampton Inn & Suites Bend',                brand: 'Hilton',   brandType: 'Hampton Inn & Suites',    address: 'Bend, OR',                          type: 'Select-service',  rooms: 114, gm: 'Robert Flores' },
-  RDMBO:   { name: 'Hilton Garden Inn Bend',                   brand: 'Hilton',   brandType: 'Hilton Garden Inn',       address: 'Bend, OR',                          type: 'Select-service',  rooms: 96,  gm: 'Cindy Adams' },
-  RDMNB:   { name: 'The Newberry Bend',                        brand: 'IHG',      brandType: 'Tapestry Collection',     address: 'Bend, OR',                          type: 'Full-service',    rooms: 117, gm: 'Frank Scott' },
-  SCCDT:   { name: 'DoubleTree Spokane City Center',           brand: 'Hilton',   brandType: 'DoubleTree',              address: 'Spokane, WA',                       type: 'Full-service',    rooms: 375, gm: 'Laura Evans' },
-  SLCDW:   { name: 'Hilton Garden Inn SLC Downtown',           brand: 'Hilton',   brandType: 'Hilton Garden Inn',       address: 'Salt Lake City, UT',                type: 'Select-service',  rooms: 132, gm: 'Michael Young' },
-  SLCLE:   { name: 'Springhill Suites Lehi',                   brand: 'Marriott', brandType: 'Springhill Suites',       address: 'Lehi, UT',                          type: 'Extended-stay',   rooms: 94,  gm: 'Patricia King' },
-  SLCLI:   { name: 'Courtyard by Marriott Lehi',               brand: 'Marriott', brandType: 'Courtyard',               address: 'Lehi, UT',                          type: 'Select-service',  rooms: 97,  gm: 'Daniel Cruz' }
-};
-
 window.switchView = function(v) {
   currentView = v;
   // Sync dropdown
@@ -2965,7 +3079,7 @@ let currentTrendMetric = 'revpar';
 function updateTrendMetric(metric) {
   currentTrendMetric = metric;
   if (currentView !== 'portfolio') return;
-  const d = PORTFOLIO_DATA[currentPeriod];
+  const d = (window.LIVE_PORTFOLIO_DATA || {})[currentPeriod] || PORTFOLIO_DATA[currentPeriod];
   if (!d || !d.charts) return;
   const cd = d.charts[metric];
   if (!cd) return;
