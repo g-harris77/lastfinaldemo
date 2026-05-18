@@ -1715,16 +1715,21 @@ function toDateStr(d) {
   const dd   = String(d.getDate()).padStart(2, '0');
   return `${yyyy}-${mm}-${dd}`;
 }
-// Anchor date — defaults to yesterday (most recent complete data)
-window._anchorDate = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return d; })();
+// Anchor date = the "as of" date shown to the user (most recent complete business day).
+// Defaults to yesterday since today's data isn't written yet.
+window._anchorDate = (() => { const d = new Date(); d.setDate(d.getDate() - 1); d.setHours(0,0,0,0); return d; })();
+
+// today() returns anchor+1 because PA stamps each row with the NEXT day.
+// To fetch anchor date's actuals, we need the stamp from anchor+1.
 function today() {
   const d = new Date(window._anchorDate);
+  d.setDate(d.getDate() + 1); // stamp is one day ahead of business date
   d.setHours(0, 0, 0, 0);
   return d;
 }
+// yesterday() = the anchor date itself — used for display labels
 function yesterday() {
   const d = new Date(window._anchorDate);
-  d.setDate(d.getDate() - 1);
   d.setHours(0, 0, 0, 0);
   return d;
 }
