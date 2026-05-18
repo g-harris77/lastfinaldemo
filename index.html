@@ -2344,11 +2344,12 @@ async function loadDataAndRun() {
       const t7dStart    = shiftDay(yd, -6); // trailing 7 business days ending yesterday
       const t7dStartStr = fmtShort(t7dStart);
 
-      // Update "As of" labels (header + control bar)
+      // Update "As of" labels — show the anchor date itself (what the user picked)
+      const anchorStr = window._anchorDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
       const asOfDateEl = document.getElementById('asOfDate');
-      if (asOfDateEl) asOfDateEl.textContent = ydStr;
+      if (asOfDateEl) asOfDateEl.textContent = anchorStr;
       const asOfHeaderEl = document.getElementById('asOfDateHeader');
-      if (asOfHeaderEl) asOfHeaderEl.textContent = ydStr;
+      if (asOfHeaderEl) asOfHeaderEl.textContent = anchorStr;
 
       // Highlight button if using a custom date
       const isCustom = toDateStr(window._anchorDate) !== toDateStr(new Date());
