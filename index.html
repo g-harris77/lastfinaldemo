@@ -1100,7 +1100,7 @@
   <div class="control-group">
     <span class="control-label">Period</span>
     <div class="seg" id="periodSeg">
-      <button data-p="yesterday">Yesterday</button>
+      <button data-p="yesterday">Day</button>
       <button data-p="wtd">T7D</button>
       <button data-p="mtd" class="active">MTD</button>
       <button data-p="ytd">YTD</button>
@@ -2241,7 +2241,7 @@ function buildPropertyLiveData(tag, allRows, ranges) {
     const ebitdaDelta   = fmtDelta(p.ebitda,   ly?.ebitda);
     const ebitdaMgnDelta= fmtDelta(p.ebitdaMgn,ly?.ebitdaMgn,true);
 
-    const periodLabels = { yesterday: `Yesterday · ${ydStr}`, wtd: 'Trailing 7 days', mtd: 'Month-to-date', ytd: `Year-to-date · ${yd.getFullYear()}`, '3yr': '3-Year Rolling' };
+    const periodLabels = { yesterday: `${ydStr}`, wtd: 'Trailing 7 days', mtd: 'Month-to-date', ytd: `Year-to-date · ${yd.getFullYear()}`, '3yr': '3-Year Rolling' };
 
     // Charts: property-specific trend
     let charts = { revpar: { labels:[], actuals:[], budget:[], ly:[], prefix:'$', title:'RevPAR Trend' },
@@ -2389,8 +2389,8 @@ async function loadDataAndRun() {
 
       window.LIVE_PORTFOLIO_DATA = {
         yesterday: buildPeriodData(
-          `Yesterday · ${ydStr}`, `Yesterday (${ydStr}) · Click row to drill in`,
-          `Daily · ${ydStr} · Actuals vs. Last Year`, 'Total Revenue (Yesterday)',
+          `${ydStr}`, `${ydStr} · Click row to drill in`,
+          `Daily · ${ydStr} · Actuals vs. Last Year`, 'Total Revenue (Day)',
           aggs.yesterday, lyAggs.yesterday, ranges.yesterday.from, ranges.yesterday.to
         ),
         wtd: buildPeriodData(
@@ -2450,7 +2450,7 @@ const ASTOR_DATA = {
     perfSub: "Yesterday · ASTOR",
     trendSub: "Hourly · Apr 27 · Actuals vs. Budget vs. LY",
     deptSub: "Yesterday · Apr 27, 2026",
-    totalRevLabel: "Total Revenue (Yesterday)",
+    totalRevLabel: "Total Revenue (Day)",
     kpi: {
       revpar: { value: '$156.20', budget: '+5.2%', ly: '+13.8%', budgetUp: true, lyUp: true },
       adr: { value: '$182.50', budget: '+2.4%', ly: '+5.6%', budgetUp: true, lyUp: true },
@@ -2856,7 +2856,7 @@ function updatePropCompSet(d, period) {
   const compSetNote = document.getElementById('propCompSetNote');
   // Periods where comp set data is valid (4-day lag means Yesterday/WTD unreliable)
   const csValidPeriods = ['mtd', 'ytd', '3yr'];
-  const csNote = { yesterday: 'Comp set data arrives 4 days late — not available for Yesterday.', wtd: 'Comp set data arrives 4 days late — showing partial WTD data only.' };
+  const csNote = { yesterday: 'Comp set data arrives ~8 days late — not available for this day.', wtd: 'Comp set data arrives ~8 days late — showing partial T7D data only.' };
 
   if (compSetNote) {
     compSetNote.textContent = csNote[period] || '';
@@ -2930,7 +2930,7 @@ function applyPropertyPeriod(p) {
     setVal('a.occ.value', d.kpi.occ.value);
     setDlt('a.occ.budget', d.kpi.occ.budget, d.kpi.occ.budgetUp);
     setDlt('a.occ.ly', d.kpi.occ.ly, d.kpi.occ.lyUp);
-    const periodLabel = { yesterday: 'Total Revenue (Yesterday)', wtd: 'Total Revenue (WTD)', mtd: 'Total Revenue (MTD)', ytd: 'Total Revenue (YTD)', '3yr': 'Total Revenue (3YR)' }[p] || 'Total Revenue';
+    const periodLabel = { yesterday: 'Total Revenue (Day)', wtd: 'Total Revenue (WTD)', mtd: 'Total Revenue (MTD)', ytd: 'Total Revenue (YTD)', '3yr': 'Total Revenue (3YR)' }[p] || 'Total Revenue';
     setVal('a.totalrev.label', periodLabel);
     setVal('a.totalrev.value', d.kpi.totalrev.value);
     setDlt('a.totalrev.budget', d.kpi.totalrev.budget, d.kpi.totalrev.budgetUp);
