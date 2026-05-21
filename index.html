@@ -1879,13 +1879,14 @@ function aggregateRows(rows, fromDate, toDate) {
     // ARI = (property ADR / comp set ADR) * 100
     // Use raw comp set rev/occ fields for full precision (cr2cd_adrcompset is rounded)
     // Use cr2cd_aricalculated (computed in Dataverse from COMPPRP/COMPSET) — average over days where it exists
-    const ariRows = propRows.filter(r => r.cr2cd_aricalculated != null && r.cr2cd_aricalculated > 0);
+    const propAriRows = propRows.filter(r => r.cr2cd_compprproomsrevenue != null && r.cr2cd_compprpoccupied > 0);
+    const csAriRows   = propRows.filter(r => r.cr2cd_compset_total_rooms  != null && r.cr2cd_compset_occupancy_pct > 0);
     let csADR = 0, ari = null;
-    if (ariRows.length > 0) {
-      const totalPropRev = ariRows.reduce((a, r) => a + (r.cr2cd_compprproomsrevenue || 0), 0);
-      const totalPropOcc = ariRows.reduce((a, r) => a + (r.cr2cd_compprpoccupied || 0), 0);
-      const totalCsRev = ariRows.reduce((a, r) => a + (r.cr2cd_compset_total_rooms || 0), 0);
-      const totalCsOcc = ariRows.reduce((a, r) => a + (r.cr2cd_compset_occupancy_pct || 0), 0);
+    if (propAriRows.length > 0 && csAriRows.length > 0) {
+      const totalPropRev = propAriRows.reduce((a, r) => a + (r.cr2cd_compprproomsrevenue || 0), 0);
+      const totalPropOcc = propAriRows.reduce((a, r) => a + (r.cr2cd_compprpoccupied || 0), 0);
+      const totalCsRev = csAriRows.reduce((a, r) => a + (r.cr2cd_compset_total_rooms || 0), 0);
+      const totalCsOcc = csAriRows.reduce((a, r) => a + (r.cr2cd_compset_occupancy_pct || 0), 0);
       csADR = totalCsOcc > 0 ? totalCsRev / totalCsOcc : 0;
       ari = (totalPropOcc > 0 && totalCsOcc > 0)
         ? (totalPropRev / totalPropOcc) / (totalCsRev / totalCsOcc) * 100
@@ -2214,13 +2215,14 @@ function buildPropertyLiveData(tag, allRows, ranges) {
       const ebitdaMgn = revenue   > 0 ? ebitda  / revenue  : 0;
       const gopMgn    = revenue   > 0 ? gop     / revenue  : 0;
       // ARI: use cr2cd_aricalculated (computed in Dataverse from COMPPRP/COMPSET) — average over days where it exists
-      const ariRows = rows.filter(r => r.cr2cd_aricalculated != null && r.cr2cd_aricalculated > 0);
+      const propAriRows = rows.filter(r => r.cr2cd_compprproomsrevenue != null && r.cr2cd_compprpoccupied > 0);
+      const csAriRows   = rows.filter(r => r.cr2cd_compset_total_rooms  != null && r.cr2cd_compset_occupancy_pct > 0);
       let csADR = 0, ari = null;
-      if (ariRows.length > 0) {
-        const totalPropRev = ariRows.reduce((a, r) => a + (r.cr2cd_compprproomsrevenue || 0), 0);
-        const totalPropOcc = ariRows.reduce((a, r) => a + (r.cr2cd_compprpoccupied || 0), 0);
-        const totalCsRev = ariRows.reduce((a, r) => a + (r.cr2cd_compset_total_rooms || 0), 0);
-        const totalCsOcc = ariRows.reduce((a, r) => a + (r.cr2cd_compset_occupancy_pct || 0), 0);
+      if (propAriRows.length > 0 && csAriRows.length > 0) {
+        const totalPropRev = propAriRows.reduce((a, r) => a + (r.cr2cd_compprproomsrevenue || 0), 0);
+        const totalPropOcc = propAriRows.reduce((a, r) => a + (r.cr2cd_compprpoccupied || 0), 0);
+        const totalCsRev = csAriRows.reduce((a, r) => a + (r.cr2cd_compset_total_rooms || 0), 0);
+        const totalCsOcc = csAriRows.reduce((a, r) => a + (r.cr2cd_compset_occupancy_pct || 0), 0);
         csADR = totalCsOcc > 0 ? totalCsRev / totalCsOcc : 0;
         ari = (totalPropOcc > 0 && totalCsOcc > 0)
           ? (totalPropRev / totalPropOcc) / (totalCsRev / totalCsOcc) * 100
