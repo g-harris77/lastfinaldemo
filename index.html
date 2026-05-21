@@ -1880,10 +1880,14 @@ function aggregateRows(rows, fromDate, toDate) {
     const ariRows = propRows.filter(r => r.cr2cd_aricalculated != null && r.cr2cd_aricalculated > 0);
     let csADR = 0, ari = null;
     if (ariRows.length > 0) {
-      ari = ariRows.reduce((a, r) => a + r.cr2cd_aricalculated, 0) / ariRows.length;
+      const totalPropRev = ariRows.reduce((a, r) => a + (r.cr2cd_COMPPRPRoomsRevenue || 0), 0);
+      const totalPropOcc = ariRows.reduce((a, r) => a + (r.cr2cd_COMPPRPOccupied || 0), 0);
       const totalCsRev = ariRows.reduce((a, r) => a + (r.cr2cd_compset_total_rooms || 0), 0);
       const totalCsOcc = ariRows.reduce((a, r) => a + (r.cr2cd_compset_occupancy_pct || 0), 0);
       csADR = totalCsOcc > 0 ? totalCsRev / totalCsOcc : 0;
+      ari = (totalPropOcc > 0 && totalCsOcc > 0)
+        ? (totalPropRev / totalPropOcc) / (totalCsRev / totalCsOcc) * 100
+        : null;
     }
     const mpi         = null;
     const rgi         = null;
@@ -2211,10 +2215,14 @@ function buildPropertyLiveData(tag, allRows, ranges) {
       const ariRows = rows.filter(r => r.cr2cd_aricalculated != null && r.cr2cd_aricalculated > 0);
       let csADR = 0, ari = null;
       if (ariRows.length > 0) {
-        ari = ariRows.reduce((a, r) => a + r.cr2cd_aricalculated, 0) / ariRows.length;
+        const totalPropRev = ariRows.reduce((a, r) => a + (r.cr2cd_COMPPRPRoomsRevenue || 0), 0);
+        const totalPropOcc = ariRows.reduce((a, r) => a + (r.cr2cd_COMPPRPOccupied || 0), 0);
         const totalCsRev = ariRows.reduce((a, r) => a + (r.cr2cd_compset_total_rooms || 0), 0);
         const totalCsOcc = ariRows.reduce((a, r) => a + (r.cr2cd_compset_occupancy_pct || 0), 0);
         csADR = totalCsOcc > 0 ? totalCsRev / totalCsOcc : 0;
+        ari = (totalPropOcc > 0 && totalCsOcc > 0)
+          ? (totalPropRev / totalPropOcc) / (totalCsRev / totalCsOcc) * 100
+          : null;
       }
       return { occupied, available, revenue, gop, ebitda, noi, adr, revpar, occ, ebitdaMgn, gopMgn, csADR, ari };
     }
