@@ -1795,6 +1795,7 @@ async function fetchAllRows(token, fromDate) {
     'cr2cd_occupancy_pct',
     'cr2cd_ebitdamargin',
     'cr2cd_adrcompset',
+    'cr2cd_aricalculated',
   ].join(',');
 
   let url = `${DATAVERSE_URL}/api/data/v9.2/${TABLE}?$filter=${encodeURIComponent(dateFilter)}&$select=${select}&$orderby=cr2cd_date asc&$top=5000`;
@@ -1875,20 +1876,13 @@ function aggregateRows(rows, fromDate, toDate) {
     const gopMgn      = revenue    > 0 ? gop     / revenue   : 0;
     // ARI = (property ADR / comp set ADR) * 100
     // Use raw comp set rev/occ fields for full precision (cr2cd_adrcompset is rounded)
-    // Only use days where comp set data exists (~8-day lag from STR)
-    // Compute daily ARI for each day, then simple average to match PS methodology
-    const csRows = propRows.filter(r => r.cr2cd_compset_total_rooms && r.cr2cd_compset_occupancy_pct);
+    // Use cr2cd_aricalculated (computed in Dataverse from COMPPRP/COMPSET) — average over days where it exists
+    const ariRows = propRows.filter(r => r.cr2cd_aricalculated != null && r.cr2cd_aricalculated > 0);
     let csADR = 0, ari = null;
-    if (csRows.length > 0) {
-      const dailyARIs = csRows.map(r => {
-        // Use cr2cd_total_revenue (Total Rooms Revenue) for property rate — matches PS ARI methodology
-        const myDailyRate = r.cr2cd_occupied_rooms > 0 ? (r.cr2cd_total_revenue || r.cr2cd_total_rooms) / r.cr2cd_occupied_rooms : 0;
-        const csDailyADR = r.cr2cd_compset_total_rooms / r.cr2cd_compset_occupancy_pct;
-        return csDailyADR > 0 ? (myDailyRate / csDailyADR) * 100 : null;
-      }).filter(v => v !== null);
-      ari = dailyARIs.length > 0 ? dailyARIs.reduce((a, b) => a + b, 0) / dailyARIs.length : null;
-      const totalCsRev = csRows.reduce((a, r) => a + r.cr2cd_compset_total_rooms, 0);
-      const totalCsOcc = csRows.reduce((a, r) => a + r.cr2cd_compset_occupancy_pct, 0);
+    if (ariRows.length > 0) {
+      ari = ariRows.reduce((a, r) => a + r.cr2cd_aricalculated, 0) / ariRows.length;
+      const totalCsRev = ariRows.reduce((a, r) => a + (r.cr2cd_compset_total_rooms || 0), 0);
+      const totalCsOcc = ariRows.reduce((a, r) => a + (r.cr2cd_compset_occupancy_pct || 0), 0);
       csADR = totalCsOcc > 0 ? totalCsRev / totalCsOcc : 0;
     }
     const mpi         = null;
@@ -2213,18 +2207,13 @@ function buildPropertyLiveData(tag, allRows, ranges) {
       const occ       = available > 0 ? occupied / available : 0;
       const ebitdaMgn = revenue   > 0 ? ebitda  / revenue  : 0;
       const gopMgn    = revenue   > 0 ? gop     / revenue  : 0;
-      // ARI: use raw comp set rev/occ for full precision, average daily ARIs to match PS
-      const csRows = rows.filter(r => r.cr2cd_compset_total_rooms && r.cr2cd_compset_occupancy_pct);
+      // ARI: use cr2cd_aricalculated (computed in Dataverse from COMPPRP/COMPSET) — average over days where it exists
+      const ariRows = rows.filter(r => r.cr2cd_aricalculated != null && r.cr2cd_aricalculated > 0);
       let csADR = 0, ari = null;
-      if (csRows.length > 0) {
-        const dailyARIs = csRows.map(r => {
-          const myDailyRate = r.cr2cd_occupied_rooms > 0 ? (r.cr2cd_total_revenue || r.cr2cd_total_rooms) / r.cr2cd_occupied_rooms : 0;
-          const csDailyADR = r.cr2cd_compset_total_rooms / r.cr2cd_compset_occupancy_pct;
-          return csDailyADR > 0 ? (myDailyRate / csDailyADR) * 100 : null;
-        }).filter(v => v !== null);
-        ari = dailyARIs.length > 0 ? dailyARIs.reduce((a, b) => a + b, 0) / dailyARIs.length : null;
-        const totalCsRev = csRows.reduce((a, r) => a + r.cr2cd_compset_total_rooms, 0);
-        const totalCsOcc = csRows.reduce((a, r) => a + r.cr2cd_compset_occupancy_pct, 0);
+      if (ariRows.length > 0) {
+        ari = ariRows.reduce((a, r) => a + r.cr2cd_aricalculated, 0) / ariRows.length;
+        const totalCsRev = ariRows.reduce((a, r) => a + (r.cr2cd_compset_total_rooms || 0), 0);
+        const totalCsOcc = ariRows.reduce((a, r) => a + (r.cr2cd_compset_occupancy_pct || 0), 0);
         csADR = totalCsOcc > 0 ? totalCsRev / totalCsOcc : 0;
       }
       return { occupied, available, revenue, gop, ebitda, noi, adr, revpar, occ, ebitdaMgn, gopMgn, csADR, ari };
