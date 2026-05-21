@@ -1796,6 +1796,8 @@ async function fetchAllRows(token, fromDate) {
     'cr2cd_ebitdamargin',
     'cr2cd_adrcompset',
     'cr2cd_aricalculated',
+    'cr2cd_compprproomsrevenue',
+    'cr2cd_compprpoccupied',
   ].join(',');
 
   let url = `${DATAVERSE_URL}/api/data/v9.2/${TABLE}?$filter=${encodeURIComponent(dateFilter)}&$select=${select}&$orderby=cr2cd_date asc&$top=5000`;
@@ -1880,8 +1882,8 @@ function aggregateRows(rows, fromDate, toDate) {
     const ariRows = propRows.filter(r => r.cr2cd_aricalculated != null && r.cr2cd_aricalculated > 0);
     let csADR = 0, ari = null;
     if (ariRows.length > 0) {
-      const totalPropRev = ariRows.reduce((a, r) => a + (r.cr2cd_COMPPRPRoomsRevenue || 0), 0);
-      const totalPropOcc = ariRows.reduce((a, r) => a + (r.cr2cd_COMPPRPOccupied || 0), 0);
+      const totalPropRev = ariRows.reduce((a, r) => a + (r.cr2cd_compprproomsrevenue || 0), 0);
+      const totalPropOcc = ariRows.reduce((a, r) => a + (r.cr2cd_compprpoccupied || 0), 0);
       const totalCsRev = ariRows.reduce((a, r) => a + (r.cr2cd_compset_total_rooms || 0), 0);
       const totalCsOcc = ariRows.reduce((a, r) => a + (r.cr2cd_compset_occupancy_pct || 0), 0);
       csADR = totalCsOcc > 0 ? totalCsRev / totalCsOcc : 0;
@@ -2215,8 +2217,8 @@ function buildPropertyLiveData(tag, allRows, ranges) {
       const ariRows = rows.filter(r => r.cr2cd_aricalculated != null && r.cr2cd_aricalculated > 0);
       let csADR = 0, ari = null;
       if (ariRows.length > 0) {
-        const totalPropRev = ariRows.reduce((a, r) => a + (r.cr2cd_COMPPRPRoomsRevenue || 0), 0);
-        const totalPropOcc = ariRows.reduce((a, r) => a + (r.cr2cd_COMPPRPOccupied || 0), 0);
+        const totalPropRev = ariRows.reduce((a, r) => a + (r.cr2cd_compprproomsrevenue || 0), 0);
+        const totalPropOcc = ariRows.reduce((a, r) => a + (r.cr2cd_compprpoccupied || 0), 0);
         const totalCsRev = ariRows.reduce((a, r) => a + (r.cr2cd_compset_total_rooms || 0), 0);
         const totalCsOcc = ariRows.reduce((a, r) => a + (r.cr2cd_compset_occupancy_pct || 0), 0);
         csADR = totalCsOcc > 0 ? totalCsRev / totalCsOcc : 0;
