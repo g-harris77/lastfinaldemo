@@ -1676,6 +1676,7 @@ msalInstance.initialize().then(() => {
 const DATAVERSE_URL = 'https://org185b8cca.api.crm.dynamics.com';
 const DATAVERSE_SCOPE = 'https://org185b8cca.crm.dynamics.com/.default';
 const TABLE = 'cr2cd_daily_metricses';
+const BUDGET_TABLE = 'cr2cd_dailybudgets';
 
 // Static property metadata
 const PROPERTY_META = {
@@ -1820,6 +1821,87 @@ async function fetchAllRows(token, fromDate) {
     url = data['@odata.nextLink'] || null;
   }
   return allRows;
+}
+
+async function fetchBudgetRows(token, fromDate) {
+  const dateFilter = `cr2cd_date ge ${toDateStr(fromDate)}`;
+  const select = [
+    'cr2cd_sitetag',
+    'cr2cd_date',
+    'cr2cd_availablerooms',
+    'cr2cd_occupiedrooms',
+    'cr2cd_occupancy_percent',
+    'cr2cd_adr_property',
+    'cr2cd_revparproperty',
+    'cr2cd_totalrooms',
+    'cr2cd_totalrevenue',
+    'cr2cd_departmentsales',
+    'cr2cd_noi',
+    'cr2cd_gop',
+    'cr2cd_ebitda',
+  ].join(',');
+
+  let url = `${DATAVERSE_URL}/api/data/v9.2/${BUDGET_TABLE}?$filter=${encodeURIComponent(dateFilter)}&$select=${select}&$orderby=cr2cd_date asc&$top=5000`;
+  let allRows = [];
+
+  while (url) {
+    const resp = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'OData-MaxVersion': '4.0',
+        'OData-Version': '4.0',
+        'Accept': 'application/json',
+        'Prefer': 'odata.maxpagesize=5000',
+      }
+    });
+    if (!resp.ok) { console.warn(`Budget fetch failed: ${resp.status}`); break; }
+    const data = await resp.json();
+    allRows = allRows.concat(data.value);
+    url = data['@odata.nextLink'] || null;
+  }
+  return allRows;
+}
+
+// Aggregate budget rows for a date range, grouped by portfolio
+function aggregateBudgetRows(rows, fromDate, toDate) {
+  const from = toDateStr(fromDate);
+  const to   = toDateStr(toDate);
+  const filtered = rows.filter(r => {
+    const d = (r.cr2cd_date || '').slice(0, 10);
+    return d >= from && d <= to;
+  });
+  if (!filtered.length) return null;
+
+  let occupied = 0, available = 0, revenue = 0, departmentsales = 0, gop = 0, ebitda = 0, noi = 0;
+  for (const r of filtered) {
+    occupied      += r.cr2cd_occupiedrooms   || 0;
+    available     += r.cr2cd_availablerooms  || 0;
+    revenue       += r.cr2cd_totalrevenue    || 0;
+    departmentsales += r.cr2cd_departmentsales || 0;
+    gop           += r.cr2cd_gop            || 0;
+    ebitda        += r.cr2cd_ebitda         || 0;
+    noi           += r.cr2cd_noi            || 0;
+  }
+  const occ    = available > 0 ? occupied / available : 0;
+  const adr    = occupied  > 0 ? revenue  / occupied  : 0;
+  const revpar = available > 0 ? revenue  / available : 0;
+  const ebitdaMgn = departmentsales > 0 ? ebitda / departmentsales : 0;
+  const gopMgn    = departmentsales > 0 ? gop    / departmentsales : 0;
+
+  return { occupied, available, revenue, departmentsales, gop, ebitda, noi, occ, adr, revpar, ebitdaMgn, gopMgn };
+}
+
+// Format a budget variance delta (actual vs budget)
+function fmtBudgetDelta(actual, budget, isPoints = false) {
+  if (!budget || !actual) return { text: '—', up: null };
+  if (isPoints) {
+    const pts = (actual - budget) * 100;
+    const up = actual >= budget;
+    return { text: (up ? '+' : '') + pts.toFixed(1) + 'pts', up };
+  }
+  const pct = ((actual - budget) / Math.abs(budget)) * 100;
+  const up = actual >= budget;
+  return { text: (up ? '+' : '') + pct.toFixed(1) + '%', up };
 }
 
 // Extract property code from property_name field e.g. "LQ52836 – La Quinta..." → "LQ52836"
@@ -2101,10 +2183,11 @@ function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag
 }
 
 // ---- Build a period data object in PORTFOLIO_DATA shape ----
-function buildPeriodData(label, propsSub, trendSub, totalRevLabel, agg, lyAgg, fromDate, toDate) {
+function buildPeriodData(label, propsSub, trendSub, totalRevLabel, agg, lyAgg, fromDate, toDate, budgetAgg) {
   if (!agg) return null;
   const p = agg.portfolio;
   const ly = lyAgg?.portfolio;
+  const b = budgetAgg || null;
 
   const revparDelta  = fmtDelta(p.revpar,  ly?.revpar);
   const adrDelta     = fmtDelta(p.adr,     ly?.adr);
@@ -2113,6 +2196,14 @@ function buildPeriodData(label, propsSub, trendSub, totalRevLabel, agg, lyAgg, f
   const gopDelta     = fmtDelta(p.gop,     ly?.gop);
   const ebitdaDelta  = fmtDelta(p.ebitda,  ly?.ebitda);
   const ebitdaMgnDelta = fmtDelta(p.ebitdaMgn, ly?.ebitdaMgn, true);
+
+  const revparBudget   = fmtBudgetDelta(p.revpar,    b?.revpar);
+  const adrBudget      = fmtBudgetDelta(p.adr,       b?.adr);
+  const occBudget      = fmtBudgetDelta(p.occ,       b?.occ,      true);
+  const revBudget      = fmtBudgetDelta(p.revenue,   b?.revenue);
+  const gopBudget      = fmtBudgetDelta(p.gop,       b?.gop);
+  const ebitdaBudget   = fmtBudgetDelta(p.ebitda,    b?.ebitda);
+  const ebitdaMgnBudget = fmtBudgetDelta(p.ebitdaMgn, b?.ebitdaMgn, true);
 
   // Build chart data if date ranges provided
   let charts = {
@@ -2150,15 +2241,15 @@ function buildPeriodData(label, propsSub, trendSub, totalRevLabel, agg, lyAgg, f
     revparLabel: 'RevPAR',
     perfSub: label + ' · Portfolio rollup',
     kpi: {
-      revpar:   { value: fmtADR(p.revpar),       budget: '—', ly: revparDelta.text,  budgetUp: false, lyUp: revparDelta.up  },
-      adr:      { value: fmtADR(p.adr),           budget: '—', ly: adrDelta.text,     budgetUp: false, lyUp: adrDelta.up     },
-      occ:      { value: fmtPct(p.occ),           budget: '—', ly: occDelta.text,     budgetUp: false, lyUp: occDelta.up     },
-      totalrev: { value: fmtCurrency(p.revenue, false),  budget: '—', ly: revDelta.text,     budgetUp: false, lyUp: revDelta.up     },
+      revpar:   { value: fmtADR(p.revpar),              budget: revparBudget.text,    ly: revparDelta.text,     budgetUp: revparBudget.up,    lyUp: revparDelta.up  },
+      adr:      { value: fmtADR(p.adr),                budget: adrBudget.text,       ly: adrDelta.text,        budgetUp: adrBudget.up,       lyUp: adrDelta.up     },
+      occ:      { value: fmtPct(p.occ),                budget: occBudget.text,       ly: occDelta.text,        budgetUp: occBudget.up,       lyUp: occDelta.up     },
+      totalrev: { value: fmtCurrency(p.revenue, false), budget: revBudget.text,       ly: revDelta.text,        budgetUp: revBudget.up,       lyUp: revDelta.up     },
     },
     profit: {
-      gop:        { value: fmtCurrency(p.gop, false),    budget: '—', ly: gopDelta.text,      budgetUp: false, lyUp: gopDelta.up      },
-      ebitda:     { value: fmtCurrency(p.ebitda, false), budget: '—', ly: ebitdaDelta.text,   budgetUp: false, lyUp: ebitdaDelta.up   },
-      ebitdaMgn:  { value: fmtPct(p.ebitdaMgn),     budget: '—', ly: ebitdaMgnDelta.text,budgetUp: false, lyUp: ebitdaMgnDelta.up},
+      gop:        { value: fmtCurrency(p.gop, false),    budget: gopBudget.text,      ly: gopDelta.text,        budgetUp: gopBudget.up,       lyUp: gopDelta.up      },
+      ebitda:     { value: fmtCurrency(p.ebitda, false), budget: ebitdaBudget.text,   ly: ebitdaDelta.text,     budgetUp: ebitdaBudget.up,    lyUp: ebitdaDelta.up   },
+      ebitdaMgn:  { value: fmtPct(p.ebitdaMgn),         budget: ebitdaMgnBudget.text, ly: ebitdaMgnDelta.text,  budgetUp: ebitdaMgnBudget.up, lyUp: ebitdaMgnDelta.up},
       flowthrough: { value: '—', badge: '—', detail: '—', badgeUp: true },
     },
     str: {
@@ -2285,8 +2376,12 @@ async function loadDataAndRun() {
   try {
     const token = await getDataverseToken();
 
-    // Fetch 3 years of data in one shot (paginated)
-    const allRows = await fetchAllRows(token, threeYearsAgo());
+    // Fetch 3 years of actuals + budget data in parallel
+    const [allRows, budgetRows] = await Promise.all([
+      fetchAllRows(token, threeYearsAgo()),
+      fetchBudgetRows(token, startOfYear()),
+    ]);
+    window.BUDGET_ROWS = budgetRows;
 
     // Define period date ranges
     // NOTE: Power Automate runs at 2am and stamps each row with TODAY's date,
@@ -2389,34 +2484,41 @@ async function loadDataAndRun() {
         window.LIVE_PROPERTY_DATA[tag] = buildPropertyLiveData(tag, rows, ranges);
       }
 
+      // Aggregate budget rows for each period
+      const budgetRows = window.BUDGET_ROWS || [];
+      const budgetAggs = {};
+      for (const [period, { from, to }] of Object.entries(ranges)) {
+        budgetAggs[period] = aggregateBudgetRows(budgetRows, from, to);
+      }
+
       window.LIVE_PORTFOLIO_DATA = {
         yesterday: buildPeriodData(
           `${ydStr}`, `${ydStr} · Click row to drill in`,
           `Daily · ${ydStr} · Actuals vs. Last Year`, 'Total Revenue (Day)',
-          aggs.yesterday, lyAggs.yesterday, ranges.yesterday.from, ranges.yesterday.to
+          aggs.yesterday, lyAggs.yesterday, ranges.yesterday.from, ranges.yesterday.to, budgetAggs.yesterday
         ),
         wtd: buildPeriodData(
           `Trailing 7 days · ${t7dStartStr}–${fmtShort(yd)}`,
           `T7D (${t7dStartStr}–${fmtShort(yd)}) · Click row to drill in`,
           `Daily · ${t7dStartStr}–${fmtShort(yd)} · Actuals vs. Last Year`, 'Total Revenue (T7D)',
-          aggs.wtd, lyAggs.wtd, ranges.wtd.from, ranges.wtd.to
+          aggs.wtd, lyAggs.wtd, ranges.wtd.from, ranges.wtd.to, budgetAggs.wtd
         ),
         mtd: buildPeriodData(
           `Month-to-date · ${mtdStartStr}–${fmtShort(yd)}`,
           `MTD (${mtdStartStr}–${fmtShort(yd)}) · Click row to drill in`,
           `Daily · ${mtdStartStr}–${fmtShort(yd)} · Actuals vs. Last Year`, 'Total Revenue (MTD)',
-          aggs.mtd, lyAggs.mtd, ranges.mtd.from, ranges.mtd.to
+          aggs.mtd, lyAggs.mtd, ranges.mtd.from, ranges.mtd.to, budgetAggs.mtd
         ),
         ytd: buildPeriodData(
           `Year-to-date · Jan 1–${fmtShort(yd)}, ${yd.getFullYear()}`,
           `YTD (Jan 1–${fmtShort(yd)}) · Click row to drill in`,
           `Weekly · Jan 1–${fmtShort(yd)} · Actuals vs. Last Year`, 'Total Revenue (YTD)',
-          aggs.ytd, lyAggs.ytd, ranges.ytd.from, ranges.ytd.to
+          aggs.ytd, lyAggs.ytd, ranges.ytd.from, ranges.ytd.to, budgetAggs.ytd
         ),
         '3yr': buildPeriodData(
           '3-Year Rolling', '3-Year · Click row to drill in',
           'Quarterly · 3YR · Actuals vs. Prior Period', 'Total Revenue (3YR)',
-          aggs['3yr'], lyAggs['3yr'], ranges['3yr'].from, ranges['3yr'].to
+          aggs['3yr'], lyAggs['3yr'], ranges['3yr'].from, ranges['3yr'].to, null
         ),
       };
 
