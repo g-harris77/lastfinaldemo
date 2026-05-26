@@ -1885,10 +1885,9 @@ function aggregateBudgetRows(rows, fromDate, toDate) {
     occSum          += r.cr2cd_occupancy_percent || 0;
     count++;
   }
-  const propCount = Object.keys(PROPERTY_META).length;
-  const adr    = propCount > 0 ? adrSum    / propCount : 0;
-  const revpar = propCount > 0 ? revparSum / propCount : 0;
-  const occ    = propCount > 0 ? occSum    / propCount : 0;
+  const adr    = count > 0 ? adrSum    / count : 0;
+  const revpar = count > 0 ? revparSum / count : 0;
+  const occ    = count > 0 ? occSum    / count : 0;
   const ebitdaMgn = departmentsales > 0 ? ebitda / departmentsales : 0;
   const gopMgn    = departmentsales > 0 ? gop    / departmentsales : 0;
 
