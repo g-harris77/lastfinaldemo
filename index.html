@@ -2341,6 +2341,19 @@ function buildPropertyLiveData(tag, allRows, ranges) {
     const ebitdaDelta   = fmtDelta(p.ebitda,   ly?.ebitda);
     const ebitdaMgnDelta= fmtDelta(p.ebitdaMgn,ly?.ebitdaMgn,true);
 
+    // Budget variance for this property
+    const b = aggregateBudgetRows(
+      (window.BUDGET_ROWS || []).filter(r => (r.cr2cd_sitetag || '') == tag),
+      from, to
+    );
+    const revparBudget    = fmtBudgetDelta(p.revpar,    b?.revpar);
+    const adrBudget       = fmtBudgetDelta(p.adr,       b?.adr);
+    const occBudget       = fmtBudgetDelta(p.occ,       b?.occ,       true);
+    const revBudget       = fmtBudgetDelta(p.revenue,   b?.revenue);
+    const gopBudget       = fmtBudgetDelta(p.gop,       b?.gop);
+    const ebitdaBudget    = fmtBudgetDelta(p.ebitda,    b?.ebitda);
+    const ebitdaMgnBudget = fmtBudgetDelta(p.ebitdaMgn, b?.ebitdaMgn, true);
+
     const periodLabels = { yesterday: `${ydStr}`, wtd: 'Trailing 7 days', mtd: 'Month-to-date', ytd: `Year-to-date · ${yd.getFullYear()}`, '3yr': '3-Year Rolling' };
 
     // Charts: property-specific trend
@@ -2354,15 +2367,15 @@ function buildPropertyLiveData(tag, allRows, ranges) {
     result[period] = {
       label: periodLabels[period] || period,
       kpi: {
-        revpar:   { value: fmtADR(p.revpar),          ly: revparDelta.text,   lyUp: revparDelta.up,   budget: '—', budgetUp: false },
-        adr:      { value: fmtADR(p.adr),             ly: adrDelta.text,      lyUp: adrDelta.up,      budget: '—', budgetUp: false },
-        occ:      { value: fmtPct(p.occ),             ly: occDelta.text,      lyUp: occDelta.up,      budget: '—', budgetUp: false },
-        totalrev: { value: fmtCurrency(p.revenue, false), ly: revDelta.text,  lyUp: revDelta.up,      budget: '—', budgetUp: false },
+        revpar:   { value: fmtADR(p.revpar),              ly: revparDelta.text,   lyUp: revparDelta.up,   budget: revparBudget.text,    budgetUp: revparBudget.up    },
+        adr:      { value: fmtADR(p.adr),                 ly: adrDelta.text,      lyUp: adrDelta.up,      budget: adrBudget.text,       budgetUp: adrBudget.up       },
+        occ:      { value: fmtPct(p.occ),                 ly: occDelta.text,      lyUp: occDelta.up,      budget: occBudget.text,       budgetUp: occBudget.up       },
+        totalrev: { value: fmtCurrency(p.revenue, false), ly: revDelta.text,      lyUp: revDelta.up,      budget: revBudget.text,       budgetUp: revBudget.up       },
       },
       profit: {
-        gop:        { value: fmtCurrency(p.gop, false),    ly: gopDelta.text,       lyUp: gopDelta.up,      budget: '—', budgetUp: false },
-        ebitda:     { value: fmtCurrency(p.ebitda, false), ly: ebitdaDelta.text,    lyUp: ebitdaDelta.up,   budget: '—', budgetUp: false },
-        ebitdaMgn:  { value: fmtPct(p.ebitdaMgn),         ly: ebitdaMgnDelta.text, lyUp: ebitdaMgnDelta.up,budget: '—', budgetUp: false },
+        gop:        { value: fmtCurrency(p.gop, false),    ly: gopDelta.text,       lyUp: gopDelta.up,      budget: gopBudget.text,       budgetUp: gopBudget.up       },
+        ebitda:     { value: fmtCurrency(p.ebitda, false), ly: ebitdaDelta.text,    lyUp: ebitdaDelta.up,   budget: ebitdaBudget.text,    budgetUp: ebitdaBudget.up    },
+        ebitdaMgn:  { value: fmtPct(p.ebitdaMgn),         ly: ebitdaMgnDelta.text, lyUp: ebitdaMgnDelta.up,budget: ebitdaMgnBudget.text, budgetUp: ebitdaMgnBudget.up },
         flowthrough:{ value: '—', badge: '—', detail: '—', badgeUp: true },
       },
       charts,
@@ -3728,3 +3741,4 @@ document.getElementById('propertyView')?.classList.remove('loading');
 </script>
 </body>
 </html>
+
