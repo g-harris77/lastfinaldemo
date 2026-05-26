@@ -1239,13 +1239,13 @@
         <span class="card-action">Detail →</span>
       </div>
       <div class="index-grid">
-        <div class="index-card" id="strCard-MPI" data-str="MPI" style="cursor:pointer; border-color:var(--accent); background:var(--accent-soft);">
+        <div class="index-card" id="strCard-MPI" data-str="MPI" style="cursor:pointer;">
           <div class="index-label">MPI</div>
           <div class="index-value">101.7</div>
           <div class="delta-pill delta-up">▲ 0.5</div>
           <div class="index-help">Occupancy<br>Index</div>
         </div>
-        <div class="index-card" id="strCard-ARI" data-str="ARI" style="cursor:pointer;">
+        <div class="index-card" id="strCard-ARI" data-str="ARI" style="cursor:pointer; border-color:var(--accent); background:var(--accent-soft);">
           <div class="index-label">ARI</div>
           <div class="index-value">102.5</div>
           <div class="delta-pill delta-up">▲ 0.9</div>
@@ -1309,6 +1309,9 @@
             <th class="num">Occ</th>
             <th class="num">ADR</th>
             <th class="num">Total Rev</th>
+            <th class="num">RevPAR vs Bud</th>
+            <th class="num">ADR vs Bud</th>
+            <th class="num">Occ vs Bud</th>
             <th class="num">MPI</th>
             <th class="num">ARI</th>
             <th class="num">RGI</th>
@@ -1953,21 +1956,22 @@ function aggregateRows(rows, fromDate, toDate) {
     const sum = (key) => propRows.reduce((a, r) => a + (r[key] || 0), 0);
 
     // Use available_rooms as the anchor — it's a raw stored value and reliable
-    const available   = sum('cr2cd_available_rooms');
-    const gop         = sum('cr2cd_gop');
-    const ebitda      = sum('cr2cd_ebitda');
-    const noi         = sum('cr2cd_noi');
+    const available       = sum('cr2cd_available_rooms');
+    const gop             = sum('cr2cd_gop');
+    const ebitda          = sum('cr2cd_ebitda');
+    const noi             = sum('cr2cd_noi');
 
     // Use raw stored columns directly — these match ProfitSword exactly
-    const occupied    = sum('cr2cd_occupied_rooms');
-    const revenue     = sum('cr2cd_total_rooms');   // total_rooms = total room revenue in PS/Dataverse
+    const occupied        = sum('cr2cd_occupied_rooms');
+    const roomsRevenue    = sum('cr2cd_total_rooms');   // rooms revenue — used only for ADR/RevPAR math
+    const departmentsales = sum('cr2cd_departmentsales'); // top line revenue (Department Sales = TOTOPRV)
 
     // Derive metrics from raw totals
-    const adr         = occupied  > 0 ? revenue / occupied  : 0;
-    const revpar      = available > 0 ? revenue / available : 0;
-    const occ         = available > 0 ? occupied / available : 0;
-    const ebitdaMgn   = revenue    > 0 ? ebitda  / revenue   : 0;
-    const gopMgn      = revenue    > 0 ? gop     / revenue   : 0;
+    const adr         = occupied      > 0 ? roomsRevenue / occupied      : 0;
+    const revpar      = available     > 0 ? roomsRevenue / available     : 0;
+    const occ         = available     > 0 ? occupied / available         : 0;
+    const ebitdaMgn   = departmentsales > 0 ? ebitda / departmentsales   : 0;
+    const gopMgn      = departmentsales > 0 ? gop    / departmentsales   : 0;
     // ARI = (property ADR / comp set ADR) * 100
     // Use raw comp set rev/occ fields for full precision (cr2cd_adrcompset is rounded)
     // Use cr2cd_aricalculated (computed in Dataverse from COMPPRP/COMPSET) — average over days where it exists
@@ -1987,26 +1991,27 @@ function aggregateRows(rows, fromDate, toDate) {
     const mpi         = null;
     const rgi         = null;
 
-    propAgg[tag] = { tag, occupied, available, revenue, gop, ebitda, noi,
+    propAgg[tag] = { tag, occupied, available, revenue: departmentsales, roomsRevenue, gop, ebitda, noi,
                      adr, revpar, occ, ebitdaMgn, gopMgn,
                      csADR, ari, mpi, rgi };
   }
 
   // Portfolio totals
   const props = Object.values(propAgg);
-  const totalOccupied  = props.reduce((a, p) => a + p.occupied,  0);
-  const totalAvailable = props.reduce((a, p) => a + p.available, 0);
-  const totalRevenue   = props.reduce((a, p) => a + p.revenue,   0);
-  const totalGOP       = props.reduce((a, p) => a + p.gop,       0);
-  const totalEBITDA    = props.reduce((a, p) => a + p.ebitda,    0);
+  const totalOccupied      = props.reduce((a, p) => a + p.occupied,      0);
+  const totalAvailable     = props.reduce((a, p) => a + p.available,     0);
+  const totalRoomsRevenue  = props.reduce((a, p) => a + p.roomsRevenue,  0);
+  const totalDeptSales     = props.reduce((a, p) => a + p.revenue,       0); // revenue = departmentsales
+  const totalGOP           = props.reduce((a, p) => a + p.gop,           0);
+  const totalEBITDA        = props.reduce((a, p) => a + p.ebitda,        0);
 
-  const portADR    = totalOccupied  > 0 ? totalRevenue / totalOccupied  : 0;
-  const portRevPAR = totalAvailable > 0 ? totalRevenue / totalAvailable : 0;
-  const portOcc    = totalAvailable > 0 ? totalOccupied / totalAvailable : 0;
-  const portEbitdaMgn = totalRevenue > 0 ? totalEBITDA / totalRevenue : 0;
+  const portADR       = totalOccupied  > 0 ? totalRoomsRevenue / totalOccupied  : 0;
+  const portRevPAR    = totalAvailable > 0 ? totalRoomsRevenue / totalAvailable : 0;
+  const portOcc       = totalAvailable > 0 ? totalOccupied / totalAvailable     : 0;
+  const portEbitdaMgn = totalDeptSales > 0 ? totalEBITDA / totalDeptSales       : 0;
 
-  return { propAgg, portfolio: { adr: portADR, revpar: portRevPAR, occ: portOcc,
-           revenue: totalRevenue, gop: totalGOP, ebitda: totalEBITDA,
+  return { propAgg, _from: fromDate, _to: toDate, portfolio: { adr: portADR, revpar: portRevPAR, occ: portOcc,
+           revenue: totalDeptSales, gop: totalGOP, ebitda: totalEBITDA,
            ebitdaMgn: portEbitdaMgn } };
 }
 
@@ -2049,7 +2054,17 @@ function buildPropRows(agg, lyAgg) {
     const meta = PROPERTY_META[tag];
 
     if (!p) return [tag, meta.name, `${meta.rooms} rms`,
-      '—','—','—','—','—','—','—','—','—','—',['—', null]];
+      '—','—','—','—','—','—','—','—','—','—','—','—','—',['—', null]];
+
+    // Budget for this property
+    const propSiteTag = meta.siteTag;
+    const budgetRows = propSiteTag ? (window.BUDGET_ROWS || []).filter(r => String(r.cr2cd_sitetag) === String(propSiteTag)) : [];
+    const from = agg._from, to = agg._to;
+    const b = (budgetRows.length && from && to) ? aggregateBudgetRows(budgetRows, from, to) : null;
+
+    const revparBudget = fmtBudgetDelta(p.revpar, b?.revpar);
+    const adrBudget    = fmtBudgetDelta(p.adr,    b?.adr);
+    const occBudget    = fmtBudgetDelta(p.occ,    b?.occ, true);
 
     const yoy = fmtDelta(p.revpar, ly?.revpar);
     return [
@@ -2060,6 +2075,9 @@ function buildPropRows(agg, lyAgg) {
       fmtPct(p.occ),
       fmtADR(p.adr),
       fmtCurrency(p.revenue, false),
+      [revparBudget.text, revparBudget.up],
+      [adrBudget.text,    adrBudget.up],
+      [occBudget.text,    occBudget.up],
       fmtIndex(p.mpi),
       fmtIndex(p.ari),
       fmtIndex(p.rgi),
@@ -2100,9 +2118,10 @@ function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag
     const map = new Map();
     rows.forEach(r => {
       const key = groupFn(parseD(extractDate(r)));
-      if (!map.has(key)) map.set(key, { revenue: 0, rooms_occ: 0, rooms_avail: 0 });
+      if (!map.has(key)) map.set(key, { revenue: 0, deptSales: 0, rooms_occ: 0, rooms_avail: 0 });
       const g = map.get(key);
-      g.revenue     += (r.cr2cd_total_rooms || 0);
+      g.revenue     += (r.cr2cd_total_rooms || 0);       // rooms revenue for ADR/RevPAR
+      g.deptSales   += (r.cr2cd_departmentsales || 0);   // department sales for Total Rev chart
       g.rooms_occ   += (r.cr2cd_occupied_rooms || 0);
       g.rooms_avail += (r.cr2cd_available_rooms || 0);
     });
@@ -2160,7 +2179,7 @@ function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag
   });
   const actualsRev = sortedKeys.map(k => {
     const g = actMap.get(k);
-    return parseFloat((g.revenue / 1000).toFixed(1));
+    return parseFloat((g.deptSales / 1000).toFixed(1));
   });
 
   // Match LY by bucket — shift LY keys forward to match current period keys
@@ -2182,7 +2201,7 @@ function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag
     const lyKey = lyKeysSorted[i];
     if (!lyKey) return null;
     const g = lyMap.get(lyKey);
-    return g ? parseFloat((g.revenue / 1000).toFixed(1)) : null;
+    return g ? parseFloat((g.deptSales / 1000).toFixed(1)) : null;
   });
 
   return {
@@ -2304,17 +2323,18 @@ function buildPropertyLiveData(tag, allRows, ranges) {
     function agg(rows) {
       if (!rows.length) return null;
       const sum = key => rows.reduce((a, r) => a + (r[key] || 0), 0);
-      const occupied  = sum('cr2cd_occupied_rooms');
-      const available = sum('cr2cd_available_rooms');
-      const revenue   = sum('cr2cd_total_rooms');
-      const gop       = sum('cr2cd_gop');
-      const ebitda    = sum('cr2cd_ebitda');
-      const noi       = sum('cr2cd_noi');
-      const adr       = occupied  > 0 ? revenue / occupied  : 0;
-      const revpar    = available > 0 ? revenue / available : 0;
-      const occ       = available > 0 ? occupied / available : 0;
-      const ebitdaMgn = revenue   > 0 ? ebitda  / revenue  : 0;
-      const gopMgn    = revenue   > 0 ? gop     / revenue  : 0;
+      const occupied        = sum('cr2cd_occupied_rooms');
+      const available       = sum('cr2cd_available_rooms');
+      const roomsRevenue    = sum('cr2cd_total_rooms');
+      const departmentsales = sum('cr2cd_departmentsales');
+      const gop             = sum('cr2cd_gop');
+      const ebitda          = sum('cr2cd_ebitda');
+      const noi             = sum('cr2cd_noi');
+      const adr       = occupied        > 0 ? roomsRevenue    / occupied        : 0;
+      const revpar    = available       > 0 ? roomsRevenue    / available       : 0;
+      const occ       = available       > 0 ? occupied        / available       : 0;
+      const ebitdaMgn = departmentsales > 0 ? ebitda          / departmentsales : 0;
+      const gopMgn    = departmentsales > 0 ? gop             / departmentsales : 0;
       // ARI: use cr2cd_aricalculated (computed in Dataverse from COMPPRP/COMPSET) — average over days where it exists
       const propAriRows = rows.filter(r => r.cr2cd_compprproomsrevenue != null && r.cr2cd_compprpoccupied > 0);
       const csAriRows   = rows.filter(r => r.cr2cd_compset_total_rooms  != null && r.cr2cd_compset_occupancy_pct > 0);
@@ -2329,7 +2349,7 @@ function buildPropertyLiveData(tag, allRows, ranges) {
           ? (totalPropRev / totalPropOcc) / (totalCsRev / totalCsOcc) * 100
           : null;
       }
-      return { occupied, available, revenue, gop, ebitda, noi, adr, revpar, occ, ebitdaMgn, gopMgn, csADR, ari };
+      return { occupied, available, revenue: departmentsales, roomsRevenue, gop, ebitda, noi, adr, revpar, occ, ebitdaMgn, gopMgn, csADR, ari };
     }
 
     const p  = agg(filtered);
@@ -2827,10 +2847,15 @@ function renderPropRows(rows) {
   const visibleRows = propTableExpanded ? rows : rows.slice(0, PROP_PREVIEW_COUNT);
 
   propTbody.innerHTML = visibleRows.map(row => {
-    const [code, name, meta, revpar, occ, adr, totalrev, mpi, ari, rgi, gop, ebitda, ebitdaMgn, yoy] = row;
+    const [code, name, meta, revpar, occ, adr, totalrev, revparBud, adrBud, occBud, mpi, ari, rgi, gop, ebitda, ebitdaMgn, yoy] = row;
     const yoyVal = Array.isArray(yoy) ? yoy[0] : yoy;
-    const yoyUp = Array.isArray(yoy) ? yoy[1] : true;
+    const yoyUp  = Array.isArray(yoy) ? yoy[1] : true;
     const yoyClass = yoyUp ? 'delta-up' : 'delta-down';
+    const budCell = (b) => {
+      if (!Array.isArray(b) || b[0] === '—') return `<td class="num mono" style="color:var(--text-subtle)">—</td>`;
+      const cls = b[1] ? 'delta-up' : 'delta-down';
+      return `<td class="num mono"><span class="delta-pill ${cls}">${b[0]}</span></td>`;
+    };
     return `<tr style="cursor:pointer;" onclick="switchView('${code}')">
       <td>
         <div style="font-weight:600;font-size:13px;">${name}</div>
@@ -2840,6 +2865,9 @@ function renderPropRows(rows) {
       <td class="num mono">${occ}</td>
       <td class="num mono">${adr}</td>
       <td class="num mono">${totalrev}</td>
+      ${budCell(revparBud)}
+      ${budCell(adrBud)}
+      ${budCell(occBud)}
       <td class="num mono">${mpi}</td>
       <td class="num mono">${ari}</td>
       <td class="num mono">${rgi}</td>
@@ -3265,7 +3293,7 @@ const STR_CHART_DATA = {
     min: 95, max: 107
   }
 };
-let activeSTR = 'MPI';
+let activeSTR = 'ARI';
 
 const strChart = new Chart(document.getElementById('rgiChart'), {
   type: 'line',
@@ -3368,7 +3396,7 @@ const PROP_STR_DATA = {
   ARI: { data: [], label: 'ARI', min: 92, max: 108 },
   RGI: { data: [], label: 'RGI', min: 96, max: 116 }
 };
-let activePropSTR = 'MPI';
+let activePropSTR = 'ARI';
 
 const propSTRChart = new Chart(document.getElementById('propSTRChart'), {
   type: 'line',
@@ -3745,4 +3773,3 @@ document.getElementById('propertyView')?.classList.remove('loading');
 </script>
 </body>
 </html>
-
