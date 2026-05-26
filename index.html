@@ -1802,6 +1802,7 @@ async function fetchAllRows(token, fromDate) {
     'cr2cd_aricalculated',
     'cr2cd_compprproomsrevenue',
     'cr2cd_compprpoccupied',
+    'cr2cd_departmentsales',
   ].join(',');
 
   let url = `${DATAVERSE_URL}/api/data/v9.2/${TABLE}?$filter=${encodeURIComponent(dateFilter)}&$select=${select}&$orderby=cr2cd_date asc&$top=5000`;
@@ -1866,6 +1867,8 @@ async function fetchBudgetRows(token, fromDate) {
 }
 
 // Aggregate budget rows for a date range, grouped by portfolio
+// Properties with no budget rows are treated as 0 (matching PS behavior).
+// Always divide ADR/RevPAR/Occ by total property count (26) so missing properties pull the average down.
 function aggregateBudgetRows(rows, fromDate, toDate) {
   const from = toDateStr(fromDate);
   const to   = toDateStr(toDate);
@@ -1873,25 +1876,25 @@ function aggregateBudgetRows(rows, fromDate, toDate) {
     const d = (r.cr2cd_date || '').slice(0, 10);
     return d >= from && d <= to;
   });
-  if (!filtered.length) return null;
+  // Even if no rows found, return zeros (not null) so missing properties show large positive variance vs actual
+  const propCount = Object.keys(PROPERTY_META).length; // always 26
 
   let revenue = 0, departmentsales = 0, gop = 0, ebitda = 0, noi = 0;
-  let adrSum = 0, revparSum = 0, occSum = 0, count = 0;
-  let adrCount = 0, revparCount = 0, occCount = 0;
+  let adrSum = 0, revparSum = 0, occSum = 0;
   for (const r of filtered) {
     revenue         += r.cr2cd_totalrevenue    || 0;
     departmentsales += r.cr2cd_departmentsales || 0;
     gop             += r.cr2cd_gop             || 0;
     ebitda          += r.cr2cd_ebitda          || 0;
     noi             += r.cr2cd_noi             || 0;
-    if (r.cr2cd_adr_property    != null) { adrSum    += r.cr2cd_adr_property;     adrCount++; }
-    if (r.cr2cd_revparproperty  != null) { revparSum += r.cr2cd_revparproperty;   revparCount++; }
-    if (r.cr2cd_occupancy_percent != null) { occSum  += r.cr2cd_occupancy_percent; occCount++; }
-    count++;
+    adrSum          += r.cr2cd_adr_property    || 0;  // null treated as 0 — missing props contribute 0
+    revparSum       += r.cr2cd_revparproperty  || 0;
+    occSum          += r.cr2cd_occupancy_percent || 0;
   }
-  const adr    = adrCount    > 0 ? adrSum    / adrCount    : 0;
-  const revpar = revparCount > 0 ? revparSum / revparCount : 0;
-  const occ    = occCount    > 0 ? occSum    / occCount    : 0;
+  // Always divide by 26 — missing properties contribute 0, matching PS
+  const adr    = adrSum    / propCount;
+  const revpar = revparSum / propCount;
+  const occ    = occSum    / propCount;
   const ebitdaMgn = departmentsales > 0 ? ebitda / departmentsales : 0;
   const gopMgn    = departmentsales > 0 ? gop    / departmentsales : 0;
 
@@ -2060,7 +2063,7 @@ function buildPropRows(agg, lyAgg) {
     const propSiteTag = meta.siteTag;
     const budgetRows = propSiteTag ? (window.BUDGET_ROWS || []).filter(r => String(r.cr2cd_sitetag) === String(propSiteTag)) : [];
     const from = agg._from, to = agg._to;
-    const b = (budgetRows.length && from && to) ? aggregateBudgetRows(budgetRows, from, to) : null;
+    const b = (from && to) ? aggregateBudgetRows(budgetRows, from, to) : null;
 
     const revparBudget = fmtBudgetDelta(p.revpar, b?.revpar);
     const adrBudget    = fmtBudgetDelta(p.adr,    b?.adr);
