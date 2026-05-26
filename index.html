@@ -1892,17 +1892,23 @@ function aggregateBudgetRows(rows, fromDate, toDate) {
   return { occupied, available, revenue, departmentsales, gop, ebitda, noi, occ, adr, revpar, ebitdaMgn, gopMgn };
 }
 
-// Format a budget variance delta (actual vs budget)
+// Format a budget variance delta (actual vs budget) — absolute difference, no percentages
 function fmtBudgetDelta(actual, budget, isPoints = false) {
-  if (!budget || !actual) return { text: '—', up: null };
+  if (actual == null || budget == null || isNaN(actual) || isNaN(budget)) return { text: '—', up: null };
+  const up = actual >= budget;
   if (isPoints) {
+    // Occupancy: show as pts difference (e.g. +2.3pts)
     const pts = (actual - budget) * 100;
-    const up = actual >= budget;
     return { text: (up ? '+' : '') + pts.toFixed(1) + 'pts', up };
   }
-  const pct = ((actual - budget) / Math.abs(budget)) * 100;
-  const up = actual >= budget;
-  return { text: (up ? '+' : '') + pct.toFixed(1) + '%', up };
+  // Currency: show as dollar difference (e.g. +$4.20 or +$8,450)
+  const diff = actual - budget;
+  const absDiff = Math.abs(diff);
+  let formatted;
+  if (absDiff >= 1e6)      formatted = '$' + (absDiff / 1e6).toFixed(2) + 'M';
+  else if (absDiff >= 1e3) formatted = '$' + (absDiff / 1e3).toFixed(1) + 'K';
+  else                     formatted = '$' + absDiff.toFixed(2);
+  return { text: (up ? '+' : '-') + formatted, up };
 }
 
 // Extract property code from property_name field e.g. "LQ52836 – La Quinta..." → "LQ52836"
