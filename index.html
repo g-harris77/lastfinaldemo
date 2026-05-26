@@ -1868,7 +1868,8 @@ function aggregateBudgetRows(rows, fromDate, toDate) {
   const to   = toDateStr(toDate);
   const filtered = rows.filter(r => {
     const d = (r.cr2cd_date || '').slice(0, 10);
-    return d >= from && d <= to;
+    // Exclude properties with no budget data (available rooms = 0 or null)
+    return d >= from && d <= to && (r.cr2cd_availablerooms || 0) > 0;
   });
   if (!filtered.length) return null;
 
