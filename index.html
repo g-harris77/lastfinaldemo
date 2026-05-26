@@ -2342,9 +2342,11 @@ function buildPropertyLiveData(tag, allRows, ranges) {
 
     // Budget variance for this property — match by numeric/string siteTag
     const propSiteTag = PROPERTY_META[tag]?.siteTag;
+    const shiftD = (d, n) => { const r = new Date(d instanceof Date ? d : d + 'T00:00:00'); r.setDate(r.getDate() + n); return r; };
     const b = propSiteTag ? aggregateBudgetRows(
       (window.BUDGET_ROWS || []).filter(r => String(r.cr2cd_sitetag) === String(propSiteTag)),
-      from, to
+      shiftD(from, -1),
+      shiftD(to, -1)
     ) : null;
     const revparBudget    = fmtBudgetDelta(p.revpar,    b?.revpar);
     const adrBudget       = fmtBudgetDelta(p.adr,       b?.adr);
@@ -2505,10 +2507,12 @@ async function loadDataAndRun() {
       }
 
       // Aggregate budget rows for each period
+      // Budget rows are stamped with the actual business date (no +1 offset like actuals),
+      // so shift the ranges back by 1 day to align with the actuals ranges.
       const budgetRows = window.BUDGET_ROWS || [];
       const budgetAggs = {};
       for (const [period, { from, to }] of Object.entries(ranges)) {
-        budgetAggs[period] = aggregateBudgetRows(budgetRows, from, to);
+        budgetAggs[period] = aggregateBudgetRows(budgetRows, shiftDay(from, -1), shiftDay(to, -1));
       }
 
       window.LIVE_PORTFOLIO_DATA = {
