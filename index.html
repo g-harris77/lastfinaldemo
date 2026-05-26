@@ -1872,23 +1872,26 @@ function aggregateBudgetRows(rows, fromDate, toDate) {
   });
   if (!filtered.length) return null;
 
-  let occupied = 0, available = 0, revenue = 0, departmentsales = 0, gop = 0, ebitda = 0, noi = 0;
+  let revenue = 0, departmentsales = 0, gop = 0, ebitda = 0, noi = 0;
+  let adrSum = 0, revparSum = 0, occSum = 0, count = 0;
   for (const r of filtered) {
-    occupied      += r.cr2cd_occupiedrooms   || 0;
-    available     += r.cr2cd_availablerooms  || 0;
-    revenue       += r.cr2cd_totalrevenue    || 0;
+    revenue         += r.cr2cd_totalrevenue    || 0;
     departmentsales += r.cr2cd_departmentsales || 0;
-    gop           += r.cr2cd_gop            || 0;
-    ebitda        += r.cr2cd_ebitda         || 0;
-    noi           += r.cr2cd_noi            || 0;
+    gop             += r.cr2cd_gop             || 0;
+    ebitda          += r.cr2cd_ebitda          || 0;
+    noi             += r.cr2cd_noi             || 0;
+    adrSum          += r.cr2cd_adr_property    || 0;
+    revparSum       += r.cr2cd_revparproperty  || 0;
+    occSum          += r.cr2cd_occupancy_percent || 0;
+    count++;
   }
-  const occ    = available > 0 ? occupied / available : 0;
-  const adr    = occupied  > 0 ? revenue  / occupied  : 0;
-  const revpar = available > 0 ? revenue  / available : 0;
+  const adr    = count > 0 ? adrSum    / count : 0;
+  const revpar = count > 0 ? revparSum / count : 0;
+  const occ    = count > 0 ? occSum    / count : 0;
   const ebitdaMgn = departmentsales > 0 ? ebitda / departmentsales : 0;
   const gopMgn    = departmentsales > 0 ? gop    / departmentsales : 0;
 
-  return { occupied, available, revenue, departmentsales, gop, ebitda, noi, occ, adr, revpar, ebitdaMgn, gopMgn };
+  return { revenue, departmentsales, gop, ebitda, noi, occ, adr, revpar, ebitdaMgn, gopMgn };
 }
 
 // Format a budget variance delta (actual vs budget) — absolute difference, no percentages
