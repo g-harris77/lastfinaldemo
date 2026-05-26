@@ -1881,20 +1881,21 @@ function aggregateBudgetRows(rows, fromDate, toDate) {
 
   let revenue = 0, departmentsales = 0, gop = 0, ebitda = 0, noi = 0;
   let adrSum = 0, revparSum = 0, occSum = 0;
+  let adrCount = 0, revparCount = 0, occCount = 0;
   for (const r of filtered) {
     revenue         += r.cr2cd_totalrevenue    || 0;
     departmentsales += r.cr2cd_departmentsales || 0;
     gop             += r.cr2cd_gop             || 0;
     ebitda          += r.cr2cd_ebitda          || 0;
     noi             += r.cr2cd_noi             || 0;
-    adrSum          += r.cr2cd_adr_property    || 0;  // null treated as 0 — missing props contribute 0
-    revparSum       += r.cr2cd_revparproperty  || 0;
-    occSum          += r.cr2cd_occupancy_percent || 0;
+    if (r.cr2cd_adr_property     != null) { adrSum    += r.cr2cd_adr_property;      adrCount++;    }
+    if (r.cr2cd_revparproperty   != null) { revparSum += r.cr2cd_revparproperty;    revparCount++; }
+    if (r.cr2cd_occupancy_percent != null) { occSum   += r.cr2cd_occupancy_percent; occCount++;    }
   }
-  // Always divide by 26 — missing properties contribute 0, matching PS
-  const adr    = adrSum    / propCount;
-  const revpar = revparSum / propCount;
-  const occ    = occSum    / propCount;
+  // Skip nulls for sum and count (matching PS behavior) — small rounding diff vs PS is expected
+  const adr    = adrCount    > 0 ? adrSum    / adrCount    : 0;
+  const revpar = revparCount > 0 ? revparSum / revparCount : 0;
+  const occ    = occCount    > 0 ? occSum    / occCount    : 0;
   const ebitdaMgn = departmentsales > 0 ? ebitda / departmentsales : 0;
   const gopMgn    = departmentsales > 0 ? gop    / departmentsales : 0;
 
