@@ -222,7 +222,7 @@
     flex-wrap: wrap;
     gap: 24px;
     position: sticky;
-    top: 60px;
+    top: 103px;
     z-index: 40;
     background: rgba(11, 14, 20, 0.85);
     backdrop-filter: blur(12px);
@@ -1025,6 +1025,174 @@
     from { opacity: 0; transform: translateY(-8px); }
     to   { opacity: 1; transform: translateY(0); }
   }
+
+  /* ========== TAB NAV ========== */
+  .tab-nav {
+    display: flex; align-items: center; gap: 4px;
+    padding: 0 28px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: rgba(11,14,20,0.92);
+    backdrop-filter: blur(12px);
+    position: sticky; top: 61px; z-index: 45;
+  }
+  .tab-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 12px 16px;
+    border: none; background: none;
+    font-family: inherit; font-size: 13px; font-weight: 500;
+    color: var(--text-subtle); cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px; transition: all 0.15s;
+  }
+  .tab-btn:hover { color: var(--text-muted); }
+  .tab-btn.active { color: var(--text); border-bottom-color: var(--accent); }
+  .tab-panel { display: block; }
+  .tab-panel.hidden { display: none; }
+
+  /* ========== WELLNESS PANEL ========== */
+  .wellness-breadcrumb {
+    display: flex; align-items: center; gap: 6px;
+    padding: 10px 28px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: rgba(11,14,20,0.7);
+    font-size: 12px; color: var(--text-subtle);
+    backdrop-filter: blur(8px);
+  }
+  .wcrumb { cursor: pointer; transition: color 0.15s; }
+  .wcrumb:hover { color: var(--text); }
+  .wcrumb.active { color: var(--text-muted); cursor: default; }
+  .wcrumb-sep { opacity: 0.4; }
+  .quarter-badge-w {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    color: var(--accent); background: var(--accent-soft);
+    padding: 3px 9px; border-radius: 5px; text-transform: uppercase;
+  }
+  .wback-btn {
+    display: none; align-items: center; gap: 5px;
+    font-size: 12px; color: var(--text-subtle); cursor: pointer;
+    padding: 5px 10px; border-radius: 6px;
+    border: 1px solid var(--border); background: var(--surface);
+    font-family: inherit; transition: all 0.15s;
+  }
+  .wback-btn:hover { color: var(--text); background: var(--surface-2); }
+  .wback-btn.visible { display: inline-flex; }
+  .wview { display: none; }
+  .wview.active { display: block; }
+  .wsection-title {
+    font-size: 11px; font-weight: 600; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.12em;
+  }
+  .wsection-sub { font-size: 12px; color: var(--text-subtle); margin-top: 2px; }
+  .wsection-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .wsummary-strip { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+  .wsummary-chip {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface); border: 1px solid var(--border-subtle);
+    border-radius: 8px; padding: 10px 16px; font-size: 12px;
+  }
+  .wchip-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .wchip-green { background: #4ADE80; box-shadow: 0 0 6px rgba(74,222,128,0.4); }
+  .wchip-yellow { background: #F5B45D; box-shadow: 0 0 6px rgba(245,180,93,0.4); }
+  .wchip-red { background: #F87171; box-shadow: 0 0 6px rgba(248,113,113,0.4); }
+  .wchip-count { font-size: 18px; font-weight: 700; color: var(--text); font-family: 'JetBrains Mono', monospace; }
+  .wchip-label { color: var(--text-subtle); }
+  .wattention-banner {
+    background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.2);
+    border-radius: 10px; padding: 12px 18px; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 12px; font-size: 13px;
+  }
+  .wrvp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+  .wrvp-card {
+    background: var(--surface); border: 1px solid var(--border-subtle);
+    border-radius: 12px; padding: 20px; cursor: pointer;
+    transition: all 0.18s; position: relative; overflow: hidden;
+  }
+  .wrvp-card:hover { border-color: var(--border); background: var(--surface-2); transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+  .wrvp-card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 12px 12px 0 0; }
+  .wrvp-card.wgreen::before { background: #4ADE80; }
+  .wrvp-card.wyellow::before { background: #F5B45D; }
+  .wrvp-card.wred::before { background: #F87171; }
+  .wrvp-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+  .wrvp-name { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .wrvp-meta { font-size: 11.5px; color: var(--text-subtle); }
+  .wscore-block { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .wscore-num { font-size: 26px; font-weight: 700; font-family: 'JetBrains Mono', monospace; line-height: 1; }
+  .wscore-num.wgreen { color: #4ADE80; }
+  .wscore-num.wyellow { color: #F5B45D; }
+  .wscore-num.wred { color: #F87171; }
+  .wscore-lbl { font-size: 10px; color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.08em; }
+  .wmomentum {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .wmomentum.wup { color: #4ADE80; background: rgba(74,222,128,0.10); }
+  .wmomentum.wdown { color: #F87171; background: rgba(248,113,113,0.10); }
+  .wmomentum.wflat { color: var(--text-subtle); background: rgba(155,165,184,0.08); }
+  .wprop-mini {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 10px; border-radius: 7px;
+    background: var(--surface-2); border: 1px solid var(--border-subtle);
+    font-size: 12px; margin-bottom: 6px;
+  }
+  .wprop-mini-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .wprop-mini-name { flex: 1; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .wprop-mini-score { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; }
+  .wprop-mini-score.wgreen { color: #4ADE80; }
+  .wprop-mini-score.wyellow { color: #F5B45D; }
+  .wprop-mini-score.wred { color: #F87171; }
+  .wrvp-footer { display: flex; justify-content: flex-end; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border-subtle); font-size: 11.5px; color: var(--text-subtle); }
+  .wwell-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 9px; border-radius: 5px; font-size: 11px; font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .wwell-pill.wgreen { color: #4ADE80; background: rgba(74,222,128,0.10); }
+  .wwell-pill.wyellow { color: #F5B45D; background: rgba(245,180,93,0.12); }
+  .wwell-pill.wred { color: #F87171; background: rgba(248,113,113,0.10); }
+  .wwell-pill .wdot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .wcluster-header {
+    background: linear-gradient(135deg, var(--surface) 0%, var(--surface-2) 100%);
+    border: 1px solid var(--border-subtle); border-radius: 12px;
+    padding: 22px 26px; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 20px; position: relative; overflow: hidden;
+  }
+  .wcluster-header::before { content:""; position:absolute; top:0; right:0; width:280px; height:100%; background:radial-gradient(circle at top right, rgba(212,165,116,0.08), transparent 70%); pointer-events:none; }
+  .wcluster-icon { width:52px; height:52px; border-radius:10px; background:var(--surface-3); border:1px solid var(--border); display:grid; place-items:center; flex-shrink:0; font-size:22px; }
+  .wcluster-info { flex:1; }
+  .wcluster-info h2 { font-size:20px; font-weight:600; margin-bottom:4px; }
+  .wcluster-info .meta { font-size:12px; color:var(--text-subtle); }
+  .wdetail-header {
+    background: linear-gradient(135deg, var(--surface) 0%, var(--surface-2) 100%);
+    border: 1px solid var(--border-subtle); border-radius: 12px;
+    padding: 22px 26px; margin-bottom: 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: relative; overflow: hidden;
+  }
+  .wdetail-header::before { content:""; position:absolute; top:0; right:0; width:300px; height:100%; background:radial-gradient(circle at top right, rgba(212,165,116,0.10), transparent 70%); pointer-events:none; }
+  .wdetail-title { font-size:20px; font-weight:600; margin-bottom:6px; }
+  .wdetail-meta { font-size:12px; color:var(--text-subtle); }
+  .wdetail-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .wcat-bar-row { display:flex; align-items:center; gap:10px; font-size:12px; margin-bottom:10px; }
+  .wcat-bar-label { width:130px; color:var(--text-subtle); font-size:11px; text-transform:uppercase; letter-spacing:0.06em; flex-shrink:0; }
+  .wcat-bar-track { flex:1; height:6px; border-radius:3px; background:var(--surface-3); }
+  .wcat-bar-fill { height:100%; border-radius:3px; }
+  .wcat-bar-val { width:48px; text-align:right; font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; flex-shrink:0; }
+  .wcat-bar-max { width:38px; text-align:right; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-subtle); flex-shrink:0; }
+  .wmetric-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border-subtle); font-size:13px; }
+  .wmetric-row:last-child { border-bottom:none; }
+  .wmetric-row .wlabel { color:var(--text-muted); }
+  .wmetric-row .wval { font-family:'JetBrains Mono',monospace; font-weight:600; }
+  .wmetric-row .wearned { font-size:11px; font-family:'JetBrains Mono',monospace; }
+  .wmetric-row .wearned.got { color:#4ADE80; }
+  .wmetric-row .wearned.missed { color:#F87171; }
+  .wmetric-row .wearned.partial { color:#F5B45D; }
+  @media (max-width: 768px) {
+    .wdetail-grid { grid-template-columns: 1fr; }
+    .wellness-breadcrumb { padding: 10px 16px; }
+    .wrvp-grid { grid-template-columns: 1fr; }
+    .tab-nav { padding: 0 16px; }
+  }
 </style>
 </head>
 <body>
@@ -1058,6 +1226,21 @@
     <div class="avatar">RB</div>
   </div>
 </header>
+
+<!-- ============== TAB NAV ============== -->
+<nav class="tab-nav" id="tabNav">
+  <button class="tab-btn active" data-tab="owners" onclick="switchTab('owners')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    Owner's Dashboard
+  </button>
+  <button class="tab-btn" data-tab="wellness" onclick="switchTab('wellness')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    GM Pulse
+  </button>
+</nav>
+
+<!-- ============== OWNERS TAB PANEL ============== -->
+<div id="tab-owners" class="tab-panel">
 
 <!-- ============== CONTROLS ============== -->
 <div class="controls">
@@ -1576,6 +1759,80 @@
 
 
 </main>
+
+</div><!-- /#tab-owners -->
+
+<!-- ============== GM PULSE TAB PANEL ============== -->
+<div id="tab-wellness" class="tab-panel hidden">
+
+  <!-- BREADCRUMB BAR -->
+  <div class="wellness-breadcrumb" id="wBreadcrumb">
+    <span class="wcrumb active" id="wcrumb0" onclick="wShowView('portfolio')">All Regions</span>
+    <span class="wcrumb-sep" id="wsep1" style="display:none">›</span>
+    <span class="wcrumb" id="wcrumb1" style="display:none"></span>
+    <span class="wcrumb-sep" id="wsep2" style="display:none">›</span>
+    <span class="wcrumb active" id="wcrumb2" style="display:none"></span>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+      <span class="quarter-badge-w">Q1 2026</span>
+      <button class="wback-btn" id="wBackBtn" onclick="wGoBack()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back
+      </button>
+    </div>
+  </div>
+
+  <!-- PORTFOLIO VIEW -->
+  <div class="wview active" id="wview-portfolio">
+    <main style="padding:24px 28px 80px;max-width:1400px;margin:0 auto">
+      <div class="wsection-header">
+        <div>
+          <div class="wsection-title">Regional Wellness Overview</div>
+          <div class="wsection-sub">Q1 2026 · Incentive scorecard composite · 23 managed properties</div>
+        </div>
+      </div>
+      <div class="wsummary-strip" id="wSummaryStrip"></div>
+      <div class="wattention-banner" id="wAttentionBanner" style="display:none">
+        <span style="font-size:16px">⚑</span>
+        <div><strong style="color:var(--negative)">Needs follow-up:</strong> <span id="wAttentionNames" style="color:var(--text-muted)"></span></div>
+      </div>
+      <div class="wrvp-grid" id="wRvpGrid"></div>
+    </main>
+  </div>
+
+  <!-- CLUSTER VIEW -->
+  <div class="wview" id="wview-cluster">
+    <main style="padding:24px 28px 80px;max-width:1400px;margin:0 auto">
+      <div id="wClusterHeader"></div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header"><span class="wsection-title">Properties</span></div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr>
+              <th style="text-align:left;font-size:10.5px;color:var(--text-subtle);text-transform:uppercase;letter-spacing:.08em;font-weight:600;padding:10px 14px;border-bottom:1px solid var(--border-subtle)">Property</th>
+              <th style="text-align:right;font-size:10.5px;color:var(--text-subtle);text-transform:uppercase;letter-spacing:.08em;font-weight:600;padding:10px 14px;border-bottom:1px solid var(--border-subtle)">Wellness</th>
+              <th style="text-align:right;font-size:10.5px;color:var(--text-subtle);text-transform:uppercase;letter-spacing:.08em;font-weight:600;padding:10px 14px;border-bottom:1px solid var(--border-subtle)">GOP</th>
+              <th style="text-align:right;font-size:10.5px;color:var(--text-subtle);text-transform:uppercase;letter-spacing:.08em;font-weight:600;padding:10px 14px;border-bottom:1px solid var(--border-subtle)">Mkt Share</th>
+              <th style="text-align:right;font-size:10.5px;color:var(--text-subtle);text-transform:uppercase;letter-spacing:.08em;font-weight:600;padding:10px 14px;border-bottom:1px solid var(--border-subtle)">GSS</th>
+              <th style="text-align:right;font-size:10.5px;color:var(--text-subtle);text-transform:uppercase;letter-spacing:.08em;font-weight:600;padding:10px 14px;border-bottom:1px solid var(--border-subtle)">Forecast</th>
+              <th style="text-align:right;font-size:10.5px;color:var(--text-subtle);text-transform:uppercase;letter-spacing:.08em;font-weight:600;padding:10px 14px;border-bottom:1px solid var(--border-subtle)">PM</th>
+              <th style="text-align:right;font-size:10.5px;color:var(--text-subtle);text-transform:uppercase;letter-spacing:.08em;font-weight:600;padding:10px 14px;border-bottom:1px solid var(--border-subtle)">Momentum</th>
+            </tr>
+          </thead>
+          <tbody id="wClusterTableBody"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <!-- PROPERTY DETAIL VIEW -->
+  <div class="wview" id="wview-property">
+    <main style="padding:24px 28px 80px;max-width:1400px;margin:0 auto">
+      <div id="wPropertyHeader"></div>
+      <div class="wdetail-grid" id="wDetailGrid"></div>
+    </main>
+  </div>
+
+</div><!-- /#tab-wellness -->
 
 <!-- ============== INSIGHTS DRAWER ============== -->
 <div class="drawer-overlay" id="overlay"></div>
@@ -3774,7 +4031,314 @@ applyPropertyPeriod('mtd');
 document.getElementById('portfolioView')?.classList.remove('loading');
 document.getElementById('propertyView')?.classList.remove('loading');
 } // ========== END runDashboard() ==========
+
+// ============================================================
+// TAB SWITCHING
+// ============================================================
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('hidden', p.id !== 'tab-' + tab));
+}
+
+// ============================================================
+// GM PULSE — DATA
+// ============================================================
+const W_THRESH_GREEN = 70;
+const W_THRESH_YELLOW = 40;
+
+function wCls(score) {
+  return score >= W_THRESH_GREEN ? 'wgreen' : score >= W_THRESH_YELLOW ? 'wyellow' : 'wred';
+}
+function wLabel(score) {
+  return score >= W_THRESH_GREEN ? 'On Track' : score >= W_THRESH_YELLOW ? 'Watch' : 'At Risk';
+}
+function wMockPrior(score) {
+  const delta = ((score * 137.5) % 20) - 10;
+  return Math.max(0, Math.min(100, score + delta));
+}
+function wMomentum(score) {
+  const delta = score - wMockPrior(score);
+  if (Math.abs(delta) < 2) return { cls:'wflat', arrow:'→', delta:'+0.0' };
+  return delta > 0
+    ? { cls:'wup', arrow:'↑', delta:'+'+delta.toFixed(1) }
+    : { cls:'wdown', arrow:'↓', delta:delta.toFixed(1) };
+}
+
+const W_PROPERTIES = [
+  { code:'BZNFC', short:'Home2 Bozeman', full:'Home2 Suites by Hilton Bozeman Four Corners', gop:28.6, gopFlow:30.0, str:15.0, fcst:0.0, gss:10.0, revinate:5.0, pm:5.0, total:93.6, gopAchieve:109.3, revparIdx:147.2, gssRank:91.6, revinatePct:94.4 },
+  { code:'PDXRE', short:"River's Edge Portland", full:"River's Edge Portland Hotel, Tapestry Collection", gop:30.0, gopFlow:30.0, str:13.0, fcst:0.0, gss:10.0, revinate:5.0, pm:5.0, total:93.0, gopAchieve:117.8, revparIdx:127.9, gssRank:79.5, revinatePct:93.9 },
+  { code:'LG52840', short:'La Quinta Twin Falls', full:'La Quinta Twin Falls', gop:30.0, gopFlow:30.0, str:12.0, fcst:0.0, gss:10.0, revinate:5.0, pm:5.0, total:92.0, gopAchieve:237.7, revparIdx:108.5, gssRank:87.9, revinatePct:100.0 },
+  { code:'CDAID', short:'Hampton CdA', full:"Hampton Inn & Suites Coeur d'Alene", gop:25.7, gopFlow:30.0, str:15.0, fcst:0.0, gss:10.0, revinate:5.0, pm:5.0, total:90.7, gopAchieve:107.7, revparIdx:137.6, gssRank:98.4, revinatePct:98.7 },
+  { code:'DALFB', short:'DoubleTree Dallas', full:'DoubleTree Dallas-Farmers Branch', gop:28.6, gopFlow:30.0, str:15.0, fcst:0.0, gss:5.0, revinate:5.0, pm:5.0, total:88.6, gopAchieve:109.7, revparIdx:133.7, gssRank:52.4, revinatePct:100.0 },
+  { code:'LQ52836', short:'La Quinta CdA', full:"La Quinta Coeur d'Alene", gop:30.0, gopFlow:30.0, str:8.0, fcst:0.0, gss:10.0, revinate:5.0, pm:5.0, total:88.0, gopAchieve:279.4, revparIdx:90.1, gssRank:93.3, revinatePct:100.0 },
+  { code:'SLCLE', short:'SpringHill Lehi', full:'Springhill Suites by Marriott Lehi', gop:30.0, gopFlow:30.0, str:15.0, fcst:0.0, gss:0.0, revinate:5.0, pm:5.0, total:85.0, gopAchieve:158.3, revparIdx:135.7, gssRank:47.9, revinatePct:97.3 },
+  { code:'BOIGI', short:'HGI Boise Spectrum', full:'Hilton Garden Inn Boise Spectrum', gop:25.7, gopFlow:30.0, str:4.0, fcst:5.0, gss:10.0, revinate:5.0, pm:5.0, total:84.7, gopAchieve:107.3, revparIdx:118.0, gssRank:83.8, revinatePct:100.0 },
+  { code:'LASHE', short:'HGI Henderson', full:'Hilton Garden Inn Henderson', gop:25.7, gopFlow:30.0, str:6.0, fcst:0.0, gss:5.0, revinate:5.0, pm:5.0, total:76.7, gopAchieve:107.9, revparIdx:120.2, gssRank:70.1, revinatePct:100.0 },
+  { code:'BNAGV', short:'Tru Nashville', full:'Tru by Hilton Goodlettsville Nashville', gop:30.0, gopFlow:30.0, str:6.0, fcst:0.0, gss:0.0, revinate:5.0, pm:5.0, total:76.0, gopAchieve:194.2, revparIdx:120.4, gssRank:27.5, revinatePct:98.6 },
+  { code:'MSOGI', short:'HGI Missoula', full:'Hilton Garden Inn Missoula', gop:30.0, gopFlow:30.0, str:0.0, fcst:0.0, gss:0.0, revinate:5.0, pm:5.0, total:70.0, gopAchieve:141.6, revparIdx:85.8, gssRank:36.7, revinatePct:100.0 },
+  { code:'PHXRU', short:'Tru Gilbert', full:'Tru by Hilton Gilbert', gop:18.6, gopFlow:30.0, str:0.0, fcst:5.0, gss:5.0, revinate:5.0, pm:5.0, total:68.6, gopAchieve:102.1, revparIdx:92.1, gssRank:54.0, revinatePct:100.0 },
+  { code:'ASTOR', short:'HIE Astoria', full:'Holiday Inn Express Astoria', gop:30.0, gopFlow:0.0, str:15.0, fcst:0.0, gss:10.0, revinate:0.0, pm:5.0, total:60.0, gopAchieve:111.1, revparIdx:149.1, gssRank:86.3, revinatePct:86.5 },
+  { code:'LASET', short:'Hampton Las Vegas Airport', full:'Hampton Inn & Suites Las Vegas Airport', gop:20.0, gopFlow:0.0, str:0.0, fcst:0.0, gss:5.0, revinate:5.0, pm:5.0, total:35.0, gopAchieve:103.2, revparIdx:104.9, gssRank:64.3, revinatePct:94.4 },
+  { code:'OR113', short:'Comfort Suites Redmond', full:'Comfort Suites Redmond Airport', gop:21.5, gopFlow:0.0, str:3.0, fcst:0.0, gss:0.0, revinate:5.0, pm:5.0, total:34.5, gopAchieve:104.5, revparIdx:87.1, gssRank:0.0, revinatePct:96.0 },
+  { code:'BOISP', short:'Hampton Boise Spectrum', full:'Hampton Inn & Suites Boise Spectrum', gop:15.7, gopFlow:0.0, str:1.0, fcst:0.0, gss:5.0, revinate:5.0, pm:5.0, total:31.7, gopAchieve:100.5, revparIdx:115.5, gssRank:60.1, revinatePct:97.4 },
+  { code:'SCCDT', short:'DoubleTree Spokane', full:'DoubleTree by Hilton Spokane City Center', gop:10.0, gopFlow:0.0, str:0.0, fcst:0.0, gss:5.0, revinate:5.0, pm:5.0, total:25.0, gopAchieve:96.0, revparIdx:93.2, gssRank:57.0, revinatePct:90.6 },
+  { code:'SLCDW', short:'HGI SLC Downtown', full:'Hilton Garden Inn Salt Lake City Downtown', gop:0.0, gopFlow:0.0, str:0.0, fcst:5.0, gss:10.0, revinate:5.0, pm:5.0, total:25.0, gopAchieve:89.5, revparIdx:107.0, gssRank:94.4, revinatePct:98.9 },
+  { code:'BOIRI', short:'Residence Inn Boise', full:'Residence Inn by Marriott Boise', gop:0.0, gopFlow:0.0, str:0.0, fcst:5.0, gss:0.0, revinate:0.0, pm:5.0, total:10.0, gopAchieve:59.9, revparIdx:70.6, gssRank:48.8, revinatePct:89.2 },
+  { code:'PDXSH', short:'Hampton Sherwood', full:'Hampton Inn & Suites Sherwood', gop:0.0, gopFlow:0.0, str:0.0, fcst:0.0, gss:5.0, revinate:5.0, pm:5.0, total:15.0, gopAchieve:15.0, revparIdx:102.9, gssRank:71.3, revinatePct:100.0 },
+  { code:'SLCLI', short:'Courtyard Lehi', full:'Courtyard by Marriott Lehi', gop:0.0, gopFlow:0.0, str:0.0, fcst:0.0, gss:5.0, revinate:5.0, pm:5.0, total:15.0, gopAchieve:89.1, revparIdx:98.4, gssRank:72.4, revinatePct:96.0 },
+  { code:'RDMBO', short:'HGI Bend', full:'Hilton Garden Inn Bend', gop:0.0, gopFlow:0.0, str:0.0, fcst:5.0, gss:0.0, revinate:5.0, pm:5.0, total:15.0, gopAchieve:68.8, revparIdx:101.7, gssRank:35.7, revinatePct:96.3 },
+  { code:'BOISH', short:'SpringHill Boise West Eagle', full:'Springhill Suites Boise West Eagle', gop:2.9, gopFlow:0.0, str:0.0, fcst:5.0, gss:0.0, revinate:0.0, pm:5.0, total:12.9, gopAchieve:91.8, revparIdx:109.1, gssRank:34.7, revinatePct:59.2 },
+  { code:'RDMBE', short:'Hampton Bend', full:'Hampton Inn & Suites Bend', gop:0.0, gopFlow:0.0, str:0.0, fcst:0.0, gss:0.0, revinate:0.0, pm:5.0, total:5.0, gopAchieve:39.1, revparIdx:73.5, gssRank:31.1, revinatePct:88.9 },
+  { code:'RDMNB', short:'The Newberry Bend', full:'The Newberry Bend', gop:0.0, gopFlow:0.0, str:0.0, fcst:0.0, gss:0.0, revinate:5.0, pm:5.0, total:10.0, gopAchieve:64.7, revparIdx:84.3, gssRank:47.7, revinatePct:100.0 },
+  { code:'PDXTG', short:'Hampton Portland Tigard', full:'Hampton Inn & Suites Portland Tigard', gop:0.0, gopFlow:0.0, str:0.0, fcst:0.0, gss:0.0, revinate:0.0, pm:5.0, total:5.0, gopAchieve:59.6, revparIdx:71.5, gssRank:13.8, revinatePct:85.5 },
+];
+
+const W_RVPS = [
+  { id:'rvp-ableman', name:'Doug Ableman', title:'Regional Vice President', icon:'🌲', properties:['ASTOR','OR113','PDXRE','PDXSH','PDXTG','RDMBE','RDMBO','RDMNB'] },
+  { id:'rvp-gamboa',  name:'Marianna Gamboa', title:'Regional Vice President', icon:'⛰️', properties:['BNAGV','BZNFC','MSOGI','PHXRU','SLCDW','SLCLE','SLCLI'] },
+  { id:'rvp-truniger',name:'Dan Truniger', title:'Regional Vice President', icon:'🏨', properties:['BOIGI','BOIRI','BOISH','BOISP','CDAID','LASET','LASHE','LG52840','LQ52836'] },
+  { id:'rvp-horton',  name:'Gary Horton', title:'Regional Vice President', icon:'🌵', properties:['DALFB'] },
+  { id:'rvp-silvester',name:'Noall Silvester', title:'Regional Vice President', icon:'🏙️', properties:['SCCDT'] },
+];
+
+function wGetProp(code) { return W_PROPERTIES.find(p => p.code === code); }
+
+// ---- State ----
+let wCurrentView = 'portfolio';
+let wCurrentRvp = null;
+let wCurrentProp = null;
+
+function wShowView(v, rvpId, propCode) {
+  document.querySelectorAll('.wview').forEach(el => el.classList.remove('active'));
+  document.getElementById('wview-' + v).classList.add('active');
+  wCurrentView = v;
+  const backBtn = document.getElementById('wBackBtn');
+  backBtn.classList.toggle('visible', v !== 'portfolio');
+  wUpdateBreadcrumb(v, rvpId, propCode);
+  if (v === 'cluster' && rvpId) { wCurrentRvp = rvpId; wRenderCluster(rvpId); }
+  if (v === 'property' && propCode) { wCurrentProp = propCode; wRenderProperty(propCode); }
+  // scroll top of wellness panel
+  document.getElementById('tab-wellness').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function wGoBack() {
+  if (wCurrentView === 'property') wShowView('cluster', wCurrentRvp);
+  else wShowView('portfolio');
+}
+
+function wUpdateBreadcrumb(v, rvpId, propCode) {
+  const c0 = document.getElementById('wcrumb0');
+  const c1 = document.getElementById('wcrumb1');
+  const c2 = document.getElementById('wcrumb2');
+  const s1 = document.getElementById('wsep1');
+  const s2 = document.getElementById('wsep2');
+  c0.className = 'wcrumb' + (v==='portfolio' ? ' active' : '');
+  if (v === 'portfolio') {
+    s1.style.display='none'; c1.style.display='none';
+    s2.style.display='none'; c2.style.display='none';
+  } else if (v === 'cluster') {
+    const rvp = W_RVPS.find(r => r.id === rvpId);
+    s1.style.display='inline'; c1.style.display='inline';
+    c1.textContent = rvp ? rvp.name : ''; c1.className='wcrumb active'; c1.onclick=null;
+    s2.style.display='none'; c2.style.display='none';
+  } else {
+    const rvp = W_RVPS.find(r => r.id === wCurrentRvp);
+    const prop = wGetProp(propCode);
+    s1.style.display='inline'; c1.style.display='inline';
+    c1.textContent = rvp ? rvp.name : ''; c1.className='wcrumb';
+    c1.onclick = () => wShowView('cluster', wCurrentRvp);
+    s2.style.display='inline'; c2.style.display='inline';
+    c2.textContent = prop ? prop.short : propCode; c2.className='wcrumb active';
+  }
+}
+
+// ---- Render Portfolio ----
+function wRenderPortfolio() {
+  let green=0, yellow=0, red=0;
+  W_PROPERTIES.forEach(p => {
+    const c = wCls(p.total);
+    if (c==='wgreen') green++; else if (c==='wyellow') yellow++; else red++;
+  });
+  const avg = W_PROPERTIES.reduce((s,p)=>s+p.total,0)/W_PROPERTIES.length;
+
+  document.getElementById('wSummaryStrip').innerHTML = `
+    <div class="wsummary-chip"><div class="wchip-dot wchip-green"></div><span class="wchip-count">${green}</span><span class="wchip-label">On Track ≥${W_THRESH_GREEN}%</span></div>
+    <div class="wsummary-chip"><div class="wchip-dot wchip-yellow"></div><span class="wchip-count">${yellow}</span><span class="wchip-label">Watch ${W_THRESH_YELLOW}–${W_THRESH_GREEN-1}%</span></div>
+    <div class="wsummary-chip"><div class="wchip-dot wchip-red"></div><span class="wchip-count">${red}</span><span class="wchip-label">At Risk &lt;${W_THRESH_YELLOW}%</span></div>
+    <div class="wsummary-chip" style="margin-left:auto"><span style="color:var(--text-subtle);font-size:11px">Portfolio avg</span><span class="wchip-count" style="color:var(--accent)">${avg.toFixed(1)}%</span></div>
+  `;
+
+  const atRisk = W_PROPERTIES.filter(p => wCls(p.total) === 'wred');
+  if (atRisk.length) {
+    document.getElementById('wAttentionBanner').style.display = 'flex';
+    document.getElementById('wAttentionNames').textContent = atRisk.map(p=>p.short).join(' · ');
+  }
+
+  let html = '';
+  W_RVPS.forEach(rvp => {
+    const props = rvp.properties.map(wGetProp).filter(Boolean);
+    if (!props.length) return;
+    const avg = props.reduce((s,p)=>s+p.total,0)/props.length;
+    const cls = wCls(avg);
+    const mom = wMomentum(avg);
+    const propRows = props.sort((a,b)=>b.total-a.total).map(p => {
+      const pc = wCls(p.total);
+      const pm = wMomentum(p.total);
+      return `<div class="wprop-mini">
+        <div class="wprop-mini-dot" style="background:${pc==='wgreen'?'#4ADE80':pc==='wyellow'?'#F5B45D':'#F87171'}"></div>
+        <div class="wprop-mini-name">${p.short}</div>
+        <div class="wprop-mini-score ${pc}">${p.total.toFixed(1)}%</div>
+        <span style="font-size:11px;color:${pm.cls==='wup'?'#4ADE80':pm.cls==='wdown'?'#F87171':'var(--text-subtle)'}">${pm.arrow}</span>
+      </div>`;
+    }).join('');
+    html += `
+      <div class="wrvp-card ${cls}" onclick="wShowView('cluster','${rvp.id}')">
+        <div class="wrvp-header">
+          <div>
+            <div class="wrvp-name">${rvp.name}</div>
+            <div class="wrvp-meta">${rvp.title} · ${props.length} propert${props.length===1?'y':'ies'}</div>
+          </div>
+          <div class="wscore-block">
+            <div class="wscore-num ${cls}">${avg.toFixed(1)}%</div>
+            <div class="wscore-lbl">Wellness</div>
+            <div class="wmomentum ${mom.cls}">${mom.arrow} ${mom.delta}</div>
+          </div>
+        </div>
+        <div>${propRows}</div>
+        <div class="wrvp-footer">View cluster →</div>
+      </div>`;
+  });
+  document.getElementById('wRvpGrid').innerHTML = html;
+}
+
+// ---- Render Cluster ----
+function wRenderCluster(rvpId) {
+  const rvp = W_RVPS.find(r=>r.id===rvpId);
+  if (!rvp) return;
+  const props = rvp.properties.map(wGetProp).filter(Boolean);
+  const avg = props.reduce((s,p)=>s+p.total,0)/props.length;
+  const cls = wCls(avg);
+  const mom = wMomentum(avg);
+
+  document.getElementById('wClusterHeader').innerHTML = `
+    <div class="wcluster-header">
+      <div class="wcluster-icon">${rvp.icon}</div>
+      <div class="wcluster-info">
+        <h2>${rvp.name}</h2>
+        <div class="meta">${rvp.title} · ${props.length} propert${props.length===1?'y':'ies'} · Q1 2026</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="text-align:right">
+          <div style="font-size:34px;font-weight:700;font-family:'JetBrains Mono',monospace;line-height:1;color:${cls==='wgreen'?'#4ADE80':cls==='wyellow'?'#F5B45D':'#F87171'}">${avg.toFixed(1)}%</div>
+          <div style="font-size:10px;color:var(--text-subtle);text-transform:uppercase;letter-spacing:.08em;margin-top:4px">Region Avg</div>
+        </div>
+        <div class="wmomentum ${mom.cls}" style="font-size:13px;padding:5px 10px">${mom.arrow} ${mom.delta}</div>
+      </div>
+    </div>`;
+
+  const rows = props.sort((a,b)=>b.total-a.total).map(p => {
+    const pc = wCls(p.total);
+    const pm = wMomentum(p.total);
+    const gopT = p.gop + p.gopFlow;
+    const tdStyle = 'padding:13px 14px;border-bottom:1px solid var(--border-subtle);';
+    const numStyle = tdStyle+'text-align:right;font-family:"JetBrains Mono",monospace;';
+    return `<tr onclick="wShowView('property',null,'${p.code}')" style="cursor:pointer;transition:background .12s" onmouseover="this.style.background='var(--surface-2)'" onmouseout="this.style.background=''">
+      <td style="${tdStyle}">
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:44px;height:28px;border-radius:5px;background:var(--surface-3);border:1px solid var(--border-subtle);font-size:9px;font-weight:700;color:var(--text-muted);letter-spacing:.04em;margin-right:10px;vertical-align:middle">${p.code.slice(0,5)}</span>
+        <span style="font-weight:500">${p.short}</span>
+      </td>
+      <td style="${numStyle}"><span class="wwell-pill ${pc}"><span class="wdot"></span>${p.total.toFixed(1)}%</span></td>
+      <td style="${numStyle}color:${gopT>40?'#4ADE80':gopT>20?'#F5B45D':'#F87171'}">${gopT.toFixed(1)}%</td>
+      <td style="${numStyle}color:${p.str>8?'#4ADE80':p.str>3?'#F5B45D':'#F87171'}">${p.str.toFixed(1)}%</td>
+      <td style="${numStyle}color:${p.gss>=10?'#4ADE80':p.gss>=5?'#F5B45D':'#F87171'}">${p.gss.toFixed(1)}%</td>
+      <td style="${numStyle}color:${p.fcst>0?'#4ADE80':'var(--text-subtle)'}">${p.fcst.toFixed(1)}%</td>
+      <td style="${numStyle}color:${p.pm>0?'#4ADE80':'#F87171'}">${p.pm.toFixed(1)}%</td>
+      <td style="${numStyle}"><span class="wmomentum ${pm.cls}">${pm.arrow} ${pm.delta}</span></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('wClusterTableBody').innerHTML = rows;
+}
+
+// ---- Render Property Detail ----
+function wRenderProperty(code) {
+  const p = wGetProp(code);
+  if (!p) return;
+  const cls = wCls(p.total);
+  const mom = wMomentum(p.total);
+  const color = cls==='wgreen'?'#4ADE80':cls==='wyellow'?'#F5B45D':'#F87171';
+  const gopT = p.gop + p.gopFlow;
+  const gssT = p.gss + p.revinate;
+
+  document.getElementById('wPropertyHeader').innerHTML = `
+    <div class="wdetail-header">
+      <div>
+        <div class="wdetail-title">${p.full}</div>
+        <div class="wdetail-meta">${p.code} · Q1 2026 · GM Wellness Scorecard</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px">
+        <div style="text-align:center">
+          <div style="font-size:42px;font-weight:700;font-family:'JetBrains Mono',monospace;line-height:1;color:${color}">${p.total.toFixed(1)}%</div>
+          <div style="font-size:10px;color:var(--text-subtle);text-transform:uppercase;letter-spacing:.08em;margin-top:4px">Wellness Score</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+          <span class="wwell-pill ${cls}" style="font-size:13px;padding:5px 12px"><span class="wdot"></span>${wLabel(p.total)}</span>
+          <span class="wmomentum ${mom.cls}">${mom.arrow} ${mom.delta} vs last qtr</span>
+        </div>
+      </div>
+    </div>`;
+
+  function barHTML(earned, max, color) {
+    const pct = max>0 ? Math.min(100,(earned/max)*100) : 0;
+    return `<div class="wcat-bar-track"><div class="wcat-bar-fill" style="width:${pct}%;background:${color}"></div></div>`;
+  }
+  function mRow(label, val, earned, earnedCls) {
+    return `<div class="wmetric-row"><span class="wlabel">${label}</span><span class="wval">${val}</span>${earned?`<span class="wearned ${earnedCls}">${earned}</span>`:''}</div>`;
+  }
+
+  document.getElementById('wDetailGrid').innerHTML = `
+    <div class="card" style="grid-column:1/-1">
+      <div class="card-header"><span class="wsection-title">Score Breakdown by Category</span></div>
+      <div style="margin-top:4px">
+        <div class="wcat-bar-row"><div class="wcat-bar-label">Financial GOP</div>${barHTML(gopT,60,gopT>40?'#4ADE80':gopT>20?'#F5B45D':'#F87171')}<div class="wcat-bar-val" style="color:${gopT>40?'#4ADE80':gopT>20?'#F5B45D':'#F87171'}">${gopT.toFixed(1)}%</div><div class="wcat-bar-max">/ 60%</div></div>
+        <div class="wcat-bar-row"><div class="wcat-bar-label">Market Share</div>${barHTML(p.str,15,p.str>8?'#4ADE80':p.str>3?'#F5B45D':'#F87171')}<div class="wcat-bar-val" style="color:${p.str>8?'#4ADE80':p.str>3?'#F5B45D':'#F87171'}">${p.str.toFixed(1)}%</div><div class="wcat-bar-max">/ 15%</div></div>
+        <div class="wcat-bar-row"><div class="wcat-bar-label">GSS + Reviews</div>${barHTML(gssT,15,gssT>=12?'#4ADE80':gssT>=7?'#F5B45D':'#F87171')}<div class="wcat-bar-val" style="color:${gssT>=12?'#4ADE80':gssT>=7?'#F5B45D':'#F87171'}">${gssT.toFixed(1)}%</div><div class="wcat-bar-max">/ 15%</div></div>
+        <div class="wcat-bar-row"><div class="wcat-bar-label">Forecast</div>${barHTML(p.fcst,5,p.fcst>0?'#4ADE80':'#F87171')}<div class="wcat-bar-val" style="color:${p.fcst>0?'#4ADE80':'#F87171'}">${p.fcst.toFixed(1)}%</div><div class="wcat-bar-max">/ 5%</div></div>
+        <div class="wcat-bar-row"><div class="wcat-bar-label">PM Completion</div>${barHTML(p.pm,5,p.pm>0?'#4ADE80':'#F87171')}<div class="wcat-bar-val" style="color:${p.pm>0?'#4ADE80':'#F87171'}">${p.pm.toFixed(1)}%</div><div class="wcat-bar-max">/ 5%</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="wsection-title">Financial — GOP</span></div>
+      ${mRow('GOP Achievement', p.gopAchieve.toFixed(1)+'%', null, '')}
+      ${mRow('Achievement Incentive', p.gop.toFixed(1)+'%', p.gop>0?'Earned':'Missed', p.gop>0?'got':'missed')}
+      ${mRow('Flow-Through Incentive', p.gopFlow.toFixed(1)+'%', p.gopFlow>0?'Earned':'Missed', p.gopFlow>0?'got':'missed')}
+      <div class="wmetric-row" style="border-top:1px solid var(--border);margin-top:4px;padding-top:10px"><span class="wlabel" style="font-weight:600;color:var(--text-muted)">GOP Total</span><span class="wval" style="color:${gopT>40?'#4ADE80':gopT>20?'#F5B45D':'#F87171'}">${gopT.toFixed(1)} / 60%</span></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="wsection-title">Market Share — STR / RevPAR</span></div>
+      ${mRow('RevPAR Index', p.revparIdx.toFixed(1), null, '')}
+      ${mRow('STR Incentive Earned', p.str.toFixed(1)+'%', p.str>=12?'Full':p.str>0?'Partial':'Missed', p.str>=12?'got':p.str>0?'partial':'missed')}
+      <div class="wmetric-row" style="border-top:1px solid var(--border);margin-top:4px;padding-top:10px"><span class="wlabel" style="font-weight:600;color:var(--text-muted)">Mkt Share Total</span><span class="wval" style="color:${p.str>8?'#4ADE80':p.str>3?'#F5B45D':'#F87171'}">${p.str.toFixed(1)} / 15%</span></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="wsection-title">Guest Satisfaction</span></div>
+      ${mRow('Brand Rank Percentile', p.gssRank.toFixed(1)+'%', null, '')}
+      ${mRow('GSS Incentive', p.gss.toFixed(1)+'%', p.gss>=10?'Full (top 25%)':p.gss>=5?'Partial (top 50%)':'Missed', p.gss>=10?'got':p.gss>=5?'partial':'missed')}
+      ${mRow('Review Response Rate', p.revinatePct.toFixed(1)+'%', null, '')}
+      ${mRow('Revinate Incentive', p.revinate.toFixed(1)+'%', p.revinate>0?'Earned (≥90%)':'Missed (<90%)', p.revinate>0?'got':'missed')}
+      <div class="wmetric-row" style="border-top:1px solid var(--border);margin-top:4px;padding-top:10px"><span class="wlabel" style="font-weight:600;color:var(--text-muted)">GSS Total</span><span class="wval" style="color:${gssT>=12?'#4ADE80':gssT>=7?'#F5B45D':'#F87171'}">${gssT.toFixed(1)} / 15%</span></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="wsection-title">Forecast Accuracy + PM</span></div>
+      ${mRow('Months within ±5%', p.fcst>0?'2+ months':'< 2 months', null, '')}
+      ${mRow('Forecast Incentive', p.fcst.toFixed(1)+'%', p.fcst>0?'Earned':'Missed', p.fcst>0?'got':'missed')}
+      ${mRow('PM Completion', p.pm>0?'Yes':'No', null, '')}
+      ${mRow('PM Incentive', p.pm.toFixed(1)+'%', p.pm>0?'Complete':'Not Complete', p.pm>0?'got':'missed')}
+      <div class="wmetric-row" style="border-top:1px solid var(--border);margin-top:4px;padding-top:10px"><span class="wlabel" style="font-weight:600;color:var(--text-muted)">Combined Total</span><span class="wval" style="color:${p.fcst+p.pm>=8?'#4ADE80':p.fcst+p.pm>=5?'#F5B45D':'#F87171'}">${(p.fcst+p.pm).toFixed(1)} / 10%</span></div>
+    </div>`;
+}
+
+// ---- Init wellness ----
+wRenderPortfolio();
 </script>
 </body>
 </html>
-
