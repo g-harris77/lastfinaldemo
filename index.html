@@ -3501,6 +3501,8 @@ function updateChatScope() {
 function makeSpark(id, data, color) {
   const ctx = document.getElementById(id);
   if (!ctx) return;
+  const existing = Chart.getChart(ctx);
+  if (existing) existing.destroy();
   new Chart(ctx, {
     type: 'line',
     data: {
@@ -3557,7 +3559,7 @@ const STR_CHART_DATA = {
 };
 let activeSTR = 'ARI';
 
-const strChart = new Chart(document.getElementById('rgiChart'), {
+const strChart = (() => { const _c = Chart.getChart(document.getElementById('rgiChart')); if (_c) _c.destroy(); return new Chart(document.getElementById('rgiChart'), {
   type: 'line',
   data: {
     labels: ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13'],
@@ -3585,7 +3587,7 @@ const strChart = new Chart(document.getElementById('rgiChart'), {
            suggestedMin: STR_CHART_DATA.RGI.min, suggestedMax: STR_CHART_DATA.RGI.max }
     }
   }
-});
+}); })();
 
 function switchSTRChart(metric) {
   activeSTR = metric;
@@ -3616,6 +3618,8 @@ function switchSTRChart(metric) {
 });
 
 function makeTrendChart(canvasId) {
+  const _ex = Chart.getChart(document.getElementById(canvasId));
+  if (_ex) _ex.destroy();
   return new Chart(document.getElementById(canvasId), {
     type: 'line',
     data: {
@@ -3660,7 +3664,7 @@ const PROP_STR_DATA = {
 };
 let activePropSTR = 'ARI';
 
-const propSTRChart = new Chart(document.getElementById('propSTRChart'), {
+const propSTRChart = (() => { const _c = Chart.getChart(document.getElementById('propSTRChart')); if (_c) _c.destroy(); return new Chart(document.getElementById('propSTRChart'), {
   type: 'line',
   data: {
     labels: ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13'],
@@ -3694,7 +3698,7 @@ const propSTRChart = new Chart(document.getElementById('propSTRChart'), {
       y: { grid: { color: '#1A222D' }, ticks: { font: { size: 10 } }, suggestedMin: 96, suggestedMax: 116 }
     }
   }
-});
+}); })();
 
 const STR_PERIOD_LABELS = {
   yesterday: 'Trailing 24 hours',
