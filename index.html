@@ -1981,32 +1981,34 @@ function toDateStr(d) {
 // Defaults to yesterday since today's data isn't written yet.
 window._anchorDate = (() => { const d = new Date(); d.setDate(d.getDate() - 1); d.setHours(0,0,0,0); return d; })();
 
-// today() returns the anchor date directly — date labels in Dataverse match the business date.
+// today() returns anchor+1 because PA stamps each row with the NEXT day.
+// To fetch anchor date's actuals, we need the stamp from anchor+1.
 function today() {
   const d = new Date(window._anchorDate);
+  d.setDate(d.getDate() + 1); // stamp is one day ahead of business date
   d.setHours(0, 0, 0, 0);
   return d;
 }
-// yesterday() = same as today() — kept for display label compatibility
+// yesterday() = the anchor date itself — used for display labels
 function yesterday() {
   const d = new Date(window._anchorDate);
   d.setHours(0, 0, 0, 0);
   return d;
 }
 function startOfWeek() {
-  const d = new Date(window._anchorDate);
+  const d = new Date();
   const day = d.getDay(); // 0=Sun
   d.setDate(d.getDate() - day); // Sunday — aligns with chart weekly grouping
   return d;
 }
 function startOfMonth() {
-  const d = new Date(window._anchorDate); d.setDate(1); return d;
+  const d = new Date(); d.setDate(1); return d;
 }
 function startOfYear() {
-  const d = new Date(window._anchorDate); d.setMonth(0); d.setDate(1); return d;
+  const d = new Date(); d.setMonth(0); d.setDate(1); return d;
 }
 function threeYearsAgo() {
-  const d = new Date(window._anchorDate); d.setFullYear(d.getFullYear() - 3); return d;
+  const d = new Date(); d.setFullYear(d.getFullYear() - 3); return d;
 }
 function oneYearAgo(d) {
   const r = new Date(d); r.setFullYear(r.getFullYear() - 1); return r;
@@ -2391,9 +2393,10 @@ function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag
   // Determine grouping strategy
   let groupFn, labelFn, lyGroupFn, lyLabelFn;
   if (totalDays <= 35) {
-    // Daily — date label in Dataverse matches the business date directly, no offset needed
+    // Daily — rows are stamped with today but contain yesterday's data (Power Automate runs at 2am)
+    // So label each bucket as stamp_date - 1 day for correct business date display
     groupFn   = d => toDateStr(d);
-    labelFn   = d => fmtLabel(new Date(d + 'T00:00:00'));
+    labelFn   = d => { const bd = new Date(d + 'T00:00:00'); bd.setDate(bd.getDate() - 1); return fmtLabel(bd); };
     lyGroupFn = d => toDateStr(new Date(d.getTime() + 365 * dayMs));
     lyLabelFn = labelFn;
   } else if (totalDays <= 180) {
@@ -2831,16 +2834,6 @@ async function loadDataAndRun() {
 
     // Store rows globally FIRST so buildChartData and recompute can use them
     window.ALL_ROWS = dedupedRows;
-
-    // Set anchor to the latest available date in the data
-    if (dedupedRows.length > 0) {
-      const latestStamp = dedupedRows.map(r => extractDate(r)).filter(Boolean).sort().pop();
-      if (latestStamp) {
-        const d = new Date(latestStamp + 'T00:00:00');
-        d.setHours(0, 0, 0, 0);
-        window._anchorDate = d;
-      }
-    }
 
     // Run initial computation
     window.recompute();
