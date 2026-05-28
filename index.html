@@ -1994,19 +1994,19 @@ function yesterday() {
   return d;
 }
 function startOfWeek() {
-  const d = new Date();
+  const d = new Date(window._anchorDate);
   const day = d.getDay(); // 0=Sun
   d.setDate(d.getDate() - day); // Sunday — aligns with chart weekly grouping
   return d;
 }
 function startOfMonth() {
-  const d = new Date(); d.setDate(1); return d;
+  const d = new Date(window._anchorDate); d.setDate(1); return d;
 }
 function startOfYear() {
-  const d = new Date(); d.setMonth(0); d.setDate(1); return d;
+  const d = new Date(window._anchorDate); d.setMonth(0); d.setDate(1); return d;
 }
 function threeYearsAgo() {
-  const d = new Date(); d.setFullYear(d.getFullYear() - 3); return d;
+  const d = new Date(window._anchorDate); d.setFullYear(d.getFullYear() - 3); return d;
 }
 function oneYearAgo(d) {
   const r = new Date(d); r.setFullYear(r.getFullYear() - 1); return r;
@@ -2747,9 +2747,9 @@ async function loadDataAndRun() {
       const ranges = {
         yesterday: { from: td,                           to: td                           },
         wtd:       { from: shiftDay(td, -6),             to: td                           }, // trailing 7 days
-        mtd:       { from: shiftDay(startOfMonth(), 1),  to: td                           },
-        ytd:       { from: shiftDay(startOfYear(), 1),   to: td                           },
-        '3yr':     { from: shiftDay(threeYearsAgo(), 1), to: td                           },
+        mtd:       { from: startOfMonth(),                to: td                           },
+        ytd:       { from: startOfYear(),                to: td                           },
+        '3yr':     { from: threeYearsAgo(),              to: td                           },
       };
 
       const rows = window.ALL_ROWS || [];
