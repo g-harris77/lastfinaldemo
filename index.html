@@ -2063,7 +2063,7 @@ async function fetchAllRows(token, fromDate) {
     'cr2cd_departmentsales',
   ].join(',');
 
-  let url = `${DATAVERSE_URL}/api/data/v9.2/${TABLE}?$filter=${encodeURIComponent(dateFilter)}&$select=${select}&$orderby=cr2cd_date asc&$top=5000`;
+  let url = `${DATAVERSE_URL}/api/data/v9.2/${TABLE}?$filter=${encodeURIComponent(dateFilter)}&$select=${select}&$orderby=cr2cd_date asc`;
   let allRows = [];
 
   while (url) {
@@ -2103,7 +2103,7 @@ async function fetchBudgetRows(token, fromDate) {
     'cr2cd_ebitda',
   ].join(',');
 
-  let url = `${DATAVERSE_URL}/api/data/v9.2/${BUDGET_TABLE}?$filter=${encodeURIComponent(dateFilter)}&$select=${select}&$orderby=cr2cd_date asc&$top=5000`;
+  let url = `${DATAVERSE_URL}/api/data/v9.2/${BUDGET_TABLE}?$filter=${encodeURIComponent(dateFilter)}&$select=${select}&$orderby=cr2cd_date asc`;
   let allRows = [];
 
   while (url) {
