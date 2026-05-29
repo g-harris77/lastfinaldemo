@@ -2539,24 +2539,35 @@ function buildPeriodData(label, propsSub, trendSub, totalRevLabel, agg, lyAgg, f
   // Uses Competitive Set 1 data which matches ProfitSword's portfolio-level aggregation exactly.
   let portfolioARI = null;
   let lyPortfolioARI = null;
-  function calcCS1ARI(fromDate, toDate, hotelADR) {
-    if (!hotelADR) return null;
+  function calcCS1ARI(fromDate, toDate, aggRows) {
+    if (!aggRows) return null;
     const cs1 = window.CS1_ROWS || [];
     const fromStr = toDateStr(fromDate instanceof Date ? fromDate : new Date(fromDate + 'T00:00:00'));
     const toStr   = toDateStr(toDate   instanceof Date ? toDate   : new Date(toDate   + 'T00:00:00'));
-    const filtered = cs1.filter(r => {
+    // CS1 compset ADR: sum all cs1 rev / sum all cs1 occ for the period
+    const cs1Filtered = cs1.filter(r => {
       const d = (r.cr2cd_date || '').slice(0, 10);
       return d >= fromStr && d <= toStr;
     });
-    const totalOcc = filtered.reduce((a, r) => a + (r.cr2cd_cs1occupied || 0), 0);
-    const totalRev = filtered.reduce((a, r) => a + (r.cr2cd_cs1revenue  || 0), 0);
-    if (totalOcc === 0 || totalRev === 0) return null;
-    const csADR = totalRev / totalOcc;
+    const cs1TotalOcc = cs1Filtered.reduce((a, r) => a + (r.cr2cd_cs1occupied || 0), 0);
+    const cs1TotalRev = cs1Filtered.reduce((a, r) => a + (r.cr2cd_cs1revenue  || 0), 0);
+    if (cs1TotalOcc === 0 || cs1TotalRev === 0) return null;
+    const csADR = cs1TotalRev / cs1TotalOcc;
+    // Hotel ADR for ARI: sum(cr2cd_compprproomsrevenue) / sum(cr2cd_compprpoccupied) across all rows in period
+    const allRows = window.ALL_ROWS || [];
+    const hotelFiltered = allRows.filter(r => {
+      const d = (r.cr2cd_date || '').slice(0, 10);
+      return d >= fromStr && d <= toStr;
+    });
+    const hotelRev = hotelFiltered.reduce((a, r) => a + (r.cr2cd_compprproomsrevenue || 0), 0);
+    const hotelOcc = hotelFiltered.reduce((a, r) => a + (r.cr2cd_compprpoccupied     || 0), 0);
+    if (hotelOcc === 0 || hotelRev === 0) return null;
+    const hotelADR = hotelRev / hotelOcc;
     return (hotelADR / csADR) * 100;
   }
   if (fromDate && toDate) {
-    portfolioARI   = calcCS1ARI(fromDate, toDate, agg?.portfolio?.adr);
-    lyPortfolioARI = calcCS1ARI(oneYearAgo(fromDate), oneYearAgo(toDate), lyAgg?.portfolio?.adr);
+    portfolioARI   = calcCS1ARI(fromDate, toDate, agg);
+    lyPortfolioARI = calcCS1ARI(oneYearAgo(fromDate), oneYearAgo(toDate), lyAgg);
   }
     const ariDelta = (portfolioARI !== null && lyPortfolioARI !== null)
       ? { text: (portfolioARI >= lyPortfolioARI ? '+' : '') + (portfolioARI - lyPortfolioARI).toFixed(1) + 'pts', up: portfolioARI >= lyPortfolioARI }
