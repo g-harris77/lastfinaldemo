@@ -1712,26 +1712,6 @@
       </div>
     </div>
     <div class="chart-wrap"><canvas id="propSTRChart"></canvas></div>
-    <div style="margin-top:18px; padding-top:14px; border-top:1px solid var(--border-subtle);">
-      <table>
-        <thead>
-          <tr>
-            <th>Competitor</th>
-            <th class="num">Rms</th>
-            <th class="num">Occ</th>
-            <th class="num">ADR</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>Comp 1 (LIC midscale)</td><td class="num">146</td><td class="num">73.8%</td><td class="num">$181.20</td></tr>
-          <tr><td>Comp 2 (LGA economy)</td><td class="num">138</td><td class="num">71.4%</td><td class="num">$172.80</td></tr>
-          <tr><td>Comp 3 (LGA midscale)</td><td class="num">160</td><td class="num">75.1%</td><td class="num">$185.40</td></tr>
-          <tr><td>Comp 4 (LGA economy)</td><td class="num">155</td><td class="num">68.2%</td><td class="num">$169.50</td></tr>
-          <tr><td>Comp 5 (LGA midscale)</td><td class="num">151</td><td class="num">74.9%</td><td class="num">$184.70</td></tr>
-          <tr class="total"><td><strong>ASTOR</strong></td><td class="num">134</td><td class="num">81.1%</td><td class="num">$176.90</td></tr>
-        </tbody>
-      </table>
-    </div>
   </div>
 
   <!-- Metric Trend (full width, multi-metric) -->
@@ -2502,6 +2482,74 @@ function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag
   };
 }
 
+// ---- Build daily ARI chart data for portfolio ----
+function buildPortfolioARIChartData(fromDate, toDate) {
+  if (!fromDate || !toDate) return [];
+  const cs1 = window.CS1_ROWS || [];
+  const allRows = window.ALL_ROWS || [];
+  const fromStr = toDateStr(fromDate instanceof Date ? fromDate : new Date(fromDate + 'T00:00:00'));
+  const toStr   = toDateStr(toDate   instanceof Date ? toDate   : new Date(toDate   + 'T00:00:00'));
+
+  // Get all unique dates in range that have CS1 data
+  const dates = [...new Set(
+    cs1.filter(r => {
+      const d = (r.cr2cd_date || '').slice(0, 10);
+      return d >= fromStr && d <= toStr;
+    }).map(r => (r.cr2cd_date || '').slice(0, 10))
+  )].sort();
+
+  return dates.map(date => {
+    // CS1 ADR for this date
+    const cs1Day = cs1.filter(r => (r.cr2cd_date || '').slice(0, 10) === date);
+    const cs1Occ = cs1Day.reduce((a, r) => a + (r.cr2cd_cs1occupied || 0), 0);
+    const cs1Rev = cs1Day.reduce((a, r) => a + (r.cr2cd_cs1revenue  || 0), 0);
+    if (cs1Occ === 0 || cs1Rev === 0) return null;
+    const csADR = cs1Rev / cs1Occ;
+
+    // Hotel ADR for this date using COMPPRP fields
+    const hotelDay = allRows.filter(r => (r.cr2cd_date || '').slice(0, 10) === date);
+    const hotelRev = hotelDay.reduce((a, r) => a + (r.cr2cd_compprproomsrevenue || 0), 0);
+    const hotelOcc = hotelDay.reduce((a, r) => a + (r.cr2cd_compprpoccupied     || 0), 0);
+    if (hotelOcc === 0 || hotelRev === 0) return null;
+    const hotelADR = hotelRev / hotelOcc;
+
+    return parseFloat(((hotelADR / csADR) * 100).toFixed(1));
+  });
+}
+
+// ---- Build daily ARI chart data for a single property ----
+function buildPropertyARIChartData(tag, fromDate, toDate) {
+  if (!fromDate || !toDate) return [];
+  const cs1 = window.CS1_ROWS || [];
+  const allRows = window.ALL_ROWS || [];
+  const fromStr = toDateStr(fromDate instanceof Date ? fromDate : new Date(fromDate + 'T00:00:00'));
+  const toStr   = toDateStr(toDate   instanceof Date ? toDate   : new Date(toDate   + 'T00:00:00'));
+
+  const dates = [...new Set(
+    cs1.filter(r => {
+      const d = (r.cr2cd_date || '').slice(0, 10);
+      return d >= fromStr && d <= toStr;
+    }).map(r => (r.cr2cd_date || '').slice(0, 10))
+  )].sort();
+
+  return dates.map(date => {
+    const cs1Day = cs1.filter(r => (r.cr2cd_date || '').slice(0, 10) === date);
+    const cs1Occ = cs1Day.reduce((a, r) => a + (r.cr2cd_cs1occupied || 0), 0);
+    const cs1Rev = cs1Day.reduce((a, r) => a + (r.cr2cd_cs1revenue  || 0), 0);
+    if (cs1Occ === 0 || cs1Rev === 0) return null;
+    const csADR = cs1Rev / cs1Occ;
+
+    // Hotel side: only this property's COMPPRP data
+    const propDay = allRows.filter(r => extractTag(r) === tag && (r.cr2cd_date || '').slice(0, 10) === date);
+    const hotelRev = propDay.reduce((a, r) => a + (r.cr2cd_compprproomsrevenue || 0), 0);
+    const hotelOcc = propDay.reduce((a, r) => a + (r.cr2cd_compprpoccupied     || 0), 0);
+    if (hotelOcc === 0 || hotelRev === 0) return null;
+    const hotelADR = hotelRev / hotelOcc;
+
+    return parseFloat(((hotelADR / csADR) * 100).toFixed(1));
+  });
+}
+
 // ---- Build a period data object in PORTFOLIO_DATA shape ----
 function buildPeriodData(label, propsSub, trendSub, totalRevLabel, agg, lyAgg, fromDate, toDate, budgetAgg) {
   if (!agg) return null;
@@ -2566,8 +2614,8 @@ function buildPeriodData(label, propsSub, trendSub, totalRevLabel, agg, lyAgg, f
     return (hotelADR / csADR) * 100;
   }
   if (fromDate && toDate) {
-    portfolioARI   = calcCS1ARI(fromDate, toDate, agg);
-    lyPortfolioARI = calcCS1ARI(oneYearAgo(fromDate), oneYearAgo(toDate), lyAgg);
+    try { portfolioARI   = calcCS1ARI(fromDate, toDate, agg); } catch(e) { portfolioARI = null; }
+    try { lyPortfolioARI = calcCS1ARI(oneYearAgo(fromDate), oneYearAgo(toDate), lyAgg); } catch(e) { lyPortfolioARI = null; }
   }
     const ariDelta = (portfolioARI !== null && lyPortfolioARI !== null)
       ? { text: (portfolioARI >= lyPortfolioARI ? '+' : '') + (portfolioARI - lyPortfolioARI).toFixed(1) + 'pts', up: portfolioARI >= lyPortfolioARI }
@@ -2597,7 +2645,7 @@ function buildPeriodData(label, propsSub, trendSub, totalRevLabel, agg, lyAgg, f
         up: ariDelta.up,
       },
       RGI: { value: '—', delta: '—', up: true },
-      chartData: { MPI: [], ARI: [], RGI: [] },
+      chartData: { MPI: [], ARI: buildPortfolioARIChartData(fromDate, toDate), RGI: [] },
     },
     perfRows: [],
     propRows: buildPropRows(agg, lyAgg),
@@ -2713,6 +2761,7 @@ function buildPropertyLiveData(tag, allRows, ranges) {
       charts,
       csADR: p.csADR,
       ari: p.ari,
+      ariChartData: buildPropertyARIChartData(tag, from, to),
     };
   }
   return result;
@@ -3276,12 +3325,27 @@ function applyPortfolioPeriod(p) {
       }
     });
     // Update STR chart data and x-axis labels for the period
-    const strLabels = { yesterday: ['12a','3a','6a','9a','12p','3p','6p','9p','11p'], wtd: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], mtd: Array.from({length:13},(_,i)=>`W${i+1}`), ytd: ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13'], '3yr': ["Q1'24","Q2'24","Q3'24","Q4'24","Q1'25","Q2'25","Q3'25","Q4'25","Q1'26"] };
-    strChart.data.labels = strLabels[p] || strLabels.ytd;
+    // For ARI, use actual data length to set labels (daily dots per date)
+    const ariData = d.str.chartData.ARI || [];
+    if (ariData.length > 0) {
+      strChart.data.labels = ariData.map((_, i) => `D${i+1}`);
+    } else {
+      const strLabels = { yesterday: ['12a','3a','6a','9a','12p','3p','6p','9p','11p'], wtd: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], mtd: Array.from({length:13},(_,i)=>`W${i+1}`), ytd: ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13'], '3yr': ["Q1'24","Q2'24","Q3'24","Q4'24","Q1'25","Q2'25","Q3'25","Q4'25","Q1'26"] };
+      strChart.data.labels = strLabels[p] || strLabels.ytd;
+    }
     // Mutate the arrays in place using splice so Chart.js detects the change (same pattern as property view)
     STR_CHART_DATA.MPI.data.splice(0, STR_CHART_DATA.MPI.data.length, ...d.str.chartData.MPI);
-    STR_CHART_DATA.ARI.data.splice(0, STR_CHART_DATA.ARI.data.length, ...d.str.chartData.ARI);
+    STR_CHART_DATA.ARI.data.splice(0, STR_CHART_DATA.ARI.data.length, ...ariData);
     STR_CHART_DATA.RGI.data.splice(0, STR_CHART_DATA.RGI.data.length, ...d.str.chartData.RGI);
+    // Update ARI y-axis range based on actual data
+    if (ariData.length > 0) {
+      const validVals = ariData.filter(v => v !== null);
+      if (validVals.length > 0) {
+        const avg = validVals.reduce((a,v) => a+v, 0) / validVals.length;
+        STR_CHART_DATA.ARI.min = Math.floor(avg - 8);
+        STR_CHART_DATA.ARI.max = Math.ceil(avg + 8);
+      }
+    }
     switchSTRChart(activeSTR);
   }
 
@@ -3419,13 +3483,43 @@ function applyPropertyPeriod(p) {
       const titleEl = document.querySelector('#propTrendCardTitle .section-title');
       if (titleEl) titleEl.textContent = d.charts[currentPropTrendMetric]?.title || 'Trend';
     }
-    // STR — no live data yet, show dashes
-    ['MPI','ARI','RGI'].forEach(m => {
+    // STR — show ARI from live data, MPI/RGI remain dashes
+    ['MPI','RGI'].forEach(m => {
       const valEl = document.getElementById('propStrVal-' + m);
       const deltaEl = document.getElementById('propStrDelta-' + m);
       if (valEl) valEl.textContent = '—';
       if (deltaEl) { deltaEl.textContent = '—'; deltaEl.className = 'delta-pill delta-flat'; }
     });
+    // ARI — populate from live data
+    if (d.ari !== null && d.ari !== undefined) {
+      const ariEl = document.getElementById('propStrVal-ARI');
+      const ariDeltaEl = document.getElementById('propStrDelta-ARI');
+      if (ariEl) ariEl.textContent = d.ari.toFixed(1);
+      if (ariDeltaEl) {
+        const diff = (d.ari - 100).toFixed(1);
+        const up = d.ari >= 100;
+        ariDeltaEl.textContent = (up ? '▲ ' : '▼ ') + Math.abs(diff);
+        ariDeltaEl.className = 'delta-pill ' + (up ? 'delta-up' : 'delta-down');
+      }
+    } else {
+      const ariEl = document.getElementById('propStrVal-ARI');
+      const ariDeltaEl = document.getElementById('propStrDelta-ARI');
+      if (ariEl) ariEl.textContent = '—';
+      if (ariDeltaEl) { ariDeltaEl.textContent = '—'; ariDeltaEl.className = 'delta-pill delta-flat'; }
+    }
+    // ARI chart — populate from ariChartData
+    if (d.ariChartData && d.ariChartData.length > 0) {
+      const labels = d.ariChartData.map((_, i) => i === 0 ? 'Start' : i === d.ariChartData.length - 1 ? 'End' : `D${i+1}`);
+      propSTRChart.data.labels = labels;
+      PROP_STR_DATA.ARI.data = d.ariChartData;
+      const validVals = d.ariChartData.filter(v => v !== null);
+      if (validVals.length > 0) {
+        const avg = validVals.reduce((a,v) => a+v, 0) / validVals.length;
+        PROP_STR_DATA.ARI.min = Math.floor(avg - 8);
+        PROP_STR_DATA.ARI.max = Math.ceil(avg + 8);
+      }
+      switchPropSTR('ARI');
+    }
     // Comp set — show ARI if available
     updatePropCompSet(d, p);
     return;
