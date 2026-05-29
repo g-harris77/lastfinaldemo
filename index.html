@@ -2122,6 +2122,37 @@ async function fetchBudgetRows(token, fromDate) {
   return allRows;
 }
 
+async function fetchCS1Rows(token, fromDate) {
+  const CS1_TABLE = 'cr2cd_cs1compsetdailies';
+  const dateFilter = `cr2cd_date ge ${toDateStr(fromDate)}`;
+  const select = [
+    'cr2cd_sitetag',
+    'cr2cd_date',
+    'cr2cd_cs1occupied',
+    'cr2cd_cs1revenue',
+  ].join(',');
+
+  let url = `${DATAVERSE_URL}/api/data/v9.2/${CS1_TABLE}?$filter=${encodeURIComponent(dateFilter)}&$select=${select}&$orderby=cr2cd_date asc`;
+  let allRows = [];
+
+  while (url) {
+    const resp = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'OData-MaxVersion': '4.0',
+        'OData-Version': '4.0',
+        'Accept': 'application/json',
+        'Prefer': 'odata.maxpagesize=5000',
+      }
+    });
+    if (!resp.ok) { console.warn(`CS1 fetch failed: ${resp.status}`); break; }
+    const data = await resp.json();
+    allRows = allRows.concat(data.value);
+    url = data['@odata.nextLink'] || null;
+  }
+  return allRows;
+}
+
 // Aggregate budget rows for a date range, grouped by portfolio
 // Properties with no budget rows are treated as 0 (matching PS behavior).
 // Always divide ADR/RevPAR/Occ by total property count (26) so missing properties pull the average down.
@@ -2504,23 +2535,29 @@ function buildPeriodData(label, propsSub, trendSub, totalRevLabel, agg, lyAgg, f
     charts = buildChartData(window.ALL_ROWS, fromDate, toDate, oneYearAgo(fromDate), oneYearAgo(toDate), null);
   }
 
-  // Portfolio ARI: weighted average of per-property ARI by occupied rooms
-    let portfolioARI = null;
-    let lyPortfolioARI = null;
-    if (agg?.propAgg) {
-      const validProps = Object.values(agg.propAgg).filter(pp => pp.ari !== null && pp.occupied > 0);
-      if (validProps.length > 0) {
-        const totalOcc = validProps.reduce((a, pp) => a + pp.occupied, 0);
-        portfolioARI = validProps.reduce((a, pp) => a + pp.ari * pp.occupied, 0) / totalOcc;
-      }
-    }
-    if (lyAgg?.propAgg) {
-      const lyValidProps = Object.values(lyAgg.propAgg).filter(pp => pp.ari !== null && pp.occupied > 0);
-      if (lyValidProps.length > 0) {
-        const lyTotalOcc = lyValidProps.reduce((a, pp) => a + pp.occupied, 0);
-        lyPortfolioARI = lyValidProps.reduce((a, pp) => a + pp.ari * pp.occupied, 0) / lyTotalOcc;
-      }
-    }
+  // Portfolio ARI: sum(CS1 prp rev) / sum(CS1 prp occ) / sum(CS1 cs rev) / sum(CS1 cs occ) * 100
+  // Uses Competitive Set 1 data which matches ProfitSword's portfolio-level aggregation exactly.
+  let portfolioARI = null;
+  let lyPortfolioARI = null;
+  function calcCS1ARI(fromDate, toDate, hotelADR) {
+    if (!hotelADR) return null;
+    const cs1 = window.CS1_ROWS || [];
+    const fromStr = toDateStr(fromDate instanceof Date ? fromDate : new Date(fromDate + 'T00:00:00'));
+    const toStr   = toDateStr(toDate   instanceof Date ? toDate   : new Date(toDate   + 'T00:00:00'));
+    const filtered = cs1.filter(r => {
+      const d = (r.cr2cd_date || '').slice(0, 10);
+      return d >= fromStr && d <= toStr;
+    });
+    const totalOcc = filtered.reduce((a, r) => a + (r.cr2cd_cs1occupied || 0), 0);
+    const totalRev = filtered.reduce((a, r) => a + (r.cr2cd_cs1revenue  || 0), 0);
+    if (totalOcc === 0 || totalRev === 0) return null;
+    const csADR = totalRev / totalOcc;
+    return (hotelADR / csADR) * 100;
+  }
+  if (fromDate && toDate) {
+    portfolioARI   = calcCS1ARI(fromDate, toDate, agg?.portfolio?.adr);
+    lyPortfolioARI = calcCS1ARI(oneYearAgo(fromDate), oneYearAgo(toDate), lyAgg?.portfolio?.adr);
+  }
     const ariDelta = (portfolioARI !== null && lyPortfolioARI !== null)
       ? { text: (portfolioARI >= lyPortfolioARI ? '+' : '') + (portfolioARI - lyPortfolioARI).toFixed(1) + 'pts', up: portfolioARI >= lyPortfolioARI }
       : { text: '—', up: true };
@@ -2680,12 +2717,14 @@ async function loadDataAndRun() {
   try {
     const token = await getDataverseToken();
 
-    // Fetch 3 years of actuals + budget data in parallel
-    const [allRows, budgetRows] = await Promise.all([
+    // Fetch 3 years of actuals + budget + CS1 compset data in parallel
+    const [allRows, budgetRows, cs1Rows] = await Promise.all([
       fetchAllRows(token, threeYearsAgo()),
       fetchBudgetRows(token, startOfYear()),
+      fetchCS1Rows(token, threeYearsAgo()),
     ]);
     window.BUDGET_ROWS = budgetRows;
+    window.CS1_ROWS = cs1Rows;
 
     // Define period date ranges
     // NOTE: Power Automate runs at 2am and stamps each row with TODAY's date,
