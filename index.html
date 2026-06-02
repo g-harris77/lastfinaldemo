@@ -1407,7 +1407,7 @@
       <div class="kpi-value" data-bind="p.flowthrough.value">—</div>
       <div class="kpi-deltas">
         <div class="kpi-delta"><span class="kpi-delta-label">Benchmark (40–60%)</span><span class="delta-pill" data-bind="p.flowthrough.badge"></span></div>
-        <div class="kpi-delta"><span class="kpi-delta-label">Δ EBITDA / Δ Rev</span><span class="ft-context" data-bind="p.flowthrough.detail"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label">Δ GOP / Δ Rev</span><span class="ft-context" data-bind="p.flowthrough.detail"></span></div>
       </div>
     </div>
   </div>
@@ -1670,7 +1670,7 @@
       <div class="kpi-value" data-bind="a.flowthrough.value">—</div>
       <div class="kpi-deltas">
         <div class="kpi-delta"><span class="kpi-delta-label">Benchmark (40–60%)</span><span class="delta-pill" data-bind="a.flowthrough.badge">—</span></div>
-        <div class="kpi-delta"><span class="kpi-delta-label">Δ EBITDA / Δ Rev</span><span class="ft-context" data-bind="a.flowthrough.detail">—</span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label">Δ GOP / Δ Rev</span><span class="ft-context" data-bind="a.flowthrough.detail">—</span></div>
       </div>
     </div>
   </div>
@@ -2633,7 +2633,18 @@ function buildPeriodData(label, propsSub, trendSub, totalRevLabel, agg, lyAgg, f
       gop:        { value: fmtCurrency(p.gop, false),    budget: gopBudget.text,      ly: gopDelta.text,        budgetUp: gopBudget.up,       lyUp: gopDelta.up      },
       ebitda:     { value: fmtCurrency(p.ebitda, false), budget: ebitdaBudget.text,   ly: ebitdaDelta.text,     budgetUp: ebitdaBudget.up,    lyUp: ebitdaDelta.up   },
       ebitdaMgn:  { value: fmtPct(p.ebitdaMgn),         budget: ebitdaMgnBudget.text, ly: ebitdaMgnDelta.text,  budgetUp: ebitdaMgnBudget.up, lyUp: ebitdaMgnDelta.up},
-      flowthrough: { value: '—', badge: '—', detail: '—', badgeUp: true },
+      flowthrough: (() => {
+        const deltaRev = p.revenue - (ly?.revenue || 0);
+        const deltaGOP = p.gop     - (ly?.gop     || 0);
+        if (!ly || deltaRev === 0) return { value: '—', badge: '—', detail: '—', badgeUp: true };
+        const ft = (deltaGOP / deltaRev) * 100;
+        const ftStr = ft.toFixed(1) + '%';
+        const badge = ft >= 60 ? 'Above Target' : ft >= 40 ? 'On Target' : 'Below Target';
+        const badgeUp = ft >= 40;
+        const fmtK = v => (v >= 0 ? '+' : '-') + '$' + (Math.abs(v) >= 1e6 ? (Math.abs(v)/1e6).toFixed(2)+'M' : (Math.abs(v)/1000).toFixed(1)+'K');
+        const detail = `${fmtK(deltaGOP)} GOP / ${fmtK(deltaRev)} rev`;
+        return { value: ftStr, badge, detail, badgeUp };
+      })(),
     },
     str: {
       MPI: { value: '—', delta: '—', up: true },
@@ -2761,7 +2772,18 @@ function buildPropertyLiveData(tag, allRows, ranges) {
         gop:        { value: fmtCurrency(p.gop, false),    ly: gopDelta.text,       lyUp: gopDelta.up,      budget: gopBudget.text,       budgetUp: gopBudget.up       },
         ebitda:     { value: fmtCurrency(p.ebitda, false), ly: ebitdaDelta.text,    lyUp: ebitdaDelta.up,   budget: ebitdaBudget.text,    budgetUp: ebitdaBudget.up    },
         ebitdaMgn:  { value: fmtPct(p.ebitdaMgn),         ly: ebitdaMgnDelta.text, lyUp: ebitdaMgnDelta.up,budget: ebitdaMgnBudget.text, budgetUp: ebitdaMgnBudget.up },
-        flowthrough:{ value: '—', badge: '—', detail: '—', badgeUp: true },
+        flowthrough: (() => {
+          const deltaRev = p.revenue - (ly?.revenue || 0);
+          const deltaGOP = p.gop     - (ly?.gop     || 0);
+          if (!ly || deltaRev === 0) return { value: '—', badge: '—', detail: '—', badgeUp: true };
+          const ft = (deltaGOP / deltaRev) * 100;
+          const ftStr = ft.toFixed(1) + '%';
+          const badge = ft >= 60 ? 'Above Target' : ft >= 40 ? 'On Target' : 'Below Target';
+          const badgeUp = ft >= 40;
+          const fmtK = v => (v >= 0 ? '+' : '-') + '$' + (Math.abs(v) >= 1e6 ? (Math.abs(v)/1e6).toFixed(2)+'M' : (Math.abs(v)/1000).toFixed(1)+'K');
+          const detail = `${fmtK(deltaGOP)} GOP / ${fmtK(deltaRev)} rev`;
+          return { value: ftStr, badge, detail, badgeUp };
+        })(),
       },
       charts,
       csADR: p.csADR,
@@ -3530,6 +3552,14 @@ function applyPropertyPeriod(p) {
       setVal('a.ebitdaMgn.value', d.profit.ebitdaMgn.value);
       setDlt('a.ebitdaMgn.budget', d.profit.ebitdaMgn.budget, d.profit.ebitdaMgn.budgetUp);
       setDlt('a.ebitdaMgn.ly', d.profit.ebitdaMgn.ly, d.profit.ebitdaMgn.lyUp);
+      // Flow through
+      if (d.profit.flowthrough) {
+        setVal('a.flowthrough.value', d.profit.flowthrough.value);
+        const ftBadge = document.querySelector('[data-bind="a.flowthrough.badge"]');
+        if (ftBadge) { ftBadge.textContent = d.profit.flowthrough.badge; ftBadge.className = 'delta-pill ' + (d.profit.flowthrough.badgeUp ? 'delta-up' : 'delta-down'); }
+        const ftDetail = document.querySelector('[data-bind="a.flowthrough.detail"]');
+        if (ftDetail) ftDetail.textContent = d.profit.flowthrough.detail;
+      }
     }
     // Trend chart — build lazily on first view
     if (d.charts) {
@@ -4651,3 +4681,4 @@ wRenderPortfolio();
 </script>
 </body>
 </html>
+
