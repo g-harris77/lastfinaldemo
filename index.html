@@ -2753,13 +2753,13 @@ function buildPropertyLiveData(tag, allRows, ranges) {
 
     const periodLabels = { yesterday: `${ydStr}`, wtd: 'Trailing 7 days', mtd: 'Month-to-date', ytd: `Year-to-date · ${yd.getFullYear()}`, '3yr': '3-Year Rolling' };
 
-    // Charts: property-specific trend
-    let charts = { revpar: { labels:[], actuals:[], budget:[], ly:[], prefix:'$', title:'RevPAR Trend' },
-                   adr:    { labels:[], actuals:[], budget:[], ly:[], prefix:'$', title:'ADR Trend' },
-                   totalrev:{ labels:[], actuals:[], budget:[], ly:[], prefix:'$', suffix:'K', title:'Total Revenue Trend' } };
-    if (window.ALL_ROWS) {
-      charts = buildChartData(window.ALL_ROWS, from, to, oneYearAgo(from), oneYearAgo(to), tag);
-    }
+    // Charts: built lazily on demand when property/period is actually viewed
+    // Store the params needed to build them, not the built data itself
+    const charts = { _lazy: true, _tag: tag, _from: from, _to: to,
+      revpar:   { labels:[], actuals:[], budget:[], ly:[], prefix:'$', title:'RevPAR Trend' },
+      adr:      { labels:[], actuals:[], budget:[], ly:[], prefix:'$', title:'ADR Trend' },
+      totalrev: { labels:[], actuals:[], budget:[], ly:[], prefix:'$', suffix:'K', title:'Total Revenue Trend' },
+    };
 
     result[period] = {
       label: periodLabels[period] || period,
@@ -3518,8 +3518,13 @@ function applyPropertyPeriod(p) {
       setDlt('a.ebitdaMgn.budget', d.profit.ebitdaMgn.budget, d.profit.ebitdaMgn.budgetUp);
       setDlt('a.ebitdaMgn.ly', d.profit.ebitdaMgn.ly, d.profit.ebitdaMgn.lyUp);
     }
-    // Trend chart — use property-specific live chart data
+    // Trend chart — build lazily on first view
     if (d.charts) {
+      if (d.charts._lazy && window.ALL_ROWS) {
+        const built = buildChartData(window.ALL_ROWS, d.charts._from, d.charts._to, oneYearAgo(d.charts._from), oneYearAgo(d.charts._to), d.charts._tag);
+        Object.assign(d.charts, built);
+        d.charts._lazy = false;
+      }
       updateChart(propertyTrendChart, d.charts[currentPropTrendMetric]);
       const titleEl = document.querySelector('#propTrendCardTitle .section-title');
       if (titleEl) titleEl.textContent = d.charts[currentPropTrendMetric]?.title || 'Trend';
