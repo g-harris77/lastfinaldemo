@@ -2737,10 +2737,10 @@ function buildPropertyLiveData(tag, allRows, ranges) {
     const ebitdaDelta   = fmtDelta(p.ebitda,   ly?.ebitda);
     const ebitdaMgnDelta= fmtDelta(p.ebitdaMgn,ly?.ebitdaMgn,true);
 
-    // Budget variance for this property — match by numeric/string siteTag
+    // Budget variance for this property — use pre-built siteTag index
     const propSiteTag = PROPERTY_META[tag]?.siteTag;
     const b = propSiteTag ? aggregateBudgetRows(
-      (window.BUDGET_ROWS || []).filter(r => String(r.cr2cd_sitetag) === String(propSiteTag)),
+      (window._budgetTagIndex ? (window._budgetTagIndex.get(String(propSiteTag)) || []) : (window.BUDGET_ROWS || []).filter(r => String(r.cr2cd_sitetag) === String(propSiteTag))),
       from, to
     ) : null;
     const revparBudget    = fmtBudgetDelta(p.revpar,    b?.revpar);
@@ -2972,6 +2972,15 @@ async function loadDataAndRun() {
       tagDateIndex.get(key).push(r);
     }
     window._tagDateIndex = tagDateIndex;
+
+    // Build budget row index by siteTag for fast per-property budget lookups
+    const budgetTagIndex = new Map();
+    for (const r of (window.BUDGET_ROWS || [])) {
+      const key = String(r.cr2cd_sitetag);
+      if (!budgetTagIndex.has(key)) budgetTagIndex.set(key, []);
+      budgetTagIndex.get(key).push(r);
+    }
+    window._budgetTagIndex = budgetTagIndex;
 
     // Run initial computation
     window.recompute();
@@ -4629,3 +4638,4 @@ wRenderPortfolio();
 </script>
 </body>
 </html>
+
