@@ -2203,13 +2203,23 @@ function extractDate(r) {
 
 // ---- Aggregate rows for a date range ----
 function aggregateRows(rows, fromDate, toDate) {
-  // Filter to date range
+  // Filter to date range — use pre-built index if available for O(1) lookups
   const from = toDateStr(fromDate);
   const to = toDateStr(toDate);
-  const filtered = rows.filter(r => {
-    const d = extractDate(r);
-    return d >= from && d <= to;
-  });
+  let filtered;
+  if (window._dateIndex && window._sortedDates) {
+    filtered = [];
+    for (const d of window._sortedDates) {
+      if (d < from) continue;
+      if (d > to) break;
+      filtered.push(...window._dateIndex.get(d));
+    }
+  } else {
+    filtered = rows.filter(r => {
+      const d = extractDate(r);
+      return d >= from && d <= to;
+    });
+  }
 
   if (!filtered.length) return null;
 
@@ -2660,21 +2670,28 @@ function buildPropertyLiveData(tag, allRows, ranges) {
   const ydStr = yd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
   for (const [period, { from, to }] of Object.entries(ranges)) {
-    // Filter rows for this property only
-    const propRows = allRows.filter(r => extractTag(r) === tag);
     const fromStr = toDateStr(from instanceof Date ? from : new Date(from + 'T00:00:00'));
     const toStr   = toDateStr(to   instanceof Date ? to   : new Date(to   + 'T00:00:00'));
-    const filtered = propRows.filter(r => {
-      const d = extractDate(r);
-      return d >= fromStr && d <= toStr;
-    });
     const lyFrom = oneYearAgo(from), lyTo = oneYearAgo(to);
     const lyFromStr = toDateStr(lyFrom instanceof Date ? lyFrom : new Date(lyFrom + 'T00:00:00'));
     const lyToStr   = toDateStr(lyTo   instanceof Date ? lyTo   : new Date(lyTo   + 'T00:00:00'));
-    const lyFiltered = propRows.filter(r => {
-      const d = extractDate(r);
-      return d >= lyFromStr && d <= lyToStr;
-    });
+
+    // Use tag+date index if available for fast lookups
+    let filtered, lyFiltered;
+    if (window._tagDateIndex && window._sortedDates) {
+      filtered = [];
+      lyFiltered = [];
+      for (const d of window._sortedDates) {
+        const rows = window._tagDateIndex.get(tag + '|' + d) || [];
+        if (rows.length === 0) continue;
+        if (d >= fromStr && d <= toStr) filtered.push(...rows);
+        else if (d >= lyFromStr && d <= lyToStr) lyFiltered.push(...rows);
+      }
+    } else {
+      const propRows = allRows.filter(r => extractTag(r) === tag);
+      filtered   = propRows.filter(r => { const d = extractDate(r); return d >= fromStr   && d <= toStr;   });
+      lyFiltered = propRows.filter(r => { const d = extractDate(r); return d >= lyFromStr && d <= lyToStr; });
+    }
 
     function agg(rows) {
       if (!rows.length) return null;
@@ -2931,6 +2948,30 @@ async function loadDataAndRun() {
 
     // Store rows globally FIRST so buildChartData and recompute can use them
     window.ALL_ROWS = dedupedRows;
+
+    // Build date index for fast range lookups — Map<dateStr, row[]>
+    // This avoids scanning all 21k rows on every aggregateRows call
+    const dateIndex = new Map();
+    for (const r of dedupedRows) {
+      const d = (r.cr2cd_date || '').slice(0, 10);
+      if (!d) continue;
+      if (!dateIndex.has(d)) dateIndex.set(d, []);
+      dateIndex.get(d).push(r);
+    }
+    window._dateIndex = dateIndex;
+    window._sortedDates = [...dateIndex.keys()].sort();
+
+    // Build tag+date index for property lookups — Map<tag|dateStr, row>
+    const tagDateIndex = new Map();
+    for (const r of dedupedRows) {
+      const tag = extractTag(r);
+      const d = (r.cr2cd_date || '').slice(0, 10);
+      if (!tag || !d) continue;
+      const key = tag + '|' + d;
+      if (!tagDateIndex.has(key)) tagDateIndex.set(key, []);
+      tagDateIndex.get(key).push(r);
+    }
+    window._tagDateIndex = tagDateIndex;
 
     // Run initial computation
     window.recompute();
