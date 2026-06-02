@@ -2495,29 +2495,24 @@ function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag
 // ---- Build daily ARI chart data for portfolio ----
 function buildPortfolioARIChartData(fromDate, toDate) {
   if (!fromDate || !toDate) return [];
-  const cs1 = window.CS1_ROWS || [];
-  const allRows = window.ALL_ROWS || [];
   const fromStr = toDateStr(fromDate instanceof Date ? fromDate : new Date(fromDate + 'T00:00:00'));
   const toStr   = toDateStr(toDate   instanceof Date ? toDate   : new Date(toDate   + 'T00:00:00'));
 
-  // Get all unique dates in range that have CS1 data
-  const dates = [...new Set(
-    cs1.filter(r => {
-      const d = (r.cr2cd_date || '').slice(0, 10);
-      return d >= fromStr && d <= toStr;
-    }).map(r => (r.cr2cd_date || '').slice(0, 10))
-  )].sort();
+  // Use CS1 index if available
+  const cs1Index = window._cs1DateIndex;
+  const dateIndex = window._dateIndex;
+  if (!cs1Index || !dateIndex) return [];
+
+  const dates = [...cs1Index.keys()].filter(d => d >= fromStr && d <= toStr).sort();
 
   return dates.map(date => {
-    // CS1 ADR for this date
-    const cs1Day = cs1.filter(r => (r.cr2cd_date || '').slice(0, 10) === date);
+    const cs1Day = cs1Index.get(date) || [];
     const cs1Occ = cs1Day.reduce((a, r) => a + (r.cr2cd_cs1occupied || 0), 0);
     const cs1Rev = cs1Day.reduce((a, r) => a + (r.cr2cd_cs1revenue  || 0), 0);
     if (cs1Occ === 0 || cs1Rev === 0) return null;
     const csADR = cs1Rev / cs1Occ;
 
-    // Hotel ADR for this date using COMPPRP fields
-    const hotelDay = allRows.filter(r => (r.cr2cd_date || '').slice(0, 10) === date);
+    const hotelDay = dateIndex.get(date) || [];
     const hotelRev = hotelDay.reduce((a, r) => a + (r.cr2cd_compprproomsrevenue || 0), 0);
     const hotelOcc = hotelDay.reduce((a, r) => a + (r.cr2cd_compprpoccupied     || 0), 0);
     if (hotelOcc === 0 || hotelRev === 0) return null;
@@ -2530,27 +2525,23 @@ function buildPortfolioARIChartData(fromDate, toDate) {
 // ---- Build daily ARI chart data for a single property ----
 function buildPropertyARIChartData(tag, fromDate, toDate) {
   if (!fromDate || !toDate) return [];
-  const cs1 = window.CS1_ROWS || [];
-  const allRows = window.ALL_ROWS || [];
   const fromStr = toDateStr(fromDate instanceof Date ? fromDate : new Date(fromDate + 'T00:00:00'));
   const toStr   = toDateStr(toDate   instanceof Date ? toDate   : new Date(toDate   + 'T00:00:00'));
 
-  const dates = [...new Set(
-    cs1.filter(r => {
-      const d = (r.cr2cd_date || '').slice(0, 10);
-      return d >= fromStr && d <= toStr;
-    }).map(r => (r.cr2cd_date || '').slice(0, 10))
-  )].sort();
+  const cs1Index = window._cs1DateIndex;
+  const tagDateIndex = window._tagDateIndex;
+  if (!cs1Index || !tagDateIndex) return [];
+
+  const dates = [...cs1Index.keys()].filter(d => d >= fromStr && d <= toStr).sort();
 
   return dates.map(date => {
-    const cs1Day = cs1.filter(r => (r.cr2cd_date || '').slice(0, 10) === date);
+    const cs1Day = cs1Index.get(date) || [];
     const cs1Occ = cs1Day.reduce((a, r) => a + (r.cr2cd_cs1occupied || 0), 0);
     const cs1Rev = cs1Day.reduce((a, r) => a + (r.cr2cd_cs1revenue  || 0), 0);
     if (cs1Occ === 0 || cs1Rev === 0) return null;
     const csADR = cs1Rev / cs1Occ;
 
-    // Hotel side: only this property's COMPPRP data
-    const propDay = allRows.filter(r => extractTag(r) === tag && (r.cr2cd_date || '').slice(0, 10) === date);
+    const propDay = tagDateIndex.get(tag + '|' + date) || [];
     const hotelRev = propDay.reduce((a, r) => a + (r.cr2cd_compprproomsrevenue || 0), 0);
     const hotelOcc = propDay.reduce((a, r) => a + (r.cr2cd_compprpoccupied     || 0), 0);
     if (hotelOcc === 0 || hotelRev === 0) return null;
@@ -2583,15 +2574,12 @@ function buildPeriodData(label, propsSub, trendSub, totalRevLabel, agg, lyAgg, f
   const ebitdaBudget   = fmtBudgetDelta(p.ebitda,    b?.ebitda);
   const ebitdaMgnBudget = fmtBudgetDelta(p.ebitdaMgn, b?.ebitdaMgn, true);
 
-  // Build chart data if date ranges provided
-  let charts = {
+  // Build chart data lazily — only when actually viewed
+  const charts = { _lazy: true, _from: fromDate, _to: toDate,
     revpar:   { labels: [], actuals: [], budget: [], ly: [], prefix: '$', title: 'RevPAR Trend' },
     adr:      { labels: [], actuals: [], budget: [], ly: [], prefix: '$', title: 'ADR Trend' },
     totalrev: { labels: [], actuals: [], budget: [], ly: [], prefix: '$', suffix: 'K', title: 'Total Revenue Trend' },
   };
-  if (fromDate && toDate && window.ALL_ROWS) {
-    charts = buildChartData(window.ALL_ROWS, fromDate, toDate, oneYearAgo(fromDate), oneYearAgo(toDate), null);
-  }
 
   // Portfolio ARI: sum(CS1 prp rev) / sum(CS1 prp occ) / sum(CS1 cs rev) / sum(CS1 cs occ) * 100
   // Uses Competitive Set 1 data which matches ProfitSword's portfolio-level aggregation exactly.
@@ -2655,7 +2643,7 @@ function buildPeriodData(label, propsSub, trendSub, totalRevLabel, agg, lyAgg, f
         up: ariDelta.up,
       },
       RGI: { value: '—', delta: '—', up: true },
-      chartData: { MPI: [], ARI: buildPortfolioARIChartData(fromDate, toDate), RGI: [] },
+      chartData: { MPI: [], ARI: [], RGI: [], _ariFrom: fromDate, _ariTo: toDate },
     },
     perfRows: [],
     propRows: buildPropRows(agg, lyAgg),
@@ -2778,7 +2766,10 @@ function buildPropertyLiveData(tag, allRows, ranges) {
       charts,
       csADR: p.csADR,
       ari: p.ari,
-      ariChartData: buildPropertyARIChartData(tag, from, to),
+      _ariFrom: from,
+      _ariTo: to,
+      _ariTag: tag,
+      ariChartData: null, // built lazily when STR chart is viewed
     };
   }
   return result;
@@ -2972,6 +2963,16 @@ async function loadDataAndRun() {
       tagDateIndex.get(key).push(r);
     }
     window._tagDateIndex = tagDateIndex;
+
+    // Build CS1 date index for fast ARI chart lookups
+    const cs1DateIndex = new Map();
+    for (const r of (window.CS1_ROWS || [])) {
+      const d = (r.cr2cd_date || '').slice(0, 10);
+      if (!d) continue;
+      if (!cs1DateIndex.has(d)) cs1DateIndex.set(d, []);
+      cs1DateIndex.get(d).push(r);
+    }
+    window._cs1DateIndex = cs1DateIndex;
 
     // Build budget row index by siteTag for fast per-property budget lookups
     const budgetTagIndex = new Map();
@@ -3375,7 +3376,10 @@ function applyPortfolioPeriod(p) {
       }
     });
     // Update STR chart data and x-axis labels for the period
-    // For ARI, use actual data length to set labels (daily dots per date)
+    // For ARI, build lazily on first view
+    if (d.str.chartData.ARI.length === 0 && d.str.chartData._ariFrom) {
+      d.str.chartData.ARI = buildPortfolioARIChartData(d.str.chartData._ariFrom, d.str.chartData._ariTo);
+    }
     const ariData = d.str.chartData.ARI || [];
     if (ariData.length > 0) {
       strChart.data.labels = ariData.map((_, i) => `D${i+1}`);
@@ -3562,7 +3566,10 @@ function applyPropertyPeriod(p) {
       if (ariEl) ariEl.textContent = '—';
       if (ariDeltaEl) { ariDeltaEl.textContent = '—'; ariDeltaEl.className = 'delta-pill delta-flat'; }
     }
-    // ARI chart — populate from ariChartData
+    // ARI chart — build lazily on first view
+    if (!d.ariChartData && d._ariTag) {
+      d.ariChartData = buildPropertyARIChartData(d._ariTag, d._ariFrom, d._ariTo);
+    }
     if (d.ariChartData && d.ariChartData.length > 0) {
       const labels = d.ariChartData.map((_, i) => i === 0 ? 'Start' : i === d.ariChartData.length - 1 ? 'End' : `D${i+1}`);
       propSTRChart.data.labels = labels;
@@ -3971,6 +3978,12 @@ function updateTrendMetric(metric) {
   if (currentView !== 'portfolio') return;
   const d = (window.LIVE_PORTFOLIO_DATA || {})[currentPeriod] || PORTFOLIO_DATA[currentPeriod];
   if (!d || !d.charts) return;
+  // Build chart data lazily on first view
+  if (d.charts._lazy && window.ALL_ROWS) {
+    const built = buildChartData(window.ALL_ROWS, d.charts._from, d.charts._to, oneYearAgo(d.charts._from), oneYearAgo(d.charts._to), null);
+    Object.assign(d.charts, built);
+    d.charts._lazy = false;
+  }
   const cd = d.charts[metric];
   if (!cd) return;
   updateChart(portfolioTrendChart, cd);
@@ -4638,4 +4651,3 @@ wRenderPortfolio();
 </script>
 </body>
 </html>
-
