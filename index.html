@@ -1320,7 +1320,7 @@
           <span class="delta-pill" data-bind="p.revpar.budget"></span>
         </div>
         <div class="kpi-delta">
-          <span class="kpi-delta-label">vs Last Year</span>
+          <span class="kpi-delta-label">Last Year</span>
           <span class="delta-pill" data-bind="p.revpar.ly"></span>
         </div>
       </div>
@@ -1336,7 +1336,7 @@
           <span class="delta-pill" data-bind="p.adr.budget"></span>
         </div>
         <div class="kpi-delta">
-          <span class="kpi-delta-label">vs Last Year</span>
+          <span class="kpi-delta-label">Last Year</span>
           <span class="delta-pill" data-bind="p.adr.ly"></span>
         </div>
       </div>
@@ -1352,7 +1352,7 @@
           <span class="delta-pill" data-bind="p.occ.budget"></span>
         </div>
         <div class="kpi-delta">
-          <span class="kpi-delta-label">vs Last Year</span>
+          <span class="kpi-delta-label">Last Year</span>
           <span class="delta-pill" data-bind="p.occ.ly"></span>
         </div>
       </div>
@@ -1368,7 +1368,7 @@
           <span class="delta-pill" data-bind="p.totalrev.budget"></span>
         </div>
         <div class="kpi-delta">
-          <span class="kpi-delta-label">vs Last Year</span>
+          <span class="kpi-delta-label">Last Year</span>
           <span class="delta-pill" data-bind="p.totalrev.ly"></span>
         </div>
       </div>
@@ -1382,24 +1382,24 @@
       <div class="kpi-label">GOP <span class="help-dot" title="Gross Operating Profit — Revenue minus departmental & undistributed operating expenses">i</span></div>
       <div class="kpi-value" data-bind="p.gop.value">—</div>
       <div class="kpi-deltas">
-        <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="p.gop.budget"></span></div>
-        <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="p.gop.ly"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label" data-bind="p.gop.budgetLabel">Bud —</span><span class="delta-pill" data-bind="p.gop.budget"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label" data-bind="p.gop.lyLabel">LY —</span><span class="delta-pill" data-bind="p.gop.ly"></span></div>
       </div>
     </div>
     <div class="kpi profit-kpi">
       <div class="kpi-label">EBITDA</div>
       <div class="kpi-value" data-bind="p.ebitda.value">—</div>
       <div class="kpi-deltas">
-        <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="p.ebitda.budget"></span></div>
-        <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="p.ebitda.ly"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label" data-bind="p.ebitda.budgetLabel">Bud —</span><span class="delta-pill" data-bind="p.ebitda.budget"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label" data-bind="p.ebitda.lyLabel">LY —</span><span class="delta-pill" data-bind="p.ebitda.ly"></span></div>
       </div>
     </div>
     <div class="kpi profit-kpi">
       <div class="kpi-label">EBITDA Margin</div>
       <div class="kpi-value" data-bind="p.ebitdaMgn.value">—</div>
       <div class="kpi-deltas">
-        <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="p.ebitdaMgn.budget"></span></div>
-        <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="p.ebitdaMgn.ly"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label" data-bind="p.ebitdaMgn.budgetLabel">Bud —</span><span class="delta-pill" data-bind="p.ebitdaMgn.budget"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label" data-bind="p.ebitdaMgn.lyLabel">LY —</span><span class="delta-pill" data-bind="p.ebitdaMgn.ly"></span></div>
       </div>
     </div>
     <div class="kpi profit-kpi">
@@ -1605,8 +1605,8 @@
       <div class="kpi-label">RevPAR <span class="help-dot" title="Revenue Per Available Room">i</span></div>
       <div class="kpi-value" data-bind="a.revpar.value">—</div>
       <div class="kpi-deltas">
-        <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="a.revpar.budget"></span></div>
-        <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="a.revpar.ly"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label" data-bind="a.revpar.budgetLabel">Bud —</span><span class="delta-pill" data-bind="a.revpar.budget"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label" data-bind="a.revpar.lyLabel">LY —</span><span class="delta-pill" data-bind="a.revpar.ly"></span></div>
       </div>
       <canvas class="kpi-spark" id="aSpark1"></canvas>
     </div>
@@ -1614,8 +1614,8 @@
       <div class="kpi-label">ADR</div>
       <div class="kpi-value" data-bind="a.adr.value">—</div>
       <div class="kpi-deltas">
-        <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="a.adr.budget"></span></div>
-        <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="a.adr.ly"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label" data-bind="a.adr.budgetLabel">Bud —</span><span class="delta-pill" data-bind="a.adr.budget"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label" data-bind="a.adr.lyLabel">LY —</span><span class="delta-pill" data-bind="a.adr.ly"></span></div>
       </div>
       <canvas class="kpi-spark" id="aSpark2"></canvas>
     </div>
@@ -1623,8 +1623,8 @@
       <div class="kpi-label">Occupancy</div>
       <div class="kpi-value" data-bind="a.occ.value">—</div>
       <div class="kpi-deltas">
-        <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="a.occ.budget"></span></div>
-        <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="a.occ.ly"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label" data-bind="a.occ.budgetLabel">Bud —</span><span class="delta-pill" data-bind="a.occ.budget"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label" data-bind="a.occ.lyLabel">LY —</span><span class="delta-pill" data-bind="a.occ.ly"></span></div>
       </div>
       <canvas class="kpi-spark" id="aSpark3"></canvas>
     </div>
@@ -1632,8 +1632,8 @@
       <div class="kpi-label" data-bind="a.totalrev.label">Total Revenue (MTD)</div>
       <div class="kpi-value" data-bind="a.totalrev.value">—</div>
       <div class="kpi-deltas">
-        <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="a.totalrev.budget"></span></div>
-        <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="a.totalrev.ly"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label" data-bind="a.totalrev.budgetLabel">Bud —</span><span class="delta-pill" data-bind="a.totalrev.budget"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label" data-bind="a.totalrev.lyLabel">LY —</span><span class="delta-pill" data-bind="a.totalrev.ly"></span></div>
       </div>
       <canvas class="kpi-spark" id="aSpark4"></canvas>
     </div>
@@ -1645,24 +1645,24 @@
       <div class="kpi-label">GOP <span class="help-dot" title="Gross Operating Profit">i</span></div>
       <div class="kpi-value" data-bind="a.gop.value">—</div>
       <div class="kpi-deltas">
-        <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="a.gop.budget"></span></div>
-        <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="a.gop.ly"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label" data-bind="a.gop.budgetLabel">Bud —</span><span class="delta-pill" data-bind="a.gop.budget"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label" data-bind="a.gop.lyLabel">LY —</span><span class="delta-pill" data-bind="a.gop.ly"></span></div>
       </div>
     </div>
     <div class="kpi profit-kpi">
       <div class="kpi-label">EBITDA</div>
       <div class="kpi-value" data-bind="a.ebitda.value">—</div>
       <div class="kpi-deltas">
-        <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="a.ebitda.budget"></span></div>
-        <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="a.ebitda.ly"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label" data-bind="a.ebitda.budgetLabel">Bud —</span><span class="delta-pill" data-bind="a.ebitda.budget"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label" data-bind="a.ebitda.lyLabel">LY —</span><span class="delta-pill" data-bind="a.ebitda.ly"></span></div>
       </div>
     </div>
     <div class="kpi profit-kpi">
       <div class="kpi-label">EBITDA Margin</div>
       <div class="kpi-value" data-bind="a.ebitdaMgn.value">—</div>
       <div class="kpi-deltas">
-        <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="a.ebitdaMgn.budget"></span></div>
-        <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="a.ebitdaMgn.ly"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label" data-bind="a.ebitdaMgn.budgetLabel">Bud —</span><span class="delta-pill" data-bind="a.ebitdaMgn.budget"></span></div>
+        <div class="kpi-delta"><span class="kpi-delta-label" data-bind="a.ebitdaMgn.lyLabel">LY —</span><span class="delta-pill" data-bind="a.ebitdaMgn.ly"></span></div>
       </div>
     </div>
     <div class="kpi profit-kpi">
@@ -2624,15 +2624,15 @@ function buildPeriodData(label, propsSub, trendSub, totalRevLabel, agg, lyAgg, f
     revparLabel: 'RevPAR',
     perfSub: label + ' · Portfolio rollup',
     kpi: {
-      revpar:   { value: fmtADR(p.revpar),              budget: revparBudget.text,    ly: revparDelta.text,     budgetUp: revparBudget.up,    lyUp: revparDelta.up  },
-      adr:      { value: fmtADR(p.adr),                budget: adrBudget.text,       ly: adrDelta.text,        budgetUp: adrBudget.up,       lyUp: adrDelta.up     },
-      occ:      { value: fmtPct(p.occ),                budget: occBudget.text,       ly: occDelta.text,        budgetUp: occBudget.up,       lyUp: occDelta.up     },
-      totalrev: { value: fmtCurrency(p.revenue, false), budget: revBudget.text,       ly: revDelta.text,        budgetUp: revBudget.up,       lyUp: revDelta.up     },
+      revpar:   { value: fmtADR(p.revpar),              budget: revparBudget.text,    ly: revparDelta.text,     budgetUp: revparBudget.up,    lyUp: revparDelta.up,   budgetLabel: b?.revpar   != null ? 'Bud ' + fmtADR(b.revpar)             : 'Bud —', lyLabel: ly?.revpar   != null ? 'LY ' + fmtADR(ly.revpar)             : 'LY —' },
+      adr:      { value: fmtADR(p.adr),                budget: adrBudget.text,       ly: adrDelta.text,        budgetUp: adrBudget.up,       lyUp: adrDelta.up,      budgetLabel: b?.adr      != null ? 'Bud ' + fmtADR(b.adr)               : 'Bud —', lyLabel: ly?.adr      != null ? 'LY ' + fmtADR(ly.adr)               : 'LY —' },
+      occ:      { value: fmtPct(p.occ),                budget: occBudget.text,       ly: occDelta.text,        budgetUp: occBudget.up,       lyUp: occDelta.up,      budgetLabel: b?.occ      != null ? 'Bud ' + fmtPct(b.occ)               : 'Bud —', lyLabel: ly?.occ      != null ? 'LY ' + fmtPct(ly.occ)               : 'LY —' },
+      totalrev: { value: fmtCurrency(p.revenue, false), budget: revBudget.text,       ly: revDelta.text,        budgetUp: revBudget.up,       lyUp: revDelta.up,      budgetLabel: b?.revenue  != null ? 'Bud ' + fmtCurrency(b.revenue,true) : 'Bud —', lyLabel: ly?.revenue  != null ? 'LY ' + fmtCurrency(ly.revenue,true) : 'LY —' },
     },
     profit: {
-      gop:        { value: fmtCurrency(p.gop, false),    budget: gopBudget.text,      ly: gopDelta.text,        budgetUp: gopBudget.up,       lyUp: gopDelta.up      },
-      ebitda:     { value: fmtCurrency(p.ebitda, false), budget: ebitdaBudget.text,   ly: ebitdaDelta.text,     budgetUp: ebitdaBudget.up,    lyUp: ebitdaDelta.up   },
-      ebitdaMgn:  { value: fmtPct(p.ebitdaMgn),         budget: ebitdaMgnBudget.text, ly: ebitdaMgnDelta.text,  budgetUp: ebitdaMgnBudget.up, lyUp: ebitdaMgnDelta.up},
+      gop:        { value: fmtCurrency(p.gop, false),    budget: gopBudget.text,      ly: gopDelta.text,        budgetUp: gopBudget.up,       lyUp: gopDelta.up,      budgetLabel: b?.gop      != null ? 'Bud ' + fmtCurrency(b.gop,true)    : 'Bud —', lyLabel: ly?.gop      != null ? 'LY ' + fmtCurrency(ly.gop,true)    : 'LY —' },
+      ebitda:     { value: fmtCurrency(p.ebitda, false), budget: ebitdaBudget.text,   ly: ebitdaDelta.text,     budgetUp: ebitdaBudget.up,    lyUp: ebitdaDelta.up,   budgetLabel: b?.ebitda   != null ? 'Bud ' + fmtCurrency(b.ebitda,true) : 'Bud —', lyLabel: ly?.ebitda   != null ? 'LY ' + fmtCurrency(ly.ebitda,true) : 'LY —' },
+      ebitdaMgn:  { value: fmtPct(p.ebitdaMgn),         budget: ebitdaMgnBudget.text, ly: ebitdaMgnDelta.text,  budgetUp: ebitdaMgnBudget.up, lyUp: ebitdaMgnDelta.up,budgetLabel: b?.ebitdaMgn != null ? 'Bud ' + fmtPct(b.ebitdaMgn)      : 'Bud —', lyLabel: ly?.ebitdaMgn != null ? 'LY ' + fmtPct(ly.ebitdaMgn)      : 'LY —' },
       flowthrough: (() => {
         const deltaRev = p.revenue - (ly?.revenue || 0);
         const deltaGOP = p.gop     - (ly?.gop     || 0);
@@ -2763,15 +2763,15 @@ function buildPropertyLiveData(tag, allRows, ranges) {
     result[period] = {
       label: periodLabels[period] || period,
       kpi: {
-        revpar:   { value: fmtADR(p.revpar),              ly: revparDelta.text,   lyUp: revparDelta.up,   budget: revparBudget.text,    budgetUp: revparBudget.up    },
-        adr:      { value: fmtADR(p.adr),                 ly: adrDelta.text,      lyUp: adrDelta.up,      budget: adrBudget.text,       budgetUp: adrBudget.up       },
-        occ:      { value: fmtPct(p.occ),                 ly: occDelta.text,      lyUp: occDelta.up,      budget: occBudget.text,       budgetUp: occBudget.up       },
-        totalrev: { value: fmtCurrency(p.revenue, false), ly: revDelta.text,      lyUp: revDelta.up,      budget: revBudget.text,       budgetUp: revBudget.up       },
+        revpar:   { value: fmtADR(p.revpar),              ly: revparDelta.text,   lyUp: revparDelta.up,   budget: revparBudget.text,    budgetUp: revparBudget.up,   budgetLabel: b?.revpar    != null ? 'Bud ' + fmtADR(b.revpar)             : 'Bud —', lyLabel: ly?.revpar    != null ? 'LY ' + fmtADR(ly.revpar)             : 'LY —' },
+        adr:      { value: fmtADR(p.adr),                 ly: adrDelta.text,      lyUp: adrDelta.up,      budget: adrBudget.text,       budgetUp: adrBudget.up,      budgetLabel: b?.adr       != null ? 'Bud ' + fmtADR(b.adr)               : 'Bud —', lyLabel: ly?.adr       != null ? 'LY ' + fmtADR(ly.adr)               : 'LY —' },
+        occ:      { value: fmtPct(p.occ),                 ly: occDelta.text,      lyUp: occDelta.up,      budget: occBudget.text,       budgetUp: occBudget.up,      budgetLabel: b?.occ       != null ? 'Bud ' + fmtPct(b.occ)               : 'Bud —', lyLabel: ly?.occ       != null ? 'LY ' + fmtPct(ly.occ)               : 'LY —' },
+        totalrev: { value: fmtCurrency(p.revenue, false), ly: revDelta.text,      lyUp: revDelta.up,      budget: revBudget.text,       budgetUp: revBudget.up,      budgetLabel: b?.revenue   != null ? 'Bud ' + fmtCurrency(b.revenue,true) : 'Bud —', lyLabel: ly?.revenue   != null ? 'LY ' + fmtCurrency(ly.revenue,true) : 'LY —' },
       },
       profit: {
-        gop:        { value: fmtCurrency(p.gop, false),    ly: gopDelta.text,       lyUp: gopDelta.up,      budget: gopBudget.text,       budgetUp: gopBudget.up       },
-        ebitda:     { value: fmtCurrency(p.ebitda, false), ly: ebitdaDelta.text,    lyUp: ebitdaDelta.up,   budget: ebitdaBudget.text,    budgetUp: ebitdaBudget.up    },
-        ebitdaMgn:  { value: fmtPct(p.ebitdaMgn),         ly: ebitdaMgnDelta.text, lyUp: ebitdaMgnDelta.up,budget: ebitdaMgnBudget.text, budgetUp: ebitdaMgnBudget.up },
+        gop:        { value: fmtCurrency(p.gop, false),    ly: gopDelta.text,       lyUp: gopDelta.up,      budget: gopBudget.text,       budgetUp: gopBudget.up,      budgetLabel: b?.gop       != null ? 'Bud ' + fmtCurrency(b.gop,true)    : 'Bud —', lyLabel: ly?.gop       != null ? 'LY ' + fmtCurrency(ly.gop,true)    : 'LY —' },
+        ebitda:     { value: fmtCurrency(p.ebitda, false), ly: ebitdaDelta.text,    lyUp: ebitdaDelta.up,   budget: ebitdaBudget.text,    budgetUp: ebitdaBudget.up,   budgetLabel: b?.ebitda    != null ? 'Bud ' + fmtCurrency(b.ebitda,true) : 'Bud —', lyLabel: ly?.ebitda    != null ? 'LY ' + fmtCurrency(ly.ebitda,true) : 'LY —' },
+        ebitdaMgn:  { value: fmtPct(p.ebitdaMgn),         ly: ebitdaMgnDelta.text, lyUp: ebitdaMgnDelta.up,budget: ebitdaMgnBudget.text, budgetUp: ebitdaMgnBudget.up,budgetLabel: b?.ebitdaMgn != null ? 'Bud ' + fmtPct(b.ebitdaMgn)       : 'Bud —', lyLabel: ly?.ebitdaMgn != null ? 'LY ' + fmtPct(ly.ebitdaMgn)       : 'LY —' },
         flowthrough: (() => {
           const deltaRev = p.revenue - (ly?.revenue || 0);
           const deltaGOP = p.gop     - (ly?.gop     || 0);
@@ -3342,19 +3342,27 @@ function applyPortfolioPeriod(p) {
   document.querySelector('[data-bind="p.revpar.value"]').textContent = d.kpi.revpar.value;
   setDelta(document.querySelector('[data-bind="p.revpar.budget"]'), d.kpi.revpar.budget, d.kpi.revpar.budgetUp);
   setDelta(document.querySelector('[data-bind="p.revpar.ly"]'), d.kpi.revpar.ly, d.kpi.revpar.lyUp);
+  const _rvBL = document.querySelector('[data-bind="p.revpar.budgetLabel"]'); if (_rvBL) _rvBL.textContent = d.kpi.revpar.budgetLabel || 'Bud —';
+  const _rvLL = document.querySelector('[data-bind="p.revpar.lyLabel"]');     if (_rvLL) _rvLL.textContent = d.kpi.revpar.lyLabel     || 'LY —';
 
   document.querySelector('[data-bind="p.adr.value"]').textContent = d.kpi.adr.value;
   setDelta(document.querySelector('[data-bind="p.adr.budget"]'), d.kpi.adr.budget, d.kpi.adr.budgetUp);
   setDelta(document.querySelector('[data-bind="p.adr.ly"]'), d.kpi.adr.ly, d.kpi.adr.lyUp);
+  const _adBL = document.querySelector('[data-bind="p.adr.budgetLabel"]'); if (_adBL) _adBL.textContent = d.kpi.adr.budgetLabel || 'Bud —';
+  const _adLL = document.querySelector('[data-bind="p.adr.lyLabel"]');     if (_adLL) _adLL.textContent = d.kpi.adr.lyLabel     || 'LY —';
 
   document.querySelector('[data-bind="p.occ.value"]').textContent = d.kpi.occ.value;
   setDelta(document.querySelector('[data-bind="p.occ.budget"]'), d.kpi.occ.budget, d.kpi.occ.budgetUp);
   setDelta(document.querySelector('[data-bind="p.occ.ly"]'), d.kpi.occ.ly, d.kpi.occ.lyUp);
+  const _ocBL = document.querySelector('[data-bind="p.occ.budgetLabel"]'); if (_ocBL) _ocBL.textContent = d.kpi.occ.budgetLabel || 'Bud —';
+  const _ocLL = document.querySelector('[data-bind="p.occ.lyLabel"]');     if (_ocLL) _ocLL.textContent = d.kpi.occ.lyLabel     || 'LY —';
 
   document.querySelector('[data-bind="p.totalrev.label"]').textContent = d.totalRevLabel;
   document.querySelector('[data-bind="p.totalrev.value"]').textContent = d.kpi.totalrev.value;
   setDelta(document.querySelector('[data-bind="p.totalrev.budget"]'), d.kpi.totalrev.budget, d.kpi.totalrev.budgetUp);
   setDelta(document.querySelector('[data-bind="p.totalrev.ly"]'), d.kpi.totalrev.ly, d.kpi.totalrev.lyUp);
+  const _trBL = document.querySelector('[data-bind="p.totalrev.budgetLabel"]'); if (_trBL) _trBL.textContent = d.kpi.totalrev.budgetLabel || 'Bud —';
+  const _trLL = document.querySelector('[data-bind="p.totalrev.lyLabel"]');     if (_trLL) _trLL.textContent = d.kpi.totalrev.lyLabel     || 'LY —';
 
   document.querySelector('[data-bind="p.props.sub"]').textContent = d.propsSub;
   document.querySelector('[data-bind="p.trend.sub"]').textContent = d.trendSub;
@@ -3366,16 +3374,22 @@ function applyPortfolioPeriod(p) {
     if (gopVal) gopVal.textContent = pf.gop.value;
     setDelta(document.querySelector('[data-bind="p.gop.budget"]'), pf.gop.budget, pf.gop.budgetUp);
     setDelta(document.querySelector('[data-bind="p.gop.ly"]'), pf.gop.ly, pf.gop.lyUp);
+    const _gpBL = document.querySelector('[data-bind="p.gop.budgetLabel"]');     if (_gpBL) _gpBL.textContent = pf.gop.budgetLabel     || 'Bud —';
+    const _gpLL = document.querySelector('[data-bind="p.gop.lyLabel"]');         if (_gpLL) _gpLL.textContent = pf.gop.lyLabel         || 'LY —';
 
     const ebitdaVal = document.querySelector('[data-bind="p.ebitda.value"]');
     if (ebitdaVal) ebitdaVal.textContent = pf.ebitda.value;
     setDelta(document.querySelector('[data-bind="p.ebitda.budget"]'), pf.ebitda.budget, pf.ebitda.budgetUp);
     setDelta(document.querySelector('[data-bind="p.ebitda.ly"]'), pf.ebitda.ly, pf.ebitda.lyUp);
+    const _ebBL = document.querySelector('[data-bind="p.ebitda.budgetLabel"]');  if (_ebBL) _ebBL.textContent = pf.ebitda.budgetLabel  || 'Bud —';
+    const _ebLL = document.querySelector('[data-bind="p.ebitda.lyLabel"]');      if (_ebLL) _ebLL.textContent = pf.ebitda.lyLabel      || 'LY —';
 
     const ebitdaMgnVal = document.querySelector('[data-bind="p.ebitdaMgn.value"]');
     if (ebitdaMgnVal) ebitdaMgnVal.textContent = pf.ebitdaMgn.value;
     setDelta(document.querySelector('[data-bind="p.ebitdaMgn.budget"]'), pf.ebitdaMgn.budget, pf.ebitdaMgn.budgetUp);
     setDelta(document.querySelector('[data-bind="p.ebitdaMgn.ly"]'), pf.ebitdaMgn.ly, pf.ebitdaMgn.lyUp);
+    const _emBL = document.querySelector('[data-bind="p.ebitdaMgn.budgetLabel"]'); if (_emBL) _emBL.textContent = pf.ebitdaMgn.budgetLabel || 'Bud —';
+    const _emLL = document.querySelector('[data-bind="p.ebitdaMgn.lyLabel"]');     if (_emLL) _emLL.textContent = pf.ebitdaMgn.lyLabel     || 'LY —';
 
     const ftVal = document.querySelector('[data-bind="p.flowthrough.value"]');
     if (ftVal) ftVal.textContent = pf.flowthrough.value;
@@ -3530,28 +3544,42 @@ function applyPropertyPeriod(p) {
     setVal('a.revpar.value', d.kpi.revpar.value);
     setDlt('a.revpar.budget', d.kpi.revpar.budget, d.kpi.revpar.budgetUp);
     setDlt('a.revpar.ly', d.kpi.revpar.ly, d.kpi.revpar.lyUp);
+    setVal('a.revpar.budgetLabel', d.kpi.revpar.budgetLabel || 'Bud —');
+    setVal('a.revpar.lyLabel',     d.kpi.revpar.lyLabel     || 'LY —');
     setVal('a.adr.value', d.kpi.adr.value);
     setDlt('a.adr.budget', d.kpi.adr.budget, d.kpi.adr.budgetUp);
     setDlt('a.adr.ly', d.kpi.adr.ly, d.kpi.adr.lyUp);
+    setVal('a.adr.budgetLabel', d.kpi.adr.budgetLabel || 'Bud —');
+    setVal('a.adr.lyLabel',     d.kpi.adr.lyLabel     || 'LY —');
     setVal('a.occ.value', d.kpi.occ.value);
     setDlt('a.occ.budget', d.kpi.occ.budget, d.kpi.occ.budgetUp);
     setDlt('a.occ.ly', d.kpi.occ.ly, d.kpi.occ.lyUp);
+    setVal('a.occ.budgetLabel', d.kpi.occ.budgetLabel || 'Bud —');
+    setVal('a.occ.lyLabel',     d.kpi.occ.lyLabel     || 'LY —');
     const periodLabel = { yesterday: 'Total Revenue (Day)', wtd: 'Total Revenue (WTD)', mtd: 'Total Revenue (MTD)', ytd: 'Total Revenue (YTD)', '3yr': 'Total Revenue (3YR)' }[p] || 'Total Revenue';
     setVal('a.totalrev.label', periodLabel);
     setVal('a.totalrev.value', d.kpi.totalrev.value);
     setDlt('a.totalrev.budget', d.kpi.totalrev.budget, d.kpi.totalrev.budgetUp);
     setDlt('a.totalrev.ly', d.kpi.totalrev.ly, d.kpi.totalrev.lyUp);
+    setVal('a.totalrev.budgetLabel', d.kpi.totalrev.budgetLabel || 'Bud —');
+    setVal('a.totalrev.lyLabel',     d.kpi.totalrev.lyLabel     || 'LY —');
     // Profit section
     if (d.profit) {
       setVal('a.gop.value', d.profit.gop.value);
       setDlt('a.gop.budget', d.profit.gop.budget, d.profit.gop.budgetUp);
       setDlt('a.gop.ly', d.profit.gop.ly, d.profit.gop.lyUp);
+      setVal('a.gop.budgetLabel', d.profit.gop.budgetLabel || 'Bud —');
+      setVal('a.gop.lyLabel',     d.profit.gop.lyLabel     || 'LY —');
       setVal('a.ebitda.value', d.profit.ebitda.value);
       setDlt('a.ebitda.budget', d.profit.ebitda.budget, d.profit.ebitda.budgetUp);
       setDlt('a.ebitda.ly', d.profit.ebitda.ly, d.profit.ebitda.lyUp);
+      setVal('a.ebitda.budgetLabel', d.profit.ebitda.budgetLabel || 'Bud —');
+      setVal('a.ebitda.lyLabel',     d.profit.ebitda.lyLabel     || 'LY —');
       setVal('a.ebitdaMgn.value', d.profit.ebitdaMgn.value);
       setDlt('a.ebitdaMgn.budget', d.profit.ebitdaMgn.budget, d.profit.ebitdaMgn.budgetUp);
       setDlt('a.ebitdaMgn.ly', d.profit.ebitdaMgn.ly, d.profit.ebitdaMgn.lyUp);
+      setVal('a.ebitdaMgn.budgetLabel', d.profit.ebitdaMgn.budgetLabel || 'Bud —');
+      setVal('a.ebitdaMgn.lyLabel',     d.profit.ebitdaMgn.lyLabel     || 'LY —');
       // Flow through
       if (d.profit.flowthrough) {
         setVal('a.flowthrough.value', d.profit.flowthrough.value);
