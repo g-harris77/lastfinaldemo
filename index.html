@@ -1248,10 +1248,6 @@
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
     GM Pulse
   </button>
-  <button class="tab-btn" data-tab="bonus" onclick="switchTab('bonus')">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-    Josh Koenig's Bonus
-  </button>
 </nav>
 
 <!-- ============== OWNERS TAB PANEL ============== -->
@@ -1479,7 +1475,6 @@
             <button data-tm="revpar" class="active">RevPAR</button>
             <button data-tm="adr">ADR</button>
             <button data-tm="totalrev">Total Rev</button>
-            <button data-tm="ebitda">EBITDA</button>
           </div>
           <div class="chart-legend">
             <span><span class="legend-dot" style="background: var(--accent)"></span>Actuals</span>
@@ -1743,7 +1738,6 @@
           <button data-ptm="revpar" class="active">RevPAR</button>
           <button data-ptm="adr">ADR</button>
           <button data-ptm="totalrev">Total Rev</button>
-          <button data-ptm="ebitda">EBITDA</button>
         </div>
         <div class="chart-legend">
           <span><span class="legend-dot" style="background:var(--accent)"></span>Actuals</span>
@@ -1832,16 +1826,6 @@
   </div>
 
 </div><!-- /#tab-wellness -->
-
-<!-- ============== JOSH KOENIG'S BONUS TAB ============== -->
-<div id="tab-bonus" class="tab-panel hidden">
-  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;gap:24px;padding:40px;">
-    <div style="font-size:13px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-subtle);">Q1 2026 Bonus — Josh Koenig</div>
-    <div style="font-size:clamp(48px,10vw,96px);font-weight:700;letter-spacing:-0.03em;color:var(--accent);font-family:'JetBrains Mono',monospace;text-align:center;line-height:1;">$1,000,000,000,000</div>
-    <div style="font-size:18px;color:var(--text-muted);font-weight:500;">One Bajillion Dollars</div>
-    <div style="font-size:12px;color:var(--text-subtle);margin-top:8px;">* Subject to board approval, universal constants, and the laws of mathematics</div>
-  </div>
-</div><!-- /#tab-bonus -->
 
 <!-- ============== INSIGHTS DRAWER ============== -->
 <div class="drawer-overlay" id="overlay"></div>
@@ -2429,13 +2413,12 @@ function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag
     const map = new Map();
     rows.forEach(r => {
       const key = groupFn(parseD(extractDate(r)));
-      if (!map.has(key)) map.set(key, { revenue: 0, deptSales: 0, rooms_occ: 0, rooms_avail: 0, ebitda: 0 });
+      if (!map.has(key)) map.set(key, { revenue: 0, deptSales: 0, rooms_occ: 0, rooms_avail: 0 });
       const g = map.get(key);
       g.revenue     += (r.cr2cd_total_rooms || 0);       // rooms revenue for ADR/RevPAR
       g.deptSales   += (r.cr2cd_departmentsales || 0);   // department sales for Total Rev chart
       g.rooms_occ   += (r.cr2cd_occupied_rooms || 0);
       g.rooms_avail += (r.cr2cd_available_rooms || 0);
-      g.ebitda      += (r.cr2cd_ebitda || 0);
     });
     return map;
   }
@@ -2493,10 +2476,6 @@ function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag
     const g = actMap.get(k);
     return parseFloat((g.deptSales / 1000).toFixed(1));
   });
-  const actualsEBITDA = sortedKeys.map(k => {
-    const g = actMap.get(k);
-    return parseFloat((g.ebitda / 1000).toFixed(1));
-  });
 
   // Match LY by bucket — shift LY keys forward to match current period keys
   const lyKeysSorted = [...lyMap.keys()].sort();
@@ -2519,19 +2498,13 @@ function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag
     const g = lyMap.get(lyKey);
     return g ? parseFloat((g.deptSales / 1000).toFixed(1)) : null;
   });
-  const lyEBITDA = sortedKeys.map((k, i) => {
-    const lyKey = lyKeysSorted[i];
-    if (!lyKey) return null;
-    const g = lyMap.get(lyKey);
-    return g ? parseFloat((g.ebitda / 1000).toFixed(1)) : null;
-  });
 
   // Build budget series from budget rows (same bucketing as actuals)
   let budRevpar = labels.map(() => null);
   let budADR    = labels.map(() => null);
   let budRev    = labels.map(() => null);
-  let budEBITDA = labels.map(() => null);
   if (budgetRows && budgetRows.length > 0) {
+    // Filter budget rows to the actuals date range (budget uses same date field)
     const budFiltered = budgetRows.filter(r => {
       const d = parseD((r.cr2cd_date || '').slice(0, 10));
       const inRange = d >= fd && d <= td;
@@ -2542,13 +2515,12 @@ function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag
     const budMap = new Map();
     budFiltered.forEach(r => {
       const key = groupFn(parseD((r.cr2cd_date || '').slice(0, 10)));
-      if (!budMap.has(key)) budMap.set(key, { totalrooms: 0, occupied: 0, available: 0, deptSales: 0, ebitda: 0 });
+      if (!budMap.has(key)) budMap.set(key, { totalrooms: 0, occupied: 0, available: 0, deptSales: 0 });
       const g = budMap.get(key);
       g.totalrooms += r.cr2cd_totalrooms      || 0;
       g.occupied   += r.cr2cd_occupiedrooms   || 0;
       g.available  += r.cr2cd_availablerooms  || 0;
       g.deptSales  += r.cr2cd_departmentsales || 0;
-      g.ebitda     += r.cr2cd_ebitda          || 0;
     });
     budRevpar = sortedKeys.map(k => {
       const g = budMap.get(k);
@@ -2562,17 +2534,12 @@ function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag
       const g = budMap.get(k);
       return g ? parseFloat((g.deptSales / 1000).toFixed(1)) : null;
     });
-    budEBITDA = sortedKeys.map(k => {
-      const g = budMap.get(k);
-      return g ? parseFloat((g.ebitda / 1000).toFixed(1)) : null;
-    });
   }
 
   return {
     revpar:   { labels, actuals, budget: budRevpar, ly: lyRevpar, prefix: '$', suffix: '', title: 'RevPAR Trend' },
     adr:      { labels, actuals: actualsADR, budget: budADR, ly: lyADR, prefix: '$', suffix: '', title: 'ADR Trend' },
     totalrev: { labels, actuals: actualsRev, budget: budRev, ly: lyRev, prefix: '$', suffix: 'K', title: 'Total Revenue Trend' },
-    ebitda:   { labels, actuals: actualsEBITDA, budget: budEBITDA, ly: lyEBITDA, prefix: '$', suffix: 'K', title: 'EBITDA Trend' },
   };
 }
 
@@ -2663,7 +2630,6 @@ function buildPeriodData(label, propsSub, trendSub, totalRevLabel, agg, lyAgg, f
     revpar:   { labels: [], actuals: [], budget: [], ly: [], prefix: '$', title: 'RevPAR Trend' },
     adr:      { labels: [], actuals: [], budget: [], ly: [], prefix: '$', title: 'ADR Trend' },
     totalrev: { labels: [], actuals: [], budget: [], ly: [], prefix: '$', suffix: 'K', title: 'Total Revenue Trend' },
-    ebitda:   { labels: [], actuals: [], budget: [], ly: [], prefix: '$', suffix: 'K', title: 'EBITDA Trend' },
   };
 
   // Portfolio ARI: sum(CS1 prp rev) / sum(CS1 prp occ) / sum(CS1 cs rev) / sum(CS1 cs occ) * 100
@@ -2843,7 +2809,6 @@ function buildPropertyLiveData(tag, allRows, ranges) {
       revpar:   { labels:[], actuals:[], budget:[], ly:[], prefix:'$', title:'RevPAR Trend' },
       adr:      { labels:[], actuals:[], budget:[], ly:[], prefix:'$', title:'ADR Trend' },
       totalrev: { labels:[], actuals:[], budget:[], ly:[], prefix:'$', suffix:'K', title:'Total Revenue Trend' },
-      ebitda:   { labels:[], actuals:[], budget:[], ly:[], prefix:'$', suffix:'K', title:'EBITDA Trend' },
     };
 
     result[period] = {
@@ -4926,5 +4891,3 @@ wRenderPortfolio();
 </script>
 </body>
 </html>
-
-
