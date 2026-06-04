@@ -4063,10 +4063,28 @@ document.querySelectorAll('#periodSeg button').forEach(btn => {
 
     document.querySelectorAll('#periodSeg button').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    applyPeriod(p);
+    currentPeriod = p;
+    window.currentPeriod = p;
 
-    // Lazy-load 3YR data on first click — navigate immediately, load in background
+    // Lazy-load 3YR data on first click — show dashes + loading bar, render only after fetch
     if (p === '3yr' && !window._3yrLoaded) {
+      // Switch to 3YR view with all dashes
+      if (currentView === 'portfolio') {
+        document.getElementById('portfolioView').classList.remove('hidden');
+        document.getElementById('propertyView').classList.add('hidden');
+      }
+      // Blank out all KPI values so nothing stale shows
+      document.querySelectorAll('#portfolioView [data-bind]').forEach(el => {
+        if (!el.dataset.bind.endsWith('.label') && !el.dataset.bind.endsWith('.sub')) {
+          el.textContent = '—';
+          el.className = el.classList.contains('delta-pill') ? 'delta-pill delta-flat' : el.className;
+        }
+      });
+      // Reset label spans back to generic text
+      document.querySelectorAll('#portfolioView .kpi-delta-label').forEach(el => {
+        el.textContent = el.textContent.startsWith('LY') ? 'vs Last Year' : el.textContent.startsWith('Bud') ? 'vs Budget' : el.textContent;
+      });
+
       const bar = document.createElement('div');
       bar.id = '_3yrBar';
       bar.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:4px;background:var(--accent);z-index:999;animation:shimmer 1.4s infinite;background-size:200% 100%;';
@@ -4078,21 +4096,22 @@ document.querySelectorAll('#periodSeg button').forEach(btn => {
           fetchAllRows(token, threeYearsAgo()),
           fetchCS1Rows(token, threeYearsAgo()),
         ]);
-        // Only add rows older than the 13-month cutoff to avoid duplicates
         const newActuals = extraRows.filter(r => (r.cr2cd_date || '').slice(0,10) < cutoffStr);
         const newCS1     = extraCS1Rows.filter(r => (r.cr2cd_date || '').slice(0,10) < cutoffStr);
         window.ALL_ROWS   = [...(window.ALL_ROWS || []), ...newActuals];
         window.CS1_ROWS   = [...(window.CS1_ROWS  || []), ...newCS1];
         window._3yrLoaded = true;
         if (window.recompute) window.recompute();
-        // Re-render 3YR now that data is ready (only if still on 3YR)
         if (currentPeriod === '3yr') applyPeriod('3yr');
       } catch(e) {
         console.error('3YR lazy load failed:', e);
       } finally {
         document.getElementById('_3yrBar')?.remove();
       }
+      return; // don't fall through to applyPeriod below
     }
+
+    applyPeriod(p);
   });
 });
 
