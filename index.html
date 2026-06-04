@@ -1281,6 +1281,7 @@
     <div class="seg" id="periodSeg">
       <button data-p="yesterday">Day</button>
       <button data-p="wtd">T7D</button>
+      <button data-p="t30">T30D</button>
       <button data-p="mtd" class="active">MTD</button>
       <button data-p="ytd">YTD</button>
       <button data-p="3yr">3YR</button>
@@ -2785,7 +2786,7 @@ function buildPropertyLiveData(tag, allRows, ranges) {
     const ebitdaBudget    = fmtBudgetDelta(p.ebitda,    b?.ebitda);
     const ebitdaMgnBudget = fmtBudgetDelta(p.ebitdaMgn, b?.ebitdaMgn, true);
 
-    const periodLabels = { yesterday: `${ydStr}`, wtd: 'Trailing 7 days', mtd: 'Month-to-date', ytd: `Year-to-date · ${yd.getFullYear()}`, '3yr': '3-Year Rolling' };
+    const periodLabels = { yesterday: `${ydStr}`, wtd: 'Trailing 7 days', t30: 'Trailing 30 days', mtd: 'Month-to-date', ytd: `Year-to-date · ${yd.getFullYear()}`, '3yr': '3-Year Rolling' };
 
     // Charts: built lazily on demand when property/period is actually viewed
     // Store the params needed to build them, not the built data itself
@@ -2916,6 +2917,7 @@ async function loadDataAndRun() {
       const ranges = {
         yesterday: { from: td,                           to: td                           },
         wtd:       { from: shiftDay(td, -6),             to: td                           }, // trailing 7 days
+        t30:       { from: shiftDay(td, -29),            to: td                           }, // trailing 30 days
         mtd:       { from: startOfMonth(),                to: td                           },
         ytd:       { from: startOfYear(),                to: td                           },
         '3yr':     { from: threeYearsAgo(),              to: td                           },
@@ -2935,8 +2937,10 @@ async function loadDataAndRun() {
       const ydStr       = fmt(yd);
       const mtdStart    = new Date(td.getFullYear(), td.getMonth(), 1);
       const mtdStartStr = fmtShort(mtdStart);
-      const t7dStart    = shiftDay(yd, -6); // trailing 7 business days ending yesterday
+      const t7dStart    = shiftDay(yd, -6);  // trailing 7 days ending yesterday
       const t7dStartStr = fmtShort(t7dStart);
+      const t30Start    = shiftDay(yd, -29); // trailing 30 days ending yesterday
+      const t30StartStr = fmtShort(t30Start);
 
       // Update "As of" labels — show the anchor date itself (what the user picked)
       const anchorStr = window._anchorDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -2975,6 +2979,12 @@ async function loadDataAndRun() {
           `T7D (${t7dStartStr}–${fmtShort(yd)}) · Click row to drill in`,
           `Daily · ${t7dStartStr}–${fmtShort(yd)} · Actuals vs. Last Year`, 'Total Revenue (T7D)',
           aggs.wtd, lyAggs.wtd, ranges.wtd.from, ranges.wtd.to, budgetAggs.wtd
+        ),
+        t30: buildPeriodData(
+          `Trailing 30 days · ${t30StartStr}–${fmtShort(yd)}`,
+          `T30D (${t30StartStr}–${fmtShort(yd)}) · Click row to drill in`,
+          `Daily · ${t30StartStr}–${fmtShort(yd)} · Actuals vs. Budget vs. Last Year`, 'Total Revenue (T30D)',
+          aggs.t30, lyAggs.t30, ranges.t30.from, ranges.t30.to, budgetAggs.t30
         ),
         mtd: buildPeriodData(
           `Month-to-date · ${mtdStartStr}–${fmtShort(yd)}`,
@@ -3457,7 +3467,7 @@ function applyPortfolioPeriod(p) {
     if (ariData.length > 0) {
       strChart.data.labels = ariData.map((_, i) => `D${i+1}`);
     } else {
-      const strLabels = { yesterday: ['12a','3a','6a','9a','12p','3p','6p','9p','11p'], wtd: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], mtd: Array.from({length:13},(_,i)=>`W${i+1}`), ytd: ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13'], '3yr': ["Q1'24","Q2'24","Q3'24","Q4'24","Q1'25","Q2'25","Q3'25","Q4'25","Q1'26"] };
+      const strLabels = { yesterday: ['12a','3a','6a','9a','12p','3p','6p','9p','11p'], wtd: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], t30: Array.from({length:30},(_,i)=>`D${i+1}`), mtd: Array.from({length:13},(_,i)=>`W${i+1}`), ytd: ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13'], '3yr': ["Q1'24","Q2'24","Q3'24","Q4'24","Q1'25","Q2'25","Q3'25","Q4'25","Q1'26"] };
       strChart.data.labels = strLabels[p] || strLabels.ytd;
     }
     // Mutate the arrays in place using splice so Chart.js detects the change (same pattern as property view)
@@ -3598,7 +3608,7 @@ function applyPropertyPeriod(p) {
     setVal('a.occ.value', d.kpi.occ.value);
     setPropDeltaWithLabel('a.occ.budget', d.kpi.occ.budget, d.kpi.occ.budgetUp, d.kpi.occ.budgetLabel);
     setPropDeltaWithLabel('a.occ.ly',     d.kpi.occ.ly,     d.kpi.occ.lyUp,     d.kpi.occ.lyLabel);
-    const periodLabel = { yesterday: 'Total Revenue (Day)', wtd: 'Total Revenue (WTD)', mtd: 'Total Revenue (MTD)', ytd: 'Total Revenue (YTD)', '3yr': 'Total Revenue (3YR)' }[p] || 'Total Revenue';
+    const periodLabel = { yesterday: 'Total Revenue (Day)', wtd: 'Total Revenue (WTD)', t30: 'Total Revenue (T30D)', mtd: 'Total Revenue (MTD)', ytd: 'Total Revenue (YTD)', '3yr': 'Total Revenue (3YR)' }[p] || 'Total Revenue';
     setVal('a.totalrev.label', periodLabel);
     setVal('a.totalrev.value', d.kpi.totalrev.value);
     setPropDeltaWithLabel('a.totalrev.budget', d.kpi.totalrev.budget, d.kpi.totalrev.budgetUp, d.kpi.totalrev.budgetLabel);
@@ -3692,7 +3702,7 @@ function applyPropertyPeriod(p) {
         deltaEl.className = 'delta-pill ' + (d.str[m].up ? 'delta-up' : 'delta-down');
       }
     });
-    const astrLabels = { yesterday: ['12a','3a','6a','9a','12p','3p','6p','9p','11p'], wtd: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], mtd: Array.from({length:13},(_,i)=>`W${i+1}`), ytd: ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13'], '3yr': ["Q1'24","Q2'24","Q3'24","Q4'24","Q1'25","Q2'25","Q3'25","Q4'25","Q1'26"] };
+    const astrLabels = { yesterday: ['12a','3a','6a','9a','12p','3p','6p','9p','11p'], wtd: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], t30: Array.from({length:30},(_,i)=>`D${i+1}`), mtd: Array.from({length:13},(_,i)=>`W${i+1}`), ytd: ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13'], '3yr': ["Q1'24","Q2'24","Q3'24","Q4'24","Q1'25","Q2'25","Q3'25","Q4'25","Q1'26"] };
     propSTRChart.data.labels = astrLabels[p] || astrLabels.ytd;
     PROP_STR_DATA.MPI.data = d.str.chartData.MPI;
     PROP_STR_DATA.ARI.data = d.str.chartData.ARI;
@@ -3787,7 +3797,7 @@ window.switchView = function(v) {
 }
 
 function updateChatScope() {
-  const periodLabel = { yesterday: 'Yesterday', wtd: 'WTD', mtd: 'MTD', ytd: 'YTD', '3yr': '3YR' }[currentPeriod];
+  const periodLabel = { yesterday: 'Yesterday', wtd: 'WTD', t30: 'T30D', mtd: 'MTD', ytd: 'YTD', '3yr': '3YR' }[currentPeriod];
   const scope = currentView === 'portfolio'
     ? `Full Portfolio · ${periodLabel}`
     : `ASTOR · ${periodLabel}`;
@@ -3877,7 +3887,7 @@ const strChart = (() => { const _c = Chart.getChart(document.getElementById('rgi
     responsive: true, maintainAspectRatio: false,
     plugins: {
       legend: { display: false },
-      tooltip: { backgroundColor: '#18202B', borderColor: '#232E3D', borderWidth: 1, padding: 10, titleColor: '#ECEFF4', bodyColor: '#9AA5B8' }
+      tooltip: { backgroundColor: '#18202B', borderColor: '#232E3D', borderWidth: 1, padding: 10, titleColor: '#ECEFF4', bodyColor: '#9AA5B8', usePointStyle: true, boxWidth: 8, boxHeight: 8 }
     },
     scales: {
       x: { grid: { display: false }, ticks: { font: { size: 10 } } },
@@ -3932,8 +3942,8 @@ function makeTrendChart(canvasId) {
             return c;
           }
         },
-        { label: 'Budget', data: [], borderColor: INFO, borderWidth: 1.5, borderDash: [4,4], tension: 0, pointRadius: 0, fill: false },
-        { label: 'Last Year', data: [], borderColor: SUBTLE, borderWidth: 1.5, tension: 0.25, pointRadius: 0, pointHoverRadius: 4, fill: false }
+        { label: 'Budget', data: [], borderColor: INFO, borderWidth: 1.5, borderDash: [4,4], tension: 0, pointRadius: 0, fill: false, pointStyle: 'rect' },
+        { label: 'Last Year', data: [], borderColor: SUBTLE, borderWidth: 1.5, tension: 0.25, pointRadius: 0, pointHoverRadius: 4, fill: false, pointStyle: 'circle' }
       ]
     },
     options: {
@@ -3941,6 +3951,7 @@ function makeTrendChart(canvasId) {
       plugins: {
         legend: { display: false },
         tooltip: { backgroundColor: '#18202B', borderColor: '#232E3D', borderWidth: 1, padding: 12, titleColor: '#ECEFF4', bodyColor: '#9AA5B8',
+          usePointStyle: true, boxWidth: 8, boxHeight: 8,
           callbacks: { label: ctx => `${ctx.dataset.label}: $${ctx.parsed.y.toFixed(2)}` } }
       },
       scales: {
@@ -3989,7 +4000,7 @@ const propSTRChart = (() => { const _c = Chart.getChart(document.getElementById(
     responsive: true, maintainAspectRatio: false,
     plugins: {
       legend: { display: false },
-      tooltip: { backgroundColor: '#18202B', borderColor: '#232E3D', borderWidth: 1, padding: 10, titleColor: '#ECEFF4', bodyColor: '#9AA5B8' }
+      tooltip: { backgroundColor: '#18202B', borderColor: '#232E3D', borderWidth: 1, padding: 10, titleColor: '#ECEFF4', bodyColor: '#9AA5B8', usePointStyle: true, boxWidth: 8, boxHeight: 8 }
     },
     scales: {
       x: { grid: { display: false }, ticks: { font: { size: 10 } } },
@@ -4001,7 +4012,8 @@ const propSTRChart = (() => { const _c = Chart.getChart(document.getElementById(
 const STR_PERIOD_LABELS = {
   yesterday: 'Trailing 24 hours',
   wtd:       'Trailing 7 days',
-  mtd:       'Trailing 30 days',
+  t30:       'Trailing 30 days',
+  mtd:       'Month-to-date',
   ytd:       'Trailing 13 weeks',
   '3yr':     '3-Year Rolling (Quarterly)'
 };
@@ -4235,7 +4247,7 @@ generateBtn.addEventListener('click', () => {
   setTimeout(() => {
     const insights = currentView === 'portfolio' ? PORTFOLIO_INSIGHTS : ASTOR_INSIGHTS;
     const scopeLabel = currentView === 'portfolio' ? 'Full Portfolio' : 'Holiday Inn Express Astoria';
-    const periodLabel = { yesterday: 'Yesterday', wtd: 'WTD', mtd: 'MTD', ytd: 'YTD', '3yr': '3YR' }[currentPeriod];
+    const periodLabel = { yesterday: 'Yesterday', wtd: 'WTD', t30: 'T30D', mtd: 'MTD', ytd: 'YTD', '3yr': '3YR' }[currentPeriod];
     const html = insights.map(i => `
       <div class="insight-item ${i.type}">
         <span class="insight-tag">${i.tag}</span>
@@ -4825,4 +4837,3 @@ wRenderPortfolio();
 </script>
 </body>
 </html>
-
