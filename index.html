@@ -4073,21 +4073,41 @@ document.querySelectorAll('#periodSeg button').forEach(btn => {
         document.getElementById('portfolioView').classList.remove('hidden');
         document.getElementById('propertyView').classList.add('hidden');
       }
-      // Blank out all KPI values so nothing stale shows
+      // Blank out all KPI values so nothing stale shows, with pulse animation
       document.querySelectorAll('#portfolioView [data-bind]').forEach(el => {
         if (!el.dataset.bind.endsWith('.label') && !el.dataset.bind.endsWith('.sub')) {
           el.textContent = '—';
           el.className = el.classList.contains('delta-pill') ? 'delta-pill delta-flat' : el.className;
+          el.style.animation = 'skeleton-pulse 1.2s ease-in-out infinite';
         }
       });
-      // Reset label spans back to generic text
+      // Reset label spans back to generic text, also pulse them
       document.querySelectorAll('#portfolioView .kpi-delta-label').forEach(el => {
         el.textContent = el.textContent.startsWith('LY') ? 'vs Last Year' : el.textContent.startsWith('Bud') ? 'vs Budget' : el.textContent;
+        el.style.animation = 'skeleton-pulse 1.2s ease-in-out infinite';
+      });
+      // Clear charts
+      [strChart, portfolioTrendChart].forEach(c => {
+        if (!c) return;
+        c.data.labels = [];
+        c.data.datasets.forEach(ds => ds.data = []);
+        c.update('none');
+      });
+      ['spark1','spark2','spark3','spark4'].forEach(id => {
+        const c = Chart.getChart(document.getElementById(id));
+        if (c) { c.data.labels = []; c.data.datasets.forEach(ds => ds.data = []); c.update('none'); }
       });
 
       const bar = document.createElement('div');
       bar.id = '_3yrBar';
-      bar.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:4px;background:var(--accent);z-index:999;animation:shimmer 1.4s infinite;background-size:200% 100%;';
+      bar.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:6px;background:var(--accent);z-index:999;animation:_3yrPulse 0.8s ease-in-out infinite;';
+      // Inject a more dramatic pulse keyframe if not already present
+      if (!document.getElementById('_3yrPulseStyle')) {
+        const s = document.createElement('style');
+        s.id = '_3yrPulseStyle';
+        s.textContent = '@keyframes _3yrPulse { 0%,100%{opacity:0.4;transform:scaleX(1)} 50%{opacity:1;transform:scaleX(1.01)} }';
+        document.head.appendChild(s);
+      }
       document.body.prepend(bar);
       try {
         const token = await getDataverseToken();
@@ -4107,6 +4127,10 @@ document.querySelectorAll('#periodSeg button').forEach(btn => {
         console.error('3YR lazy load failed:', e);
       } finally {
         document.getElementById('_3yrBar')?.remove();
+        // Remove pulse animations from all blanked elements
+        document.querySelectorAll('#portfolioView [data-bind], #portfolioView .kpi-delta-label').forEach(el => {
+          el.style.animation = '';
+        });
       }
       return; // don't fall through to applyPeriod below
     }
