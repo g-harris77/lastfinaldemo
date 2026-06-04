@@ -552,6 +552,16 @@
   /* ========== CHART ========== */
   .chart-wrap { height: 280px; margin-top: 8px; position: relative; }
   .chart-legend { display: flex; gap: 16px; font-size: 12px; color: var(--text-muted); align-items: center; }
+  .legend-toggle {
+    cursor: pointer; user-select: none;
+    transition: opacity 0.15s;
+    border-radius: 4px;
+    padding: 2px 4px;
+    margin: -2px -4px;
+  }
+  .legend-toggle:hover { opacity: 0.75; }
+  .legend-toggle.off { opacity: 0.35; }
+  .legend-toggle.off .legend-dot { opacity: 0.3; }
   .legend-dot {
     display: inline-block;
     width: 8px; height: 8px;
@@ -1463,8 +1473,8 @@
           </div>
           <div class="chart-legend">
             <span><span class="legend-dot" style="background: var(--accent)"></span>Actuals</span>
-            <span><span class="legend-dot" style="background: var(--info)"></span>Budget</span>
-            <span><span class="legend-dot" style="background: var(--text-subtle)"></span>LY</span>
+            <span class="legend-toggle" id="portfolioLegendBudget" data-chart="portfolio" data-ds="1"><span class="legend-dot" style="background: var(--info)"></span>Budget</span>
+            <span class="legend-toggle" id="portfolioLegendLY" data-chart="portfolio" data-ds="2"><span class="legend-dot" style="background: var(--text-subtle)"></span>LY</span>
           </div>
         </div>
       </div>
@@ -1726,8 +1736,8 @@
         </div>
         <div class="chart-legend">
           <span><span class="legend-dot" style="background:var(--accent)"></span>Actuals</span>
-          <span><span class="legend-dot" style="background:var(--info)"></span>Budget</span>
-          <span><span class="legend-dot" style="background:var(--text-subtle)"></span>LY</span>
+          <span class="legend-toggle" id="propertyLegendBudget" data-chart="property" data-ds="1"><span class="legend-dot" style="background:var(--info)"></span>Budget</span>
+          <span class="legend-toggle" id="propertyLegendLY" data-chart="property" data-ds="2"><span class="legend-dot" style="background:var(--text-subtle)"></span>LY</span>
         </div>
       </div>
     </div>
@@ -3964,6 +3974,19 @@ function makeTrendChart(canvasId) {
 
 const portfolioTrendChart = makeTrendChart('trendChart');
 const propertyTrendChart = makeTrendChart('aTrendChart');
+
+// ========== LEGEND TOGGLES ==========
+document.querySelectorAll('.legend-toggle').forEach(el => {
+  el.addEventListener('click', () => {
+    const dsIndex = parseInt(el.dataset.ds);
+    const chart = el.dataset.chart === 'portfolio' ? portfolioTrendChart : propertyTrendChart;
+    const ds = chart.data.datasets[dsIndex];
+    const isHidden = ds.hidden;
+    ds.hidden = !isHidden;
+    el.classList.toggle('off', !isHidden);
+    chart.update();
+  });
+});
 
 // ========== PROPERTY STR CHART ==========
 const PROP_STR_DATA = {
