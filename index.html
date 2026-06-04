@@ -2369,7 +2369,7 @@ function buildPropRows(agg, lyAgg) {
 }
 
 // ---- Build chart trend data from daily rows ----
-function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag) {
+function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag, budgetRows) {
   // Accept either Date objects or YYYY-MM-DD strings
   const toD = v => (v instanceof Date) ? v : new Date(v + 'T00:00:00');
   const parseD = s => (s instanceof Date) ? s : new Date(s + 'T00:00:00');
@@ -2483,10 +2483,47 @@ function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag
     return g ? parseFloat((g.deptSales / 1000).toFixed(1)) : null;
   });
 
+  // Build budget series from budget rows (same bucketing as actuals)
+  let budRevpar = labels.map(() => null);
+  let budADR    = labels.map(() => null);
+  let budRev    = labels.map(() => null);
+  if (budgetRows && budgetRows.length > 0) {
+    // Filter budget rows to the actuals date range (budget uses same date field)
+    const budFiltered = budgetRows.filter(r => {
+      const d = parseD((r.cr2cd_date || '').slice(0, 10));
+      const inRange = d >= fd && d <= td;
+      if (!inRange) return false;
+      if (siteTag) return String(r.cr2cd_sitetag) === String(siteTag);
+      return true;
+    });
+    const budMap = new Map();
+    budFiltered.forEach(r => {
+      const key = groupFn(parseD((r.cr2cd_date || '').slice(0, 10)));
+      if (!budMap.has(key)) budMap.set(key, { totalrooms: 0, occupied: 0, available: 0, deptSales: 0 });
+      const g = budMap.get(key);
+      g.totalrooms += r.cr2cd_totalrooms      || 0;
+      g.occupied   += r.cr2cd_occupiedrooms   || 0;
+      g.available  += r.cr2cd_availablerooms  || 0;
+      g.deptSales  += r.cr2cd_departmentsales || 0;
+    });
+    budRevpar = sortedKeys.map(k => {
+      const g = budMap.get(k);
+      return g && g.available > 0 ? parseFloat((g.totalrooms / g.available).toFixed(2)) : null;
+    });
+    budADR = sortedKeys.map(k => {
+      const g = budMap.get(k);
+      return g && g.occupied > 0 ? parseFloat((g.totalrooms / g.occupied).toFixed(2)) : null;
+    });
+    budRev = sortedKeys.map(k => {
+      const g = budMap.get(k);
+      return g ? parseFloat((g.deptSales / 1000).toFixed(1)) : null;
+    });
+  }
+
   return {
-    revpar:   { labels, actuals, budget: labels.map(() => null), ly: lyRevpar, prefix: '$', suffix: '', title: 'RevPAR Trend' },
-    adr:      { labels, actuals: actualsADR, budget: labels.map(() => null), ly: lyADR, prefix: '$', suffix: '', title: 'ADR Trend' },
-    totalrev: { labels, actuals: actualsRev, budget: labels.map(() => null), ly: lyRev, prefix: '$', suffix: 'K', title: 'Total Revenue Trend' },
+    revpar:   { labels, actuals, budget: budRevpar, ly: lyRevpar, prefix: '$', suffix: '', title: 'RevPAR Trend' },
+    adr:      { labels, actuals: actualsADR, budget: budADR, ly: lyADR, prefix: '$', suffix: '', title: 'ADR Trend' },
+    totalrev: { labels, actuals: actualsRev, budget: budRev, ly: lyRev, prefix: '$', suffix: 'K', title: 'Total Revenue Trend' },
   };
 }
 
@@ -3589,7 +3626,9 @@ function applyPropertyPeriod(p) {
     // Trend chart — build lazily on first view
     if (d.charts) {
       if (d.charts._lazy && window.ALL_ROWS) {
-        const built = buildChartData(window.ALL_ROWS, d.charts._from, d.charts._to, oneYearAgo(d.charts._from), oneYearAgo(d.charts._to), d.charts._tag);
+        const propSiteTag = d.charts._tag ? PROPERTY_META[d.charts._tag]?.siteTag : null;
+        const propBudgetRows = propSiteTag ? (window.BUDGET_ROWS || []).filter(r => String(r.cr2cd_sitetag) === String(propSiteTag)) : (window.BUDGET_ROWS || []);
+        const built = buildChartData(window.ALL_ROWS, d.charts._from, d.charts._to, oneYearAgo(d.charts._from), oneYearAgo(d.charts._to), d.charts._tag, propBudgetRows);
         Object.assign(d.charts, built);
         d.charts._lazy = false;
       }
@@ -4035,7 +4074,7 @@ function updateTrendMetric(metric) {
   if (!d || !d.charts) return;
   // Build chart data lazily on first view
   if (d.charts._lazy && window.ALL_ROWS) {
-    const built = buildChartData(window.ALL_ROWS, d.charts._from, d.charts._to, oneYearAgo(d.charts._from), oneYearAgo(d.charts._to), null);
+    const built = buildChartData(window.ALL_ROWS, d.charts._from, d.charts._to, oneYearAgo(d.charts._from), oneYearAgo(d.charts._to), null, window.BUDGET_ROWS || []);
     Object.assign(d.charts, built);
     d.charts._lazy = false;
   }
@@ -4122,6 +4161,9 @@ document.querySelectorAll('#periodSeg button').forEach(btn => {
         window.CS1_ROWS   = [...(window.CS1_ROWS  || []), ...newCS1];
         window._3yrLoaded = true;
         if (window.recompute) window.recompute();
+        // Force chart rebuild for 3YR since it may have been built with partial data
+        const d3yr = (window.LIVE_PORTFOLIO_DATA || {})['3yr'];
+        if (d3yr?.charts) d3yr.charts._lazy = true;
         if (currentPeriod === '3yr') applyPeriod('3yr');
       } catch(e) {
         console.error('3YR lazy load failed:', e);
@@ -4780,4 +4822,3 @@ wRenderPortfolio();
 </script>
 </body>
 </html>
-
