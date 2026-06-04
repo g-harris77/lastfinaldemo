@@ -553,14 +553,19 @@
   .chart-wrap { height: 280px; margin-top: 8px; position: relative; }
   .chart-legend { display: flex; gap: 16px; font-size: 12px; color: var(--text-muted); align-items: center; }
   .legend-toggle {
+    display: inline-flex; align-items: center; gap: 6px;
     cursor: pointer; user-select: none;
-    transition: opacity 0.15s;
-    border-radius: 4px;
-    padding: 2px 4px;
-    margin: -2px -4px;
+    transition: opacity 0.15s, border-color 0.15s;
+    border-radius: 5px;
+    padding: 3px 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    font-size: 12px;
+    color: var(--text-muted);
   }
-  .legend-toggle:hover { opacity: 0.75; }
-  .legend-toggle.off { opacity: 0.35; }
+  .legend-toggle .legend-dot { margin-right: 0; }
+  .legend-toggle:hover { border-color: var(--text-subtle); opacity: 0.85; }
+  .legend-toggle.off { opacity: 0.4; border-color: var(--border-subtle); background: transparent; }
   .legend-toggle.off .legend-dot { opacity: 0.3; }
   .legend-dot {
     display: inline-block;
@@ -3076,6 +3081,29 @@ async function loadDataAndRun() {
   }
 
   runDashboard();
+
+  // Kick off 3YR backfill after the UI is painted — 2s delay gives the browser
+  // time to render the initial view before starting the heavier background fetch
+  setTimeout(async () => {
+    if (window._3yrLoaded) return;
+    try {
+      const token3yr = await getDataverseToken();
+      const cutoffStr = (() => { const d = new Date(window._anchorDate); d.setMonth(d.getMonth() - 13); return toDateStr(d); })();
+      const [extraRows, extraCS1Rows] = await Promise.all([
+        fetchAllRows(token3yr, threeYearsAgo()),
+        fetchCS1Rows(token3yr, threeYearsAgo()),
+      ]);
+      const newActuals = extraRows.filter(r => (r.cr2cd_date || '').slice(0,10) < cutoffStr);
+      const newCS1     = extraCS1Rows.filter(r => (r.cr2cd_date || '').slice(0,10) < cutoffStr);
+      window.ALL_ROWS  = [...(window.ALL_ROWS  || []), ...newActuals];
+      window.CS1_ROWS  = [...(window.CS1_ROWS  || []), ...newCS1];
+      window._3yrLoaded = true;
+      if (window.recompute) window.recompute();
+      console.log('3YR backfill complete:', newActuals.length, 'actuals,', newCS1.length, 'CS1 rows added');
+    } catch(e) {
+      console.warn('3YR background backfill failed:', e);
+    }
+  }, 2000);
 }
 
 // ========== PORTFOLIO DATA (live from Dataverse) ==========
@@ -4143,7 +4171,7 @@ document.querySelectorAll('#periodSeg button').forEach(btn => {
     currentPeriod = p;
     window.currentPeriod = p;
 
-    // Lazy-load 3YR data on first click — show dashes + loading bar, render only after fetch
+    // If 3YR background fetch is still in progress, show loading state until it completes
     if (p === '3yr' && !window._3yrLoaded) {
       // Switch to 3YR view with all dashes
       if (currentView === 'portfolio') {
@@ -4187,24 +4215,27 @@ document.querySelectorAll('#periodSeg button').forEach(btn => {
       }
       document.body.prepend(bar);
       try {
-        const token = await getDataverseToken();
-        const cutoffStr = (() => { const d = new Date(window._anchorDate); d.setMonth(d.getMonth() - 13); return toDateStr(d); })();
-        const [extraRows, extraCS1Rows] = await Promise.all([
-          fetchAllRows(token, threeYearsAgo()),
-          fetchCS1Rows(token, threeYearsAgo()),
-        ]);
-        const newActuals = extraRows.filter(r => (r.cr2cd_date || '').slice(0,10) < cutoffStr);
-        const newCS1     = extraCS1Rows.filter(r => (r.cr2cd_date || '').slice(0,10) < cutoffStr);
-        window.ALL_ROWS   = [...(window.ALL_ROWS || []), ...newActuals];
-        window.CS1_ROWS   = [...(window.CS1_ROWS  || []), ...newCS1];
-        window._3yrLoaded = true;
-        if (window.recompute) window.recompute();
-        // Force chart rebuild for 3YR since it may have been built with partial data
+        // Background job may have already finished — if so, just render
+        if (!window._3yrLoaded) {
+          const token = await getDataverseToken();
+          const cutoffStr = (() => { const d = new Date(window._anchorDate); d.setMonth(d.getMonth() - 13); return toDateStr(d); })();
+          const [extraRows, extraCS1Rows] = await Promise.all([
+            fetchAllRows(token, threeYearsAgo()),
+            fetchCS1Rows(token, threeYearsAgo()),
+          ]);
+          const newActuals = extraRows.filter(r => (r.cr2cd_date || '').slice(0,10) < cutoffStr);
+          const newCS1     = extraCS1Rows.filter(r => (r.cr2cd_date || '').slice(0,10) < cutoffStr);
+          window.ALL_ROWS   = [...(window.ALL_ROWS || []), ...newActuals];
+          window.CS1_ROWS   = [...(window.CS1_ROWS  || []), ...newCS1];
+          window._3yrLoaded = true;
+          if (window.recompute) window.recompute();
+        }
+        // Force chart rebuild for 3YR
         const d3yr = (window.LIVE_PORTFOLIO_DATA || {})['3yr'];
         if (d3yr?.charts) d3yr.charts._lazy = true;
         if (currentPeriod === '3yr') applyPeriod('3yr');
       } catch(e) {
-        console.error('3YR lazy load failed:', e);
+        console.error('3YR load failed:', e);
       } finally {
         document.getElementById('_3yrBar')?.remove();
         // Remove pulse animations from all blanked elements
