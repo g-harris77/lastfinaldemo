@@ -2809,12 +2809,17 @@ async function loadDataAndRun() {
   try {
     const token = await getDataverseToken();
 
-    // Fetch 3 years of actuals + budget + CS1 compset data in parallel
+    // Fetch 13 months of actuals + budget + CS1 on load (enough for Day/T7D/MTD/YTD + LY comparisons).
+    // 3YR data is fetched lazily when the 3YR button is first clicked.
+    function thirteenMonthsAgo() {
+      const d = new Date(window._anchorDate); d.setMonth(d.getMonth() - 13); return d;
+    }
     const [allRows, budgetRows, cs1Rows] = await Promise.all([
-      fetchAllRows(token, threeYearsAgo()),
+      fetchAllRows(token, thirteenMonthsAgo()),
       fetchBudgetRows(token, startOfYear()),
-      fetchCS1Rows(token, threeYearsAgo()),
+      fetchCS1Rows(token, thirteenMonthsAgo()),
     ]);
+    window._3yrLoaded = false;
     window.BUDGET_ROWS = budgetRows;
     window.CS1_ROWS = cs1Rows;
 
@@ -4061,11 +4066,39 @@ document.querySelectorAll('#trendMetricSeg button').forEach(btn => {
 
 // ========== EVENT WIRING ==========
 document.querySelectorAll('#periodSeg button').forEach(btn => {
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', async () => {
     if (btn.disabled) return;
+    const p = btn.dataset.p;
+
+    // Lazy-load 3YR data on first click
+    if (p === '3yr' && !window._3yrLoaded) {
+      btn.disabled = true;
+      btn.textContent = '…';
+      try {
+        const token = await getDataverseToken();
+        const cutoffStr = (() => { const d = new Date(window._anchorDate); d.setMonth(d.getMonth() - 13); return toDateStr(d); })();
+        const [extraRows, extraCS1Rows] = await Promise.all([
+          fetchAllRows(token, threeYearsAgo()),
+          fetchCS1Rows(token, threeYearsAgo()),
+        ]);
+        // Only add rows older than the 13-month cutoff to avoid duplicates
+        const newActuals = extraRows.filter(r => (r.cr2cd_date || '').slice(0,10) < cutoffStr);
+        const newCS1     = extraCS1Rows.filter(r => (r.cr2cd_date || '').slice(0,10) < cutoffStr);
+        window.ALL_ROWS   = [...(window.ALL_ROWS || []), ...newActuals];
+        window.CS1_ROWS   = [...(window.CS1_ROWS  || []), ...newCS1];
+        window._3yrLoaded = true;
+        if (window.recompute) window.recompute();
+      } catch(e) {
+        console.error('3YR lazy load failed:', e);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '3YR';
+      }
+    }
+
     document.querySelectorAll('#periodSeg button').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    applyPeriod(btn.dataset.p);
+    applyPeriod(p);
   });
 });
 
