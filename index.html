@@ -4070,10 +4070,16 @@ document.querySelectorAll('#periodSeg button').forEach(btn => {
     if (btn.disabled) return;
     const p = btn.dataset.p;
 
-    // Lazy-load 3YR data on first click
+    document.querySelectorAll('#periodSeg button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    applyPeriod(p);
+
+    // Lazy-load 3YR data on first click — navigate immediately, load in background
     if (p === '3yr' && !window._3yrLoaded) {
-      btn.disabled = true;
-      btn.textContent = '…';
+      const bar = document.createElement('div');
+      bar.id = '_3yrBar';
+      bar.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:4px;background:var(--accent);z-index:999;animation:shimmer 1.4s infinite;background-size:200% 100%;';
+      document.body.prepend(bar);
       try {
         const token = await getDataverseToken();
         const cutoffStr = (() => { const d = new Date(window._anchorDate); d.setMonth(d.getMonth() - 13); return toDateStr(d); })();
@@ -4088,17 +4094,14 @@ document.querySelectorAll('#periodSeg button').forEach(btn => {
         window.CS1_ROWS   = [...(window.CS1_ROWS  || []), ...newCS1];
         window._3yrLoaded = true;
         if (window.recompute) window.recompute();
+        // Re-render 3YR now that data is ready (only if still on 3YR)
+        if (currentPeriod === '3yr') applyPeriod('3yr');
       } catch(e) {
         console.error('3YR lazy load failed:', e);
       } finally {
-        btn.disabled = false;
-        btn.textContent = '3YR';
+        document.getElementById('_3yrBar')?.remove();
       }
     }
-
-    document.querySelectorAll('#periodSeg button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    applyPeriod(p);
   });
 });
 
