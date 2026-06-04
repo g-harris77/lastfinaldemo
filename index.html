@@ -1216,14 +1216,10 @@
   </div>
   <div class="topbar-actions">
     <span class="as-of" id="asOfWrapper">As of <strong id="asOfDateHeader">—</strong></span>
-    <button class="btn btn-ghost" title="Notifications">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-    </button>
     <button class="btn btn-primary" id="insightsBtn">
       <svg class="ai-spark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 3v4M3 5h4M6 17v4M4 19h4M13 3l2.5 6L21 11l-5.5 2L13 19l-2.5-6L5 11l5.5-2L13 3z"/></svg>
       Generate Insights
     </button>
-    <div class="avatar">RB</div>
   </div>
 </header>
 
@@ -3346,38 +3342,33 @@ function applyPortfolioPeriod(p) {
   if (!d) return;
 
   // Helper: set delta pill + its sibling label text
-  function setDeltaWithLabel(pillEl, val, isUp, budgetLabel, lyLabel) {
+  // label is passed directly — caller decides whether it's a budgetLabel or lyLabel
+  function setDeltaWithLabel(pillEl, val, isUp, label) {
     if (!pillEl) return;
     setDelta(pillEl, val, isUp);
     const row = pillEl.closest('.kpi-delta');
     if (!row) return;
     const lbl = row.querySelector('.kpi-delta-label');
-    if (!lbl) return;
-    // budgetLabel passed for budget row, lyLabel for LY row — detect by checking current label
-    if (lbl.textContent.startsWith('vs Budget') || lbl.textContent.startsWith('Bud')) {
-      if (budgetLabel) lbl.textContent = budgetLabel;
-    } else if (lbl.textContent.startsWith('vs Last Year') || lbl.textContent.startsWith('LY')) {
-      if (lyLabel) lbl.textContent = lyLabel;
-    }
+    if (lbl && label) lbl.textContent = label;
   }
 
   // KPI cards
   document.querySelector('[data-bind="p.revpar.value"]').textContent = d.kpi.revpar.value;
   setDeltaWithLabel(document.querySelector('[data-bind="p.revpar.budget"]'), d.kpi.revpar.budget, d.kpi.revpar.budgetUp, d.kpi.revpar.budgetLabel);
-  setDeltaWithLabel(document.querySelector('[data-bind="p.revpar.ly"]'),     d.kpi.revpar.ly,     d.kpi.revpar.lyUp,     null, d.kpi.revpar.lyLabel);
+  setDeltaWithLabel(document.querySelector('[data-bind="p.revpar.ly"]'),     d.kpi.revpar.ly,     d.kpi.revpar.lyUp,     d.kpi.revpar.lyLabel);
 
   document.querySelector('[data-bind="p.adr.value"]').textContent = d.kpi.adr.value;
   setDeltaWithLabel(document.querySelector('[data-bind="p.adr.budget"]'), d.kpi.adr.budget, d.kpi.adr.budgetUp, d.kpi.adr.budgetLabel);
-  setDeltaWithLabel(document.querySelector('[data-bind="p.adr.ly"]'),     d.kpi.adr.ly,     d.kpi.adr.lyUp,     null, d.kpi.adr.lyLabel);
+  setDeltaWithLabel(document.querySelector('[data-bind="p.adr.ly"]'),     d.kpi.adr.ly,     d.kpi.adr.lyUp,     d.kpi.adr.lyLabel);
 
   document.querySelector('[data-bind="p.occ.value"]').textContent = d.kpi.occ.value;
   setDeltaWithLabel(document.querySelector('[data-bind="p.occ.budget"]'), d.kpi.occ.budget, d.kpi.occ.budgetUp, d.kpi.occ.budgetLabel);
-  setDeltaWithLabel(document.querySelector('[data-bind="p.occ.ly"]'),     d.kpi.occ.ly,     d.kpi.occ.lyUp,     null, d.kpi.occ.lyLabel);
+  setDeltaWithLabel(document.querySelector('[data-bind="p.occ.ly"]'),     d.kpi.occ.ly,     d.kpi.occ.lyUp,     d.kpi.occ.lyLabel);
 
   document.querySelector('[data-bind="p.totalrev.label"]').textContent = d.totalRevLabel;
   document.querySelector('[data-bind="p.totalrev.value"]').textContent = d.kpi.totalrev.value;
   setDeltaWithLabel(document.querySelector('[data-bind="p.totalrev.budget"]'), d.kpi.totalrev.budget, d.kpi.totalrev.budgetUp, d.kpi.totalrev.budgetLabel);
-  setDeltaWithLabel(document.querySelector('[data-bind="p.totalrev.ly"]'),     d.kpi.totalrev.ly,     d.kpi.totalrev.lyUp,     null, d.kpi.totalrev.lyLabel);
+  setDeltaWithLabel(document.querySelector('[data-bind="p.totalrev.ly"]'),     d.kpi.totalrev.ly,     d.kpi.totalrev.lyUp,     d.kpi.totalrev.lyLabel);
 
   document.querySelector('[data-bind="p.props.sub"]').textContent = d.propsSub;
   document.querySelector('[data-bind="p.trend.sub"]').textContent = d.trendSub;
@@ -3388,17 +3379,17 @@ function applyPortfolioPeriod(p) {
     const gopVal = document.querySelector('[data-bind="p.gop.value"]');
     if (gopVal) gopVal.textContent = pf.gop.value;
     setDeltaWithLabel(document.querySelector('[data-bind="p.gop.budget"]'), pf.gop.budget, pf.gop.budgetUp, pf.gop.budgetLabel);
-    setDeltaWithLabel(document.querySelector('[data-bind="p.gop.ly"]'),     pf.gop.ly,     pf.gop.lyUp,     null, pf.gop.lyLabel);
+    setDeltaWithLabel(document.querySelector('[data-bind="p.gop.ly"]'),     pf.gop.ly,     pf.gop.lyUp,     pf.gop.lyLabel);
 
     const ebitdaVal = document.querySelector('[data-bind="p.ebitda.value"]');
     if (ebitdaVal) ebitdaVal.textContent = pf.ebitda.value;
     setDeltaWithLabel(document.querySelector('[data-bind="p.ebitda.budget"]'), pf.ebitda.budget, pf.ebitda.budgetUp, pf.ebitda.budgetLabel);
-    setDeltaWithLabel(document.querySelector('[data-bind="p.ebitda.ly"]'),     pf.ebitda.ly,     pf.ebitda.lyUp,     null, pf.ebitda.lyLabel);
+    setDeltaWithLabel(document.querySelector('[data-bind="p.ebitda.ly"]'),     pf.ebitda.ly,     pf.ebitda.lyUp,     pf.ebitda.lyLabel);
 
     const ebitdaMgnVal = document.querySelector('[data-bind="p.ebitdaMgn.value"]');
     if (ebitdaMgnVal) ebitdaMgnVal.textContent = pf.ebitdaMgn.value;
     setDeltaWithLabel(document.querySelector('[data-bind="p.ebitdaMgn.budget"]'), pf.ebitdaMgn.budget, pf.ebitdaMgn.budgetUp, pf.ebitdaMgn.budgetLabel);
-    setDeltaWithLabel(document.querySelector('[data-bind="p.ebitdaMgn.ly"]'),     pf.ebitdaMgn.ly,     pf.ebitdaMgn.lyUp,     null, pf.ebitdaMgn.lyLabel);
+    setDeltaWithLabel(document.querySelector('[data-bind="p.ebitdaMgn.ly"]'),     pf.ebitdaMgn.ly,     pf.ebitdaMgn.lyUp,     pf.ebitdaMgn.lyLabel);
 
     const ftVal = document.querySelector('[data-bind="p.flowthrough.value"]');
     if (ftVal) ftVal.textContent = pf.flowthrough.value;
@@ -4746,3 +4737,4 @@ wRenderPortfolio();
 </script>
 </body>
 </html>
+
