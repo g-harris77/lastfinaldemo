@@ -4054,7 +4054,10 @@ function updateChart(chart, data) {
   chart.data.labels = data.labels;
   chart.data.datasets[0].data = data.actuals;
   chart.data.datasets[1].data = data.budget;
-  chart.data.datasets[2].data = data.ly;
+  // Hide LY line for 3YR — it doesn't make sense to show "last year" on a 3-year view
+  const hide3yrLY = currentPeriod === '3yr';
+  chart.data.datasets[2].data = hide3yrLY ? data.labels.map(() => null) : data.ly;
+  chart.data.datasets[2].hidden = hide3yrLY;
   // Update y-axis and tooltip format based on prefix/suffix
   const p = data.prefix || '';
   const s = data.suffix || '';
@@ -4822,3 +4825,4 @@ wRenderPortfolio();
 </script>
 </body>
 </html>
+
