@@ -3171,7 +3171,7 @@ async function loadDataAndRun() {
       if (window.applyPeriod) window.applyPeriod(window.currentPeriod || 'mtd');
       // Refresh leaderboard if it's visible
       if (typeof buildLeaderboard === 'function' && !document.getElementById('tab-leaderboard')?.classList.contains('hidden')) {
-        buildLeaderboard(lbPeriod, lbMetric);
+        buildLeaderboard(window.lbPeriod, window.lbMetric);
       }
     };
 
@@ -4626,11 +4626,13 @@ applyPropertyPeriod('mtd');
 document.getElementById('portfolioView')?.classList.remove('loading');
 document.getElementById('propertyView')?.classList.remove('loading');
 
+} // ========== END runDashboard() ==========
+
 // ============================================================
-// LEADERBOARD
+// LEADERBOARD (global scope)
 // ============================================================
-let lbPeriod = 'mtd';
-let lbMetric = 'composite';
+window.lbPeriod = 'mtd';
+window.lbMetric = 'composite';
 
 function buildLeaderboard(period, metric) {
   const liveData = window.LIVE_PORTFOLIO_DATA || {};
@@ -4809,8 +4811,8 @@ document.querySelectorAll('.lb-metric-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.lb-metric-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    lbMetric = btn.dataset.lbm;
-    buildLeaderboard(lbPeriod, lbMetric);
+    window.lbMetric = btn.dataset.lbm;
+    buildLeaderboard(window.lbPeriod, window.lbMetric);
   });
 });
 
@@ -4819,12 +4821,10 @@ document.querySelectorAll('#lbPeriodSeg button').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('#lbPeriodSeg button').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    lbPeriod = btn.dataset.lbp;
-    buildLeaderboard(lbPeriod, lbMetric);
+    window.lbPeriod = btn.dataset.lbp;
+    buildLeaderboard(window.lbPeriod, window.lbMetric);
   });
 });
-
-} // ========== END runDashboard() ==========
 
 // ============================================================
 // TAB SWITCHING
@@ -4835,22 +4835,22 @@ function switchTab(tab) {
   if (tab === 'leaderboard') {
     // Sync period to whatever the main dashboard is showing
     if (window.currentPeriod && window.currentPeriod !== '3yr') {
-      lbPeriod = window.currentPeriod;
+      window.lbPeriod = window.currentPeriod;
       document.querySelectorAll('#lbPeriodSeg button').forEach(b => {
-        b.classList.toggle('active', b.dataset.lbp === lbPeriod);
+        b.classList.toggle('active', b.dataset.lbp === window.lbPeriod);
       });
     }
     const dataReady = () =>
       window.LIVE_PROPERTY_DATA &&
       Object.keys(window.LIVE_PROPERTY_DATA).length > 0 &&
-      window.LIVE_PORTFOLIO_DATA?.[lbPeriod];
+      window.LIVE_PORTFOLIO_DATA?.[window.lbPeriod];
     if (dataReady()) {
-      buildLeaderboard(lbPeriod, lbMetric);
+      buildLeaderboard(window.lbPeriod, window.lbMetric);
     } else {
       const poll = setInterval(() => {
         if (dataReady()) {
           clearInterval(poll);
-          buildLeaderboard(lbPeriod, lbMetric);
+          buildLeaderboard(window.lbPeriod, window.lbMetric);
         }
       }, 100);
     }
