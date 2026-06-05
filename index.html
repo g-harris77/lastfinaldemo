@@ -3169,6 +3169,10 @@ async function loadDataAndRun() {
 
       // Re-render the current period view (applyPeriod is set on window by runDashboard)
       if (window.applyPeriod) window.applyPeriod(window.currentPeriod || 'mtd');
+      // Refresh leaderboard if it's visible
+      if (typeof buildLeaderboard === 'function' && !document.getElementById('tab-leaderboard')?.classList.contains('hidden')) {
+        buildLeaderboard(lbPeriod, lbMetric);
+      }
     };
 
     // Store rows globally FIRST so buildChartData and recompute can use them
@@ -4642,11 +4646,14 @@ function buildLeaderboard(period, metric) {
 
   const tags = Object.keys(PROPERTY_META);
 
-  // Pull per-property data for this period
+  // Pull per-property raw aggregated data directly — more reliable than parsing formatted strings
+  const livePortfolio = window.LIVE_PORTFOLIO_DATA?.[period];
+  const propAgg = livePortfolio ? (window._lastAgg?.[period] || null) : null;
+
   const propRows = tags.map(tag => {
     const pd = (window.LIVE_PROPERTY_DATA || {})[tag]?.[period];
     const meta = PROPERTY_META[tag];
-    if (!pd) return { tag, name: meta.name, rooms: meta.rooms, revpar: 0, adr: 0, occ: 0, revenue: 0, gop: 0, ebitda: 0, flowthrough: 0, budgetVar: null, lyVar: null };
+    if (!pd) return { tag, name: meta.name, rooms: meta.rooms, revpar: 0, adr: 0, occ: 0, revenue: 0, gop: 0, ebitda: 0, flowthroughRaw: 0, _kpi: {}, _profit: {} };
 
     const kpi = pd.kpi || {};
     const profit = pd.profit || {};
@@ -4654,34 +4661,33 @@ function buildLeaderboard(period, metric) {
     // Parse raw numeric values from formatted strings
     const parseVal = str => {
       if (!str || str === '—') return 0;
-      const n = parseFloat(str.replace(/[$%K,Mpts+\s]/g, '').replace('▲','').replace('▼',''));
-      return isNaN(n) ? 0 : (str.includes('M') ? n * 1000 : (str.includes('K') ? n : n));
+      const s = String(str).replace(/[▲▼+\s]/g, '');
+      const n = parseFloat(s.replace(/[$%,]/g, '').replace(/K$/i,'').replace(/M$/i,'').replace(/B$/i,''));
+      if (isNaN(n)) return 0;
+      if (/B$/i.test(s)) return n * 1e6;  // B → same K units as K-based values would be confusing; store raw
+      if (/M$/i.test(s)) return n * 1000; // M → K
+      return n;                            // K → K, or raw dollars
     };
     const parsePct = str => {
-      if (!str || str === '—') return null;
-      const n = parseFloat(str.replace(/[^0-9.\-]/g, ''));
-      return isNaN(n) ? null : n;
+      if (!str || str === '—') return 0;
+      const n = parseFloat(String(str).replace(/[^0-9.\-]/g, ''));
+      return isNaN(n) ? 0 : n;
     };
 
-    // Use raw data from propAgg if available (more accurate than re-parsing formatted strings)
-    const agg = (window.LIVE_PORTFOLIO_DATA?.[period]?.propRows || []).find(r => r[0] === tag);
+    // Use raw propAgg numbers if available for GOP/EBITDA (avoids string-parsing errors)
+    const rawProp = window.LIVE_PORTFOLIO_DATA?.[period]?.propRows?.find?.(r => r[0] === tag);
 
     return {
       tag,
       name: meta.name,
       rooms: meta.rooms,
-      revpar:      parseVal(kpi.revpar?.value),
-      adr:         parseVal(kpi.adr?.value),
-      occ:         parseVal(kpi.occ?.value),
-      revenue:     parseVal(kpi.totalrev?.value),
-      gop:         parseVal(profit.gop?.value),
-      ebitda:      parseVal(profit.ebitda?.value),
-      flowthroughRaw: parseVal(profit.flowthrough?.value),
-      budgetVar:   kpi.revpar?.budget,
-      budgetUp:    kpi.revpar?.budgetUp,
-      lyVar:       kpi.revpar?.ly,
-      lyUp:        kpi.revpar?.lyUp,
-      // Per-metric budget/ly
+      revpar:         parseVal(kpi.revpar?.value),
+      adr:            parseVal(kpi.adr?.value),
+      occ:            parsePct(kpi.occ?.value),
+      revenue:        parseVal(kpi.totalrev?.value),
+      gop:            parseVal(profit.gop?.value),
+      ebitda:         parseVal(profit.ebitda?.value),
+      flowthroughRaw: parsePct(profit.flowthrough?.value),
       _kpi: kpi, _profit: profit,
     };
   });
@@ -4834,7 +4840,17 @@ function switchTab(tab) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('hidden', p.id !== 'tab-' + tab));
   if (tab === 'leaderboard' && typeof buildLeaderboard === 'function') {
-    buildLeaderboard(lbPeriod, lbMetric);
+    if (window.LIVE_PROPERTY_DATA && Object.keys(window.LIVE_PROPERTY_DATA).length > 0) {
+      buildLeaderboard(lbPeriod, lbMetric);
+    } else {
+      // Data not ready yet — poll until it is
+      const poll = setInterval(() => {
+        if (window.LIVE_PROPERTY_DATA && Object.keys(window.LIVE_PROPERTY_DATA).length > 0) {
+          clearInterval(poll);
+          buildLeaderboard(lbPeriod, lbMetric);
+        }
+      }, 100);
+    }
   }
 }
 
@@ -5234,4 +5250,3 @@ wRenderPortfolio();
 </script>
 </body>
 </html>
-
