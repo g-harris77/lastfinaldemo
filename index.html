@@ -1309,10 +1309,6 @@
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
     Leaderboard
   </button>
-  <button class="tab-btn" data-tab="bonus" onclick="switchTab('bonus')">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-    Josh Koenig's Bonus
-  </button>
 </nav>
 
 <!-- ============== OWNERS TAB PANEL ============== -->
@@ -1579,7 +1575,6 @@
             <th class="num">GOP</th>
             <th class="num">EBITDA</th>
             <th class="num">EBITDA Mgn</th>
-            <th class="num">YoY</th>
           </tr>
         </thead>
         <tbody id="portfolioPropsTable"></tbody>
@@ -1948,8 +1943,8 @@
               <th class="num">Occ</th>
               <th class="num">GOP</th>
               <th class="num">EBITDA</th>
-              <th class="num">vs Budget</th>
-              <th class="num">vs LY</th>
+              <th class="num" id="lbColBudget">vs Budget</th>
+              <th class="num" id="lbColLY">vs LY</th>
             </tr>
           </thead>
           <tbody id="lbBody"></tbody>
@@ -1959,16 +1954,6 @@
   </main>
 
 </div><!-- /#tab-leaderboard -->
-
-<!-- ============== JOSH KOENIG'S BONUS TAB ============== -->
-<div id="tab-bonus" class="tab-panel hidden">
-  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;gap:24px;padding:40px;">
-    <div style="font-size:13px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-subtle);">Q1 2026 Bonus — Josh Koenig</div>
-    <div style="font-size:clamp(48px,10vw,96px);font-weight:700;letter-spacing:-0.03em;color:var(--accent);font-family:'JetBrains Mono',monospace;text-align:center;line-height:1;">$1,000,000,000,000</div>
-    <div style="font-size:18px;color:var(--text-muted);font-weight:500;">One Bajillion Dollars</div>
-    <div style="font-size:12px;color:var(--text-subtle);margin-top:8px;">* Subject to board approval, universal constants, and the laws of mathematics</div>
-  </div>
-</div><!-- /#tab-bonus -->
 
 <!-- ============== INSIGHTS DRAWER ============== -->
 <div class="drawer-overlay" id="overlay"></div>
@@ -2457,8 +2442,10 @@ function aggregateRows(rows, fromDate, toDate) {
 function fmtCurrency(n, compact = true) {
   if (n === null || isNaN(n)) return '—';
   if (!compact) return '$' + n.toLocaleString('en-US', { maximumFractionDigits: 0 });
-  if (Math.abs(n) >= 1e6) return '$' + (n / 1e6).toFixed(2) + 'M';
-  if (Math.abs(n) >= 1e3) return '$' + (n / 1e3).toFixed(1) + 'K';
+  const abs = Math.abs(n);
+  if (abs >= 1e9) return '$' + (n / 1e9).toFixed(2) + 'B';
+  if (abs >= 1e6) return '$' + (n / 1e6).toFixed(2) + 'M';
+  if (abs >= 1e3) return '$' + (n / 1e3).toFixed(1) + 'K';
   return '$' + n.toFixed(2);
 }
 function fmtPct(n) {
@@ -2504,7 +2491,6 @@ function buildPropRows(agg, lyAgg) {
     const adrBudget    = fmtBudgetDelta(p.adr,    b?.adr);
     const occBudget    = fmtBudgetDelta(p.occ,    b?.occ, true);
 
-    const yoy = fmtDelta(p.revpar, ly?.revpar);
     return [
       tag,
       meta.name,
@@ -2522,7 +2508,6 @@ function buildPropRows(agg, lyAgg) {
       fmtCurrency(p.gop, false),
       fmtCurrency(p.ebitda, false),
       fmtPct(p.ebitdaMgn),
-      [yoy.text, yoy.up],
     ];
   });
 }
@@ -3529,10 +3514,7 @@ function renderPropRows(rows) {
   const visibleRows = propTableExpanded ? rows : rows.slice(0, PROP_PREVIEW_COUNT);
 
   propTbody.innerHTML = visibleRows.map(row => {
-    const [code, name, meta, revpar, occ, adr, totalrev, revparBud, adrBud, occBud, mpi, ari, rgi, gop, ebitda, ebitdaMgn, yoy] = row;
-    const yoyVal = Array.isArray(yoy) ? yoy[0] : yoy;
-    const yoyUp  = Array.isArray(yoy) ? yoy[1] : true;
-    const yoyClass = yoyUp ? 'delta-up' : 'delta-down';
+    const [code, name, meta, revpar, occ, adr, totalrev, revparBud, adrBud, occBud, mpi, ari, rgi, gop, ebitda, ebitdaMgn] = row;
     const budCell = (b) => {
       if (!Array.isArray(b) || b[0] === '—') return `<td class="num mono" style="color:var(--text-subtle)">—</td>`;
       const cls = b[1] ? 'delta-up' : 'delta-down';
@@ -3556,7 +3538,6 @@ function renderPropRows(rows) {
       <td class="num mono">${gop}</td>
       <td class="num mono">${ebitda}</td>
       <td class="num mono">${ebitdaMgn}</td>
-      <td class="num"><span class="delta-pill ${yoyClass}">${yoyVal}</span></td>
     </tr>`;
   }).join('');
 
@@ -4738,6 +4719,9 @@ function buildLeaderboard(period, metric) {
   // Get the "primary" metric value label and budget/ly for the ranked column
   const metricLabels = { composite: 'Score', revpar: 'RevPAR', adr: 'ADR', occ: 'Occ', totalrev: 'Total Rev', gop: 'GOP', ebitda: 'EBITDA', flowthrough: 'Flow-Through' };
   document.getElementById('lbColPrimary').textContent = metricLabels[metric] || 'Score';
+  const varMetricLabel = metric === 'composite' ? 'RevPAR' : metricLabels[metric];
+  document.getElementById('lbColBudget').textContent = varMetricLabel + ' vs Bud';
+  document.getElementById('lbColLY').textContent = varMetricLabel + ' vs LY';
 
   const periodLabels = { yesterday: 'Yesterday', wtd: 'T7D', t30: 'T30D', mtd: 'MTD', ytd: 'YTD', '3yr': '3YR' };
   const metricDesc = metric === 'composite' ? '50% GOP / 25% RevPAR / 25% ADR' : metricLabels[metric];
@@ -4761,9 +4745,9 @@ function buildLeaderboard(period, metric) {
     else if (metric === 'revpar') primaryVal = r.revpar > 0 ? '$' + r.revpar.toFixed(2) : '—';
     else if (metric === 'adr')    primaryVal = r.adr > 0 ? '$' + r.adr.toFixed(2) : '—';
     else if (metric === 'occ')    primaryVal = r.occ > 0 ? r.occ.toFixed(1) + '%' : '—';
-    else if (metric === 'totalrev') primaryVal = r.revenue > 0 ? '$' + (r.revenue >= 1000 ? (r.revenue/1000).toFixed(1)+'M' : r.revenue.toFixed(0)+'K') : '—';
-    else if (metric === 'gop')    primaryVal = r.gop > 0 ? '$' + (r.gop >= 1000 ? (r.gop/1000).toFixed(1)+'M' : r.gop.toFixed(0)+'K') : '—';
-    else if (metric === 'ebitda') primaryVal = r.ebitda > 0 ? '$' + (r.ebitda >= 1000 ? (r.ebitda/1000).toFixed(1)+'M' : r.ebitda.toFixed(0)+'K') : '—';
+    else if (metric === 'totalrev') primaryVal = r.revenue > 0 ? fmtCurrency(r.revenue) : '—';
+    else if (metric === 'gop')    primaryVal = r.gop > 0 ? fmtCurrency(r.gop) : '—';
+    else if (metric === 'ebitda') primaryVal = r.ebitda > 0 ? fmtCurrency(r.ebitda) : '—';
     else if (metric === 'flowthrough') primaryVal = r.flowthroughRaw > 0 ? r.flowthroughRaw.toFixed(1) + '%' : '—';
 
     // Budget/LY pill for primary metric
@@ -4806,8 +4790,8 @@ function buildLeaderboard(period, metric) {
       <td class="num" style="font-family:'JetBrains Mono',monospace;">${r.revpar > 0 ? '$'+r.revpar.toFixed(2) : '—'}</td>
       <td class="num" style="font-family:'JetBrains Mono',monospace;">${r.adr > 0 ? '$'+r.adr.toFixed(2) : '—'}</td>
       <td class="num" style="font-family:'JetBrains Mono',monospace;">${r.occ > 0 ? r.occ.toFixed(1)+'%' : '—'}</td>
-      <td class="num" style="font-family:'JetBrains Mono',monospace;">${r.gop > 0 ? '$'+(r.gop>=1000?(r.gop/1000).toFixed(1)+'M':r.gop.toFixed(0)+'K') : '—'}</td>
-      <td class="num" style="font-family:'JetBrains Mono',monospace;">${r.ebitda > 0 ? '$'+(r.ebitda>=1000?(r.ebitda/1000).toFixed(1)+'M':r.ebitda.toFixed(0)+'K') : '—'}</td>
+      <td class="num" style="font-family:'JetBrains Mono',monospace;">${r.gop > 0 ? fmtCurrency(r.gop) : '—'}</td>
+      <td class="num" style="font-family:'JetBrains Mono',monospace;">${r.ebitda > 0 ? fmtCurrency(r.ebitda) : '—'}</td>
       <td class="num"><span class="delta-pill ${pillClass(bUp)}">${bUp!=null?arrow(bUp)+' ':''}${cleanVar(bVar)}</span></td>
       <td class="num"><span class="delta-pill ${pillClass(lUp)}">${lUp!=null?arrow(lUp)+' ':''}${cleanVar(lVar)}</span></td>
     `;
@@ -5250,3 +5234,4 @@ wRenderPortfolio();
 </script>
 </body>
 </html>
+
