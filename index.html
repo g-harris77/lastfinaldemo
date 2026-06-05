@@ -3572,6 +3572,10 @@ function renderPropRows(rows) {
 function applyPortfolioPeriod(p) {
   const d = (window.LIVE_PORTFOLIO_DATA || {})[p] || PORTFOLIO_DATA[p];
   if (!d) return;
+  // Always clear any loading pulse animations before rendering
+  document.querySelectorAll('#portfolioView [data-bind], #portfolioView .kpi-delta-label').forEach(el => {
+    el.style.animation = '';
+  });
 
   // Helper: set delta pill + its sibling label text
   // label is passed directly — caller decides whether it's a budgetLabel or lyLabel
@@ -4561,6 +4565,62 @@ function computeInsights() {
     });
   }
 
+  // ---- SECTION 4: ADR erosion — high occ but ADR sliding week-over-week ----
+  const adrErosion = withMomentum
+    .filter(p => p.t7d.occ >= 0.75 && p.p7d && p.t7d.adr < p.p7d.adr)
+    .map(p => ({ ...p, adrDelta: p.t7d.adr - p.p7d.adr }))
+    .sort((a, b) => a.adrDelta - b.adrDelta) // most negative first
+    .slice(0, 3);
+  if (adrErosion.length) {
+    const aeLines = adrErosion.map(p =>
+      `<strong>${p.name.split(' ').slice(0,4).join(' ')}</strong> — ADR ${n(fmtR(p.p7d.adr))} → ${n(fmtR(p.t7d.adr))} (${n('$' + p.adrDelta.toFixed(2))}), Occ ${n(fmtOcc(p.t7d.occ))}`
+    ).join('<br>');
+    insights.push({
+      tag: 'RATE EROSION', type: 'warn',
+      text: `High-occupancy properties where ADR declined vs prior 7 days — rooms are filling but at lower rates:<br><br>${aeLines}`
+    });
+  }
+
+  // ---- SECTION 5: MTD GOP top & bottom 3 ----
+  const mtdStart = startOfMonth();
+  const mtdEnd   = yd;
+  const mtdStartStr = toDateStr(mtdStart);
+  const mtdEndStr   = toDateStr(mtdEnd);
+
+  const mtdGopData = tags.map(tag => {
+    const propRows = rows.filter(r => {
+      const d = (r.cr2cd_date || '').slice(0, 10);
+      return d >= mtdStartStr && d <= mtdEndStr && extractTag(r) === tag;
+    });
+    if (!propRows.length) return null;
+    const gop  = propRows.reduce((a, r) => a + (r.cr2cd_gop  || 0), 0);
+    const rev  = propRows.reduce((a, r) => a + (r.cr2cd_departmentsales || 0), 0);
+    const gopMgn = rev > 0 ? gop / rev : 0;
+    return { tag, name: PROPERTY_META[tag].name, gop, gopMgn };
+  }).filter(p => p !== null && p.gop !== 0);
+
+  if (mtdGopData.length >= 3) {
+    const gopRanked = [...mtdGopData].sort((a, b) => b.gopMgn - a.gopMgn);
+    const gopTop3 = gopRanked.slice(0, 3);
+    const gopBot3 = gopRanked.slice(-3).reverse();
+
+    const gopTopLines = gopTop3.map((p, i) =>
+      `${i+1}. <strong>${p.name.split(' ').slice(0,4).join(' ')}</strong> — GOP ${n(fmtCurrency(p.gop))}, Margin ${n((p.gopMgn*100).toFixed(1)+'%')}`
+    ).join('<br>');
+    insights.push({
+      tag: 'MTD GOP ↑', type: 'positive',
+      text: `Top 3 properties by GOP margin month-to-date:<br><br>${gopTopLines}`
+    });
+
+    const gopBotLines = gopBot3.map((p, i) =>
+      `${i+1}. <strong>${p.name.split(' ').slice(0,4).join(' ')}</strong> — GOP ${n(fmtCurrency(p.gop))}, Margin ${n((p.gopMgn*100).toFixed(1)+'%')}`
+    ).join('<br>');
+    insights.push({
+      tag: 'MTD GOP ↓', type: 'negative',
+      text: `Bottom 3 properties by GOP margin month-to-date:<br><br>${gopBotLines}`
+    });
+  }
+
   // ---- Portfolio summary line ----
   const portAvail  = propData.reduce((a, p) => a + p.t7d.available, 0);
   const portOcc    = propData.reduce((a, p) => a + p.t7d.occupied, 0);
@@ -5409,5 +5469,4 @@ wRenderPortfolio();
 </script>
 </body>
 </html>
-
 
