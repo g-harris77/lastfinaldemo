@@ -1961,7 +1961,7 @@
   <div class="drawer-header">
     <div class="drawer-title">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2"><path d="M5 3v4M3 5h4M6 17v4M4 19h4M13 3l2.5 6L21 11l-5.5 2L13 19l-2.5-6L5 11l5.5-2L13 3z"/></svg>
-      AI Insights
+      Daily Insights
     </div>
     <button class="drawer-close" data-close>✕</button>
   </div>
@@ -1970,14 +1970,14 @@
       <div class="empty-icon">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 3l2.5 6L21 11l-5.5 2L13 19l-2.5-6L5 11l5.5-2L13 3z"/></svg>
       </div>
-      <div class="empty-title">Generate insights for this view</div>
-      <div class="empty-sub">Claude will analyze the current period and surface what's notable. Estimated cost: ~$0.04 per run.</div>
-      <button class="btn btn-primary" id="generateBtn" style="margin-top:18px;">Generate now</button>
+      <div class="empty-title">Portfolio Daily Insights</div>
+      <div class="empty-sub">Surfaces T7D winners, losers, and momentum shifts across all 26 properties based on live data.</div>
+      <button class="btn btn-primary" id="generateBtn" style="margin-top:18px;">Run Insights</button>
     </div>
   </div>
   <div class="drawer-footer">
-    <span>April spend: <strong style="color:var(--text-muted)">$1.24</strong> / $25.00 budget</span>
-    <span class="mono">claude-sonnet-4</span>
+    <span id="insightsFooterDate">Based on live Dataverse data</span>
+    <span class="mono">T7D · All 26 properties</span>
   </div>
 </aside>
 
@@ -4415,55 +4415,211 @@ insightsBtn.addEventListener('click', () => { insightsDrawer.classList.add('open
 overlay.addEventListener('click', () => { insightsDrawer.classList.remove('open'); overlay.classList.remove('open'); });
 document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => { insightsDrawer.classList.remove('open'); overlay.classList.remove('open'); }));
 
-const PORTFOLIO_INSIGHTS = [
-  { tag: 'WATCH', type: 'negative', text: `Portfolio RevPAR is <span class="num">-1.4%</span> vs. budget MTD, driven primarily by <strong>Springhill Suites Boise West Eagle</strong> (<span class="num">-2.8%</span> YoY). Boise comp set is up <span class="num">+1.1%</span>, suggesting a property-specific issue rather than market softness.` },
-  { tag: 'WIN', type: 'positive', text: `<strong>Residence Inn by Marriott</strong> is your top performer: RevPAR up <span class="num">+12.4%</span> YoY with RGI of <span class="num">110.6</span>, gaining <span class="num">+4.2 pts</span> of comp set share.` },
-  { tag: 'OBSERVATION', type: 'info', text: `OOO rooms are <span class="num">142</span> vs. budget of <span class="num">90</span> — a <span class="num">58%</span> overage. Consider asking which properties account for the variance.` },
-  { tag: 'OPPORTUNITY', type: 'warn', text: `ARI of <span class="num">102.5</span> with MPI of only <span class="num">101.7</span> means the portfolio is winning rate but not occupancy — a <span class="num">$3–5</span> ADR test on shoulder dates at limited-service properties could lift RevPAR <span class="num">~$2–4</span> without measurable occ loss.` },
-  { tag: 'RISK', type: 'negative', text: `<strong>Springhill Suites Boise West Eagle</strong> has slipped below <span class="num">100 RGI</span> for the first time in 7 months. Comp set added <span class="num">312</span> rooms in Q1.` }
-];
-const ASTOR_INSIGHTS = [
-  { tag: 'WIN', type: 'positive', text: `ASTOR is overperforming: RevPAR <span class="num">+9.4%</span> YoY MTD with RGI of <span class="num">108.0</span>, gaining <span class="num">+1.7 pts</span> of comp set share. Strong weekday business demand from LGA travelers.` },
-  { tag: 'OPPORTUNITY', type: 'info', text: `Saturday occupancy averages <span class="num">68%</span> — the weak spot. A leisure-rate test on weekend stays could lift Sat RevPAR by <span class="num">$15–25</span> without compromising the weekday corporate base.` },
-  { tag: 'OBSERVATION', type: 'warn', text: `OTA mix is <span class="num">38%</span> of revenue. Direct mix gained <span class="num">+2.1 pts</span> YoY — momentum is good but commission load (~<span class="num">$80K</span> annualized) is still high. Worth pursuing a direct booking incentive.` },
-  { tag: 'PACE', type: 'positive', text: `Forward 30-day on-the-books is <span class="num">+10.6%</span> vs. STLY (<span class="num">1,805</span> rooms). Pickup last 7 days is <span class="num">+217</span> rooms — pace is accelerating.` },
-  { tag: 'WATCH', type: 'info', text: `ARI of <span class="num">98.7</span> means you're winning occupancy but underpricing slightly. Comp 3 (LGA midscale) is at <span class="num">$185.40</span> ADR; ASTOR is <span class="num">$176.90</span>. Test +<span class="num">$5</span> on midweek peak nights.` }
-];
+// ============================================================
+// DAILY INSIGHTS ENGINE
+// ============================================================
+function computeInsights() {
+  const rows = window.ALL_ROWS || [];
+  if (!rows.length) return null;
+
+  const yd = yesterday();
+  const t7dEnd   = new Date(yd);
+  const t7dStart = new Date(yd); t7dStart.setDate(t7dStart.getDate() - 6);  // 7 days ending yesterday
+  const p7dEnd   = new Date(t7dStart); p7dEnd.setDate(p7dEnd.getDate() - 1); // day before T7D starts
+  const p7dStart = new Date(p7dEnd);   p7dStart.setDate(p7dStart.getDate() - 6); // 7 days before that
+
+  const t7dEndStr   = toDateStr(t7dEnd);
+  const t7dStartStr = toDateStr(t7dStart);
+  const p7dEndStr   = toDateStr(p7dEnd);
+  const p7dStartStr = toDateStr(p7dStart);
+
+  // Properties known to be temporarily closed / under construction — skip occupancy flags
+  const SKIP_OCC_FLAGS = new Set(['SLCLE']);
+  // Extended-stay brands — higher occupancy expectation
+  const EXTENDED_STAY = new Set(['BOIRI', 'BOISH', 'BZNFC', 'SLCLE', 'SLCLI']);
+  // Portland market — structurally depressed occupancy
+  const PORTLAND_MARKET = new Set(['PDXRE', 'PDXSH', 'PDXTG']);
+
+  // Aggregate per property for a date range
+  function aggProp(tag, fromStr, toStr) {
+    const propRows = rows.filter(r => {
+      const d = (r.cr2cd_date || '').slice(0, 10);
+      return d >= fromStr && d <= toStr && extractTag(r) === tag;
+    });
+    if (!propRows.length) return null;
+    const occ   = propRows.reduce((a, r) => a + (r.cr2cd_occupied_rooms  || 0), 0);
+    const avail = propRows.reduce((a, r) => a + (r.cr2cd_available_rooms || 0), 0);
+    const rev   = propRows.reduce((a, r) => a + (r.cr2cd_total_rooms     || 0), 0); // rooms revenue
+    if (!avail) return null;
+    return {
+      revpar: rev / avail,
+      adr:    occ > 0 ? rev / occ : 0,
+      occ:    occ / avail,
+      occupied: occ,
+      available: avail,
+    };
+  }
+
+  const tags = Object.keys(PROPERTY_META);
+
+  // Build T7D and prior-7D data for each property
+  const propData = tags.map(tag => {
+    const t7d = aggProp(tag, t7dStartStr, t7dEndStr);
+    const p7d = aggProp(tag, p7dStartStr, p7dEndStr);
+    return { tag, name: PROPERTY_META[tag].name, t7d, p7d };
+  }).filter(p => p.t7d !== null);
+
+  const insights = [];
+  const n = s => `<span class="num">${s}</span>`;
+  const fmtR = v => '$' + v.toFixed(2);
+  const fmtOcc = v => (v * 100).toFixed(1) + '%';
+
+  // ---- SECTION 1: T7D Leaders (top 3 by RevPAR) ----
+  const ranked = [...propData].sort((a, b) => b.t7d.revpar - a.t7d.revpar);
+  const top3 = ranked.slice(0, 3);
+  const bot3 = ranked.slice(-3).reverse();
+
+  // Top performers
+  const topLines = top3.map((p, i) =>
+    `${i+1}. <strong>${p.name.split(' ').slice(0,4).join(' ')}</strong> — RevPAR ${n(fmtR(p.t7d.revpar))}, Occ ${n(fmtOcc(p.t7d.occ))}, ADR ${n(fmtR(p.t7d.adr))}`
+  ).join('<br>');
+  insights.push({
+    tag: 'T7D LEADERS', type: 'positive',
+    text: `Top 3 properties by RevPAR over the last 7 days:<br><br>${topLines}`
+  });
+
+  // Bottom performers (exclude known-closed)
+  const bot3Filtered = ranked.filter(p => !SKIP_OCC_FLAGS.has(p.tag)).slice(-3).reverse();
+  const botLines = bot3Filtered.map((p, i) =>
+    `${i+1}. <strong>${p.name.split(' ').slice(0,4).join(' ')}</strong> — RevPAR ${n(fmtR(p.t7d.revpar))}, Occ ${n(fmtOcc(p.t7d.occ))}, ADR ${n(fmtR(p.t7d.adr))}`
+  ).join('<br>');
+  insights.push({
+    tag: 'T7D LAGGARDS', type: 'negative',
+    text: `Bottom 3 properties by RevPAR over the last 7 days:<br><br>${botLines}`
+  });
+
+  // ---- SECTION 2: Momentum — biggest movers vs prior 7 days ----
+  const withMomentum = propData
+    .filter(p => p.p7d !== null && p.p7d.revpar > 0)
+    .map(p => ({ ...p, delta: p.t7d.revpar - p.p7d.revpar }))
+    .sort((a, b) => b.delta - a.delta);
+
+  if (withMomentum.length >= 2) {
+    // Top 2 gainers
+    const gainers = withMomentum.slice(0, 2).filter(p => p.delta > 0);
+    if (gainers.length) {
+      const gLines = gainers.map(p =>
+        `<strong>${p.name.split(' ').slice(0,4).join(' ')}</strong> ${n('+$' + p.delta.toFixed(2))} RevPAR vs prior 7 days (${n(fmtR(p.p7d.revpar))} → ${n(fmtR(p.t7d.revpar))})`
+      ).join('<br>');
+      insights.push({
+        tag: 'MOMENTUM ↑', type: 'positive',
+        text: `Biggest RevPAR gainers — T7D vs prior 7 days:<br><br>${gLines}`
+      });
+    }
+
+    // Top 2 decliners
+    const decliners = withMomentum.slice(-2).reverse().filter(p => p.delta < 0);
+    if (decliners.length) {
+      const dLines = decliners.map(p =>
+        `<strong>${p.name.split(' ').slice(0,4).join(' ')}</strong> ${n('$' + p.delta.toFixed(2))} RevPAR vs prior 7 days (${n(fmtR(p.p7d.revpar))} → ${n(fmtR(p.t7d.revpar))})`
+      ).join('<br>');
+      insights.push({
+        tag: 'MOMENTUM ↓', type: 'negative',
+        text: `Biggest RevPAR decliners — T7D vs prior 7 days:<br><br>${dLines}`
+      });
+    }
+  }
+
+  // ---- SECTION 3: Occupancy flags ----
+  // Fully sold out (≥99%) — rate question
+  const soldOut = propData.filter(p =>
+    !SKIP_OCC_FLAGS.has(p.tag) && p.t7d.occ >= 0.99
+  );
+  if (soldOut.length) {
+    const soLines = soldOut.map(p =>
+      `<strong>${p.name.split(' ').slice(0,4).join(' ')}</strong> — ${n(fmtOcc(p.t7d.occ))} occ, ADR ${n(fmtR(p.t7d.adr))}`
+    ).join('<br>');
+    insights.push({
+      tag: 'SOLD OUT', type: 'warn',
+      text: `${soldOut.length === 1 ? 'This property was' : 'These properties were'} effectively sold out T7D — worth reviewing whether rate was maximized during peak nights:<br><br>${soLines}`
+    });
+  }
+
+  // Low occupancy (below 55%, or 45% for Portland)
+  const lowOcc = propData.filter(p => {
+    if (SKIP_OCC_FLAGS.has(p.tag)) return false;
+    const floor = PORTLAND_MARKET.has(p.tag) ? 0.45 : 0.55;
+    return p.t7d.occ < floor;
+  });
+  if (lowOcc.length) {
+    const loLines = lowOcc.map(p =>
+      `<strong>${p.name.split(' ').slice(0,4).join(' ')}</strong> — ${n(fmtOcc(p.t7d.occ))} occ, RevPAR ${n(fmtR(p.t7d.revpar))}`
+    ).join('<br>');
+    insights.push({
+      tag: 'LOW OCC', type: 'warn',
+      text: `${lowOcc.length === 1 ? 'Property' : 'Properties'} running below occupancy floor T7D:<br><br>${loLines}`
+    });
+  }
+
+  // ---- Portfolio summary line ----
+  const portAvail  = propData.reduce((a, p) => a + p.t7d.available, 0);
+  const portOcc    = propData.reduce((a, p) => a + p.t7d.occupied, 0);
+  const portRev    = propData.reduce((a, p) => a + (p.t7d.revpar * p.t7d.available), 0);
+  const portRevPAR = portAvail > 0 ? portRev / portAvail : 0;
+  const portOccPct = portAvail > 0 ? portOcc / portAvail : 0;
+  const portADR    = portOcc   > 0 ? portRev / portOcc  : 0;
+
+  return { insights, portRevPAR, portOccPct, portADR, t7dStartStr, t7dEndStr };
+}
+
+function renderInsightCard(i) {
+  return `
+    <div class="insight-item ${i.type}">
+      <span class="insight-tag">${i.tag}</span>
+      <div class="insight-text">${i.text}</div>
+    </div>`;
+}
 
 generateBtn.addEventListener('click', () => {
+  if (!window.ALL_ROWS || !window.ALL_ROWS.length) {
+    insightsBody.innerHTML = `<div class="empty-state"><div class="empty-title">Data not loaded yet</div><div class="empty-sub">Wait for the initial data load to complete, then try again.</div></div>`;
+    return;
+  }
+  // Brief shimmer then render instantly — no fake delay, this is real computed data
   insightsBody.innerHTML = `
-    <div style="display:flex; flex-direction:column; gap:10px;">
-      <div class="loading-shimmer" style="height: 80px;"></div>
-      <div class="loading-shimmer" style="height: 80px;"></div>
-      <div class="loading-shimmer" style="height: 80px;"></div>
-      <div style="text-align:center; color: var(--text-subtle); font-size:12px; margin-top:8px;">Analyzing data…</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div class="loading-shimmer" style="height:72px;border-radius:8px;"></div>
+      <div class="loading-shimmer" style="height:72px;border-radius:8px;"></div>
+      <div class="loading-shimmer" style="height:72px;border-radius:8px;"></div>
     </div>`;
+
   setTimeout(() => {
-    const insights = currentView === 'portfolio' ? PORTFOLIO_INSIGHTS : ASTOR_INSIGHTS;
-    const scopeLabel = currentView === 'portfolio' ? 'Full Portfolio' : 'Holiday Inn Express Astoria';
-    const periodLabel = { yesterday: 'Yesterday', wtd: 'WTD', t30: 'T30D', mtd: 'MTD', ytd: 'YTD', '3yr': '3YR' }[currentPeriod];
-    const html = insights.map(i => `
-      <div class="insight-item ${i.type}">
-        <span class="insight-tag">${i.tag}</span>
-        <div class="insight-text">${i.text}</div>
-        <div class="insight-meta">
-          <span>Anchored to: ${periodLabel} · ${scopeLabel.split('—')[0].trim()}</span>
-          <a style="margin-left:auto;">Save</a>
-          <a>Share</a>
-        </div>
-      </div>
-    `).join('');
-    insightsBody.innerHTML = `
-      <div style="margin-bottom:16px; padding: 12px 14px; background: var(--surface); border-radius: 8px; border: 1px solid var(--border-subtle); font-size: 12.5px; color: var(--text-muted);">
-        Generated for <strong style="color:var(--text)">${scopeLabel} · ${periodLabel}</strong> on Apr 28, 2026 · Cost: <span class="mono">$0.038</span> · ${insights.length} insights
-      </div>
-      ${html}
-      <div style="margin-top: 16px; display:flex; gap:8px;">
-        <button class="btn" style="flex:1;">Re-run with new data</button>
-        <button class="btn">Export PDF</button>
-      </div>
-    `;
-  }, 1800);
+    const result = computeInsights();
+    if (!result || !result.insights.length) {
+      insightsBody.innerHTML = `<div class="empty-state"><div class="empty-title">Not enough data</div><div class="empty-sub">Need at least 14 days of actuals to compute momentum insights.</div></div>`;
+      return;
+    }
+
+    const { insights, portRevPAR, portOccPct, portADR, t7dStartStr, t7dEndStr } = result;
+    const anchorFmt = d => { const dt = new Date(d + 'T00:00:00'); return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); };
+
+    const summaryBar = `
+      <div style="background:var(--surface);border:1px solid var(--border-subtle);border-radius:8px;padding:12px 16px;margin-bottom:16px;display:flex;gap:24px;flex-wrap:wrap;">
+        <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-subtle);margin-bottom:3px;">Portfolio RevPAR</div><div style="font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--accent);">$${portRevPAR.toFixed(2)}</div></div>
+        <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-subtle);margin-bottom:3px;">Occupancy</div><div style="font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;">${(portOccPct*100).toFixed(1)}%</div></div>
+        <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-subtle);margin-bottom:3px;">ADR</div><div style="font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;">$${portADR.toFixed(2)}</div></div>
+        <div style="margin-left:auto;text-align:right;align-self:center;"><div style="font-size:11px;color:var(--text-subtle);">${anchorFmt(t7dStartStr)} – ${anchorFmt(t7dEndStr)}</div><div style="font-size:11px;color:var(--text-subtle);margin-top:2px;">${insights.length} insights · Live data</div></div>
+      </div>`;
+
+    insightsBody.innerHTML = summaryBar + insights.map(renderInsightCard).join('') + `
+      <div style="margin-top:16px;">
+        <button class="btn" style="width:100%;" onclick="document.getElementById('generateBtn').click()">↻ Refresh</button>
+      </div>`;
+
+    // Update footer
+    const footerDate = document.getElementById('insightsFooterDate');
+    if (footerDate) footerDate.textContent = `As of ${anchorFmt(t7dEndStr)} · T7D actuals`;
+  }, 400);
 });
 
 // ========== CHAT ==========
@@ -5253,4 +5409,5 @@ wRenderPortfolio();
 </script>
 </body>
 </html>
+
 
