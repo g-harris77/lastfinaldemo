@@ -3165,8 +3165,6 @@ async function loadDataAndRun() {
 
       // Re-render the current period view (applyPeriod is set on window by runDashboard)
       if (window.applyPeriod) window.applyPeriod(window.currentPeriod || 'mtd');
-      // Rebuild sparklines with fresh data
-      if (window.buildAndRenderSparks) window.buildAndRenderSparks();
       // Refresh leaderboard if it's visible
       if (typeof buildLeaderboard === 'function' && !document.getElementById('tab-leaderboard')?.classList.contains('hidden')) {
         buildLeaderboard(window.lbPeriod, window.lbMetric);
@@ -3574,6 +3572,8 @@ function applyPortfolioPeriod(p) {
   document.querySelectorAll('#portfolioView [data-bind], #portfolioView .kpi-delta-label').forEach(el => {
     el.style.animation = '';
   });
+  // Update sparklines for this period
+  if (window.buildAndRenderSparks) window.buildAndRenderSparks(p);
 
   // Helper: set delta pill + its sibling label text
   // label is passed directly — caller decides whether it's a budgetLabel or lyLabel
@@ -4027,40 +4027,79 @@ function makeSpark(id, data, color) {
   });
 }
 
-function buildAndRenderSparks() {
+function buildAndRenderSparks(period) {
   const rows = window.ALL_ROWS || [];
   if (!rows.length) return;
-
+  const p = period || window.currentPeriod || 'mtd';
   const yd = yesterday();
-  // Build last 14 days of daily portfolio data (14 so we have enough for a smooth line)
-  const days = 14;
-  const dailyData = [];
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(yd);
-    d.setDate(d.getDate() - i);
-    const dateStr = toDateStr(d);
-    const dayRows = rows.filter(r => (r.cr2cd_date || '').slice(0, 10) === dateStr);
-    const occ   = dayRows.reduce((a, r) => a + (r.cr2cd_occupied_rooms  || 0), 0);
-    const avail = dayRows.reduce((a, r) => a + (r.cr2cd_available_rooms || 0), 0);
-    const rev   = dayRows.reduce((a, r) => a + (r.cr2cd_total_rooms     || 0), 0);
-    const deptS = dayRows.reduce((a, r) => a + (r.cr2cd_departmentsales || 0), 0);
-    if (!avail) { dailyData.push(null); continue; }
-    dailyData.push({
-      revpar:   parseFloat((rev / avail).toFixed(2)),
-      adr:      occ > 0 ? parseFloat((rev / occ).toFixed(2)) : 0,
-      occ:      parseFloat(((occ / avail) * 100).toFixed(1)),
-      totalrev: parseFloat((deptS / 1000).toFixed(1)),
-    });
+  const buckets = new Map();
+
+  // Determine from/to and bucket key function based on period
+  let fromDate, bucketFn;
+  if (p === 'yesterday') {
+    // Hourly doesn't make sense for a sparkline — show last 14 days daily instead
+    fromDate = new Date(yd); fromDate.setDate(fromDate.getDate() - 13);
+    bucketFn = r => (r.cr2cd_date || '').slice(0, 10);
+  } else if (p === 'wtd') {
+    fromDate = new Date(yd); fromDate.setDate(fromDate.getDate() - 6);
+    bucketFn = r => (r.cr2cd_date || '').slice(0, 10); // daily
+  } else if (p === 't30') {
+    fromDate = new Date(yd); fromDate.setDate(fromDate.getDate() - 29);
+    bucketFn = r => (r.cr2cd_date || '').slice(0, 10); // daily
+  } else if (p === 'mtd') {
+    fromDate = startOfMonth();
+    bucketFn = r => (r.cr2cd_date || '').slice(0, 10); // daily
+  } else if (p === 'ytd') {
+    fromDate = startOfYear();
+    // Weekly buckets — Sunday-keyed
+    bucketFn = r => {
+      const d = new Date((r.cr2cd_date || '').slice(0, 10) + 'T00:00:00');
+      d.setDate(d.getDate() - d.getDay());
+      return toDateStr(d);
+    };
+  } else if (p === '3yr') {
+    fromDate = threeYearsAgo();
+    // Monthly buckets
+    bucketFn = r => (r.cr2cd_date || '').slice(0, 7);
+  } else {
+    fromDate = new Date(yd); fromDate.setDate(fromDate.getDate() - 13);
+    bucketFn = r => (r.cr2cd_date || '').slice(0, 10);
   }
 
-  const clean = (arr, key) => arr.map(d => d ? d[key] : null).filter(v => v !== null);
-  makeSpark('spark1', clean(dailyData, 'revpar'),   '#D4A574');
-  makeSpark('spark2', clean(dailyData, 'adr'),      '#D4A574');
-  makeSpark('spark3', clean(dailyData, 'occ'),      '#D4A574');
-  makeSpark('spark4', clean(dailyData, 'totalrev'), '#D4A574');
+  const fromStr = toDateStr(fromDate);
+  const toStr   = toDateStr(yd);
+
+  // Filter and bucket
+  rows.filter(r => {
+    const d = (r.cr2cd_date || '').slice(0, 10);
+    return d >= fromStr && d <= toStr;
+  }).forEach(r => {
+    const key = bucketFn(r);
+    if (!buckets.has(key)) buckets.set(key, { occ: 0, avail: 0, rev: 0, deptS: 0 });
+    const g = buckets.get(key);
+    g.occ   += r.cr2cd_occupied_rooms  || 0;
+    g.avail += r.cr2cd_available_rooms || 0;
+    g.rev   += r.cr2cd_total_rooms     || 0;
+    g.deptS += r.cr2cd_departmentsales || 0;
+  });
+
+  const sorted = [...buckets.entries()].sort((a, b) => a[0] < b[0] ? -1 : 1);
+  const sparkData = sorted.map(([, g]) => g.avail > 0 ? {
+    revpar:   parseFloat((g.rev / g.avail).toFixed(2)),
+    adr:      g.occ > 0 ? parseFloat((g.rev / g.occ).toFixed(2)) : null,
+    occ:      parseFloat(((g.occ / g.avail) * 100).toFixed(1)),
+    totalrev: parseFloat((g.deptS / 1000).toFixed(1)),
+  } : null).filter(Boolean);
+
+  if (!sparkData.length) return;
+  const vals = key => sparkData.map(d => d[key]);
+  makeSpark('spark1', vals('revpar'),   '#D4A574');
+  makeSpark('spark2', vals('adr'),      '#D4A574');
+  makeSpark('spark3', vals('occ'),      '#D4A574');
+  makeSpark('spark4', vals('totalrev'), '#D4A574');
 }
 
-// Called after data loads
+// Called after data loads and on period change
 window.buildAndRenderSparks = buildAndRenderSparks;
 
 // STR Index chart — MPI / ARI / RGI switchable
@@ -5492,3 +5531,4 @@ wRenderPortfolio();
 </script>
 </body>
 </html>
+
