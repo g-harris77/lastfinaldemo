@@ -1989,28 +1989,13 @@
     </div>
     <button class="drawer-close" id="chatClose">✕</button>
   </div>
-  <div class="chat-meta-bar">
-    <span>Scope: <strong style="color:var(--text-muted)" id="chatScope">Full Portfolio · MTD</strong></span>
-    <span class="mono">$0.012 this session</span>
-  </div>
   <div class="chat-body" id="chatBody">
-    <div class="suggested-prompts">
-      <button class="prompt-chip" data-prompt="Why is RevPAR down vs. budget?">Why is RevPAR down vs. budget?</button>
-      <button class="prompt-chip" data-prompt="Which property is dragging?">Which property is dragging?</button>
-      <button class="prompt-chip" data-prompt="How does April look vs. forecast?">How does April look vs. forecast?</button>
-      <button class="prompt-chip" data-prompt="Forecast next 30 days">Forecast next 30 days</button>
-    </div>
-    <div class="msg msg-ai">
-      Hi Robert — I'm scoped to your portfolio data through Apr 28, 2026. Ask me anything, or pick a starter above.
-      <div class="msg-meta"><span>Just now</span></div>
-    </div>
-  </div>
-  <div class="chat-input-wrap">
-    <div class="chat-input-row">
-      <textarea class="chat-input" id="chatInput" rows="1" placeholder="Ask about the portfolio…"></textarea>
-      <button class="send-btn" id="sendBtn">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-      </button>
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      </div>
+      <div class="empty-title">Coming Soon</div>
+      <div class="empty-sub">AI-powered portfolio chat is on the roadmap. You'll be able to ask questions about any property or period directly from here.</div>
     </div>
   </div>
 </aside>
@@ -3936,7 +3921,6 @@ window.applyPeriod = function applyPeriod(p) {
   } else {
     applyPropertyPeriod(p);
   }
-  updateChatScope();
 }
 
 // Static metadata for all 26 properties — keyed by actual propRow codes
@@ -3980,17 +3964,8 @@ window.switchView = function(v) {
 
     applyPropertyPeriod(currentPeriod);
   }
-  updateChatScope();
 }
 
-function updateChatScope() {
-  const periodLabel = { yesterday: 'Yesterday', wtd: 'WTD', t30: 'T30D', mtd: 'MTD', ytd: 'YTD', '3yr': '3YR' }[currentPeriod];
-  const scope = currentView === 'portfolio'
-    ? `Full Portfolio · ${periodLabel}`
-    : `ASTOR · ${periodLabel}`;
-  const el = document.getElementById('chatScope');
-  if (el) el.textContent = scope;
-}
 
 // ========== CHARTS ==========
 // ========== SPARKLINES (real data) ==========
@@ -4748,76 +4723,15 @@ generateBtn.addEventListener('click', () => {
 const chatFab = document.getElementById('chatFab');
 const chatDrawer = document.getElementById('chatDrawer');
 const chatClose = document.getElementById('chatClose');
-const chatBody = document.getElementById('chatBody');
-const chatInput = document.getElementById('chatInput');
-const sendBtn = document.getElementById('sendBtn');
 
 chatFab.addEventListener('click', () => {
   chatDrawer.classList.add('open');
   chatFab.classList.add('hidden');
-  setTimeout(() => chatInput.focus(), 100);
 });
 chatClose.addEventListener('click', () => {
   chatDrawer.classList.remove('open');
   chatFab.classList.remove('hidden');
 });
-document.querySelectorAll('.prompt-chip').forEach(chip => {
-  chip.addEventListener('click', () => { chatInput.value = chip.dataset.prompt; sendMessage(); });
-});
-chatInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-});
-sendBtn.addEventListener('click', sendMessage);
-
-const PORTFOLIO_RESPONSES = {
-  default: `Looking at the portfolio MTD: RevPAR is <span class="num">$142.18</span>, down <span class="num">1.4%</span> vs. budget but up <span class="num">8.2%</span> YoY. The drag is primarily Springhill Suites Boise (<span class="num">-2.8% YoY</span>). Want me to dig in?`,
-  revpar: `RevPAR is short of budget by <span class="num">$2.02</span> (<span class="num">-1.4%</span>) MTD. Two drivers: OOO rooms (<span class="num">142</span> vs. budgeted <span class="num">90</span>) and BOISH losing comp set share. ADR is actually beating budget — this is an occupancy story.`,
-  property: `<strong>Springhill Suites Boise West Eagle</strong> is the biggest drag — RGI <span class="num">96.7</span>, YoY <span class="num">-2.8%</span>. Bright spot: <strong>Residence Inn</strong> with RGI <span class="num">110.6</span>, RevPAR <span class="num">+12.4%</span> YoY.`,
-  forecast: `April is tracking <span class="num">~$0.03M</span> below budget on rooms revenue, ahead on total revenue (<span class="num">+0.8%</span>). May pace is <span class="num">+5.1%</span> YoY at the portfolio level.`
-};
-const ASTOR_RESPONSES = {
-  default: `ASTOR is having a strong month: RevPAR <span class="num">$143.55</span> (<span class="num">+9.4%</span> YoY, <span class="num">+1.4%</span> vs. budget), RGI <span class="num">108.0</span>, occupancy <span class="num">81.1%</span>. Strong weekday business pattern; Saturday is the soft spot at <span class="num">68%</span>.`,
-  revpar: `RevPAR is <span class="num">$143.55</span>, beating budget by <span class="num">+1.4%</span> and up <span class="num">+9.4%</span> YoY. The drivers are higher occupancy (<span class="num">81.1%</span> vs. budget <span class="num">80.5%</span>) and a slight ADR lift. Comp set is up <span class="num">+4.0%</span> — ASTOR is outpacing.`,
-  forecast: `ASTOR's forward pace looks healthy: 30-day on-the-books at <span class="num">1,805</span> rooms (<span class="num">+10.6%</span> vs. STLY) with <span class="num">+217</span> rooms picked up in the last 7 days. Forecast for May is <span class="num">$598K</span> total revenue (<span class="num">+7.2%</span> YoY).`,
-  weekend: `Saturday averages <span class="num">68%</span> occupancy vs. Wednesday peak of <span class="num">91%</span>. ASTOR is a weekday business hotel (LGA traffic). A leisure rate test on Friday/Saturday could lift weekend RevPAR by <span class="num">$15–25</span> — Astoria is increasingly a Manhattan-spillover leisure submarket.`,
-  channel: `OTA mix is <span class="num">38%</span>, Direct <span class="num">22%</span>, Corporate <span class="num">18%</span>. Direct gained <span class="num">+2.1 pts</span> YoY. Annualized OTA commissions are roughly <span class="num">$80K</span> — meaningful enough to justify a direct-booking incentive program.`
-};
-
-function pickResponse(q) {
-  const responses = currentView === 'portfolio' ? PORTFOLIO_RESPONSES : ASTOR_RESPONSES;
-  const ql = q.toLowerCase();
-  if (ql.includes('weekend') || ql.includes('saturday') || ql.includes('sunday')) return responses.weekend || responses.default;
-  if (ql.includes('channel') || ql.includes('ota') || ql.includes('direct')) return responses.channel || responses.default;
-  if (ql.includes('revpar') && (ql.includes('down') || ql.includes('budget') || ql.includes('why'))) return responses.revpar;
-  if (ql.includes('property') || ql.includes('drag')) return responses.property || responses.default;
-  if (ql.includes('forecast') || ql.includes('pace') || ql.includes('30')) return responses.forecast;
-  return responses.default;
-}
-
-function sendMessage() {
-  const text = chatInput.value.trim();
-  if (!text) return;
-  const sp = chatBody.querySelector('.suggested-prompts');
-  if (sp) sp.remove();
-
-  const userMsg = document.createElement('div');
-  userMsg.className = 'msg msg-user';
-  userMsg.textContent = text;
-  chatBody.appendChild(userMsg);
-  chatInput.value = '';
-  chatBody.scrollTop = chatBody.scrollHeight;
-
-  const typing = document.createElement('div');
-  typing.className = 'msg msg-ai';
-  typing.innerHTML = `<span class="typing-dots"><span></span><span></span><span></span></span>`;
-  chatBody.appendChild(typing);
-  chatBody.scrollTop = chatBody.scrollHeight;
-
-  setTimeout(() => {
-    typing.innerHTML = pickResponse(text) + `<div class="msg-meta"><span>Just now</span><span class="mono">$0.0028</span></div>`;
-    chatBody.scrollTop = chatBody.scrollHeight;
-  }, 900);
-}
 
 // ========== OCCUPANCY DETAIL PANEL ==========
 const occKpiCard = document.getElementById('occKpiCard');
