@@ -399,13 +399,6 @@
   .delta-up { color: var(--positive); background: var(--positive-soft); }
   .delta-down { color: var(--negative); background: var(--negative-soft); }
   .delta-flat { color: var(--text-subtle); background: rgba(155, 165, 184, 0.08); }
-  .kpi-spark {
-    position: absolute;
-    bottom: 0; right: 0;
-    width: 90px; height: 36px;
-    opacity: 0.55;
-    pointer-events: none;
-  }
 
   /* ========== PROFITABILITY STRIP ========== */
   .profit-section-header {
@@ -1397,7 +1390,6 @@
           <span class="delta-pill" data-bind="p.revpar.ly"></span>
         </div>
       </div>
-      <canvas class="kpi-spark" id="spark1"></canvas>
     </div>
 
     <div class="kpi" data-metric="adr">
@@ -1413,7 +1405,6 @@
           <span class="delta-pill" data-bind="p.adr.ly"></span>
         </div>
       </div>
-      <canvas class="kpi-spark" id="spark2"></canvas>
     </div>
 
     <div class="kpi" data-metric="occ" id="occKpiCard">
@@ -1429,7 +1420,6 @@
           <span class="delta-pill" data-bind="p.occ.ly"></span>
         </div>
       </div>
-      <canvas class="kpi-spark" id="spark3"></canvas>
     </div>
 
     <div class="kpi" data-metric="totalrev">
@@ -1445,7 +1435,6 @@
           <span class="delta-pill" data-bind="p.totalrev.ly"></span>
         </div>
       </div>
-      <canvas class="kpi-spark" id="spark4"></canvas>
     </div>
   </div>
 
@@ -1536,7 +1525,7 @@
             <button data-tm="revpar" class="active">RevPAR</button>
             <button data-tm="adr">ADR</button>
             <button data-tm="totalrev">Total Rev</button>
-            <button data-tm="ebitda">EBITDA</button>
+            <button data-tm="gop">GOP</button>
           </div>
           <div class="chart-legend">
             <span><span class="legend-dot" style="background: var(--accent)"></span>Actuals</span>
@@ -1681,7 +1670,6 @@
         <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="a.revpar.budget"></span></div>
         <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="a.revpar.ly"></span></div>
       </div>
-      <canvas class="kpi-spark" id="aSpark1"></canvas>
     </div>
     <div class="kpi">
       <div class="kpi-label">ADR</div>
@@ -1690,7 +1678,6 @@
         <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="a.adr.budget"></span></div>
         <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="a.adr.ly"></span></div>
       </div>
-      <canvas class="kpi-spark" id="aSpark2"></canvas>
     </div>
     <div class="kpi">
       <div class="kpi-label">Occupancy</div>
@@ -1699,7 +1686,6 @@
         <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="a.occ.budget"></span></div>
         <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="a.occ.ly"></span></div>
       </div>
-      <canvas class="kpi-spark" id="aSpark3"></canvas>
     </div>
     <div class="kpi">
       <div class="kpi-label" data-bind="a.totalrev.label">Total Revenue (MTD)</div>
@@ -1708,7 +1694,6 @@
         <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="a.totalrev.budget"></span></div>
         <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="a.totalrev.ly"></span></div>
       </div>
-      <canvas class="kpi-spark" id="aSpark4"></canvas>
     </div>
   </div>
 
@@ -1799,7 +1784,7 @@
           <button data-ptm="revpar" class="active">RevPAR</button>
           <button data-ptm="adr">ADR</button>
           <button data-ptm="totalrev">Total Rev</button>
-          <button data-ptm="ebitda">EBITDA</button>
+          <button data-ptm="gop">GOP</button>
         </div>
         <div class="chart-legend">
           <span><span class="legend-dot" style="background:var(--accent)"></span>Actuals</span>
@@ -2541,13 +2526,13 @@ function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag
     const map = new Map();
     rows.forEach(r => {
       const key = groupFn(parseD(extractDate(r)));
-      if (!map.has(key)) map.set(key, { revenue: 0, deptSales: 0, rooms_occ: 0, rooms_avail: 0, ebitda: 0 });
+      if (!map.has(key)) map.set(key, { revenue: 0, deptSales: 0, rooms_occ: 0, rooms_avail: 0, gop: 0 });
       const g = map.get(key);
       g.revenue     += (r.cr2cd_total_rooms || 0);       // rooms revenue for ADR/RevPAR
       g.deptSales   += (r.cr2cd_departmentsales || 0);   // department sales for Total Rev chart
       g.rooms_occ   += (r.cr2cd_occupied_rooms || 0);
       g.rooms_avail += (r.cr2cd_available_rooms || 0);
-      g.ebitda      += (r.cr2cd_ebitda || 0);
+      g.gop         += (r.cr2cd_gop    || 0);
     });
     return map;
   }
@@ -2605,9 +2590,9 @@ function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag
     const g = actMap.get(k);
     return parseFloat((g.deptSales / 1000).toFixed(1));
   });
-  const actualsEBITDA = sortedKeys.map(k => {
+  const actualsGOP = sortedKeys.map(k => {
     const g = actMap.get(k);
-    return parseFloat((g.ebitda / 1000).toFixed(1));
+    return parseFloat((g.gop / 1000).toFixed(1));
   });
 
   // Match LY by bucket — shift LY keys forward to match current period keys
@@ -2631,18 +2616,18 @@ function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag
     const g = lyMap.get(lyKey);
     return g ? parseFloat((g.deptSales / 1000).toFixed(1)) : null;
   });
-  const lyEBITDA = sortedKeys.map((k, i) => {
+  const lyGOP = sortedKeys.map((k, i) => {
     const lyKey = lyKeysSorted[i];
     if (!lyKey) return null;
     const g = lyMap.get(lyKey);
-    return g ? parseFloat((g.ebitda / 1000).toFixed(1)) : null;
+    return g ? parseFloat((g.gop / 1000).toFixed(1)) : null;
   });
 
   // Build budget series from budget rows (same bucketing as actuals)
   let budRevpar = labels.map(() => null);
   let budADR    = labels.map(() => null);
   let budRev    = labels.map(() => null);
-  let budEBITDA = labels.map(() => null);
+  let budGOP = labels.map(() => null);
   if (budgetRows && budgetRows.length > 0) {
     const budFiltered = budgetRows.filter(r => {
       const d = parseD((r.cr2cd_date || '').slice(0, 10));
@@ -2660,7 +2645,7 @@ function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag
       g.occupied   += r.cr2cd_occupiedrooms   || 0;
       g.available  += r.cr2cd_availablerooms  || 0;
       g.deptSales  += r.cr2cd_departmentsales || 0;
-      g.ebitda     += r.cr2cd_ebitda          || 0;
+      g.gop        += r.cr2cd_gop             || 0;
     });
     budRevpar = sortedKeys.map(k => {
       const g = budMap.get(k);
@@ -2674,9 +2659,9 @@ function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag
       const g = budMap.get(k);
       return g ? parseFloat((g.deptSales / 1000).toFixed(1)) : null;
     });
-    budEBITDA = sortedKeys.map(k => {
+    budGOP = sortedKeys.map(k => {
       const g = budMap.get(k);
-      return g ? parseFloat((g.ebitda / 1000).toFixed(1)) : null;
+      return g ? parseFloat((g.gop / 1000).toFixed(1)) : null;
     });
   }
 
@@ -2684,7 +2669,7 @@ function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag
     revpar:   { labels, actuals, budget: budRevpar, ly: lyRevpar, prefix: '$', suffix: '', title: 'RevPAR Trend' },
     adr:      { labels, actuals: actualsADR, budget: budADR, ly: lyADR, prefix: '$', suffix: '', title: 'ADR Trend' },
     totalrev: { labels, actuals: actualsRev, budget: budRev, ly: lyRev, prefix: '$', suffix: 'K', title: 'Total Revenue Trend' },
-    ebitda:   { labels, actuals: actualsEBITDA, budget: budEBITDA, ly: lyEBITDA, prefix: '$', suffix: 'K', title: 'EBITDA Trend' },
+    gop:      { labels, actuals: actualsGOP,    budget: budGOP,    ly: lyGOP,    prefix: '$', suffix: 'K', title: 'GOP Trend' },
   };
 }
 
@@ -2775,7 +2760,7 @@ function buildPeriodData(label, propsSub, trendSub, totalRevLabel, agg, lyAgg, f
     revpar:   { labels: [], actuals: [], budget: [], ly: [], prefix: '$', title: 'RevPAR Trend' },
     adr:      { labels: [], actuals: [], budget: [], ly: [], prefix: '$', title: 'ADR Trend' },
     totalrev: { labels: [], actuals: [], budget: [], ly: [], prefix: '$', suffix: 'K', title: 'Total Revenue Trend' },
-    ebitda:   { labels: [], actuals: [], budget: [], ly: [], prefix: '$', suffix: 'K', title: 'EBITDA Trend' },
+    gop:      { labels: [], actuals: [], budget: [], ly: [], prefix: '$', suffix: 'K', title: 'GOP Trend' },
   };
 
   // Portfolio ARI: sum(CS1 prp rev) / sum(CS1 prp occ) / sum(CS1 cs rev) / sum(CS1 cs occ) * 100
@@ -3995,46 +3980,7 @@ function updateChatScope() {
 }
 
 // ========== CHARTS ==========
-function makeSpark(id, data, color) {
-  const ctx = document.getElementById(id);
-  if (!ctx) return;
-  const existing = Chart.getChart(ctx);
-  if (existing) existing.destroy();
-  new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: data.map((_,i) => i),
-      datasets: [{
-        data: data,
-        borderColor: color,
-        borderWidth: 1.5,
-        tension: 0.4,
-        fill: true,
-        backgroundColor: ctx => {
-          const c = ctx.chart.ctx.createLinearGradient(0, 0, 0, 36);
-          c.addColorStop(0, color + '55'); c.addColorStop(1, color + '00');
-          return c;
-        },
-        pointRadius: 0
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { enabled: false } },
-      scales: { x: { display: false }, y: { display: false } },
-      elements: { line: { borderJoinStyle: 'round' } }
-    }
-  });
-}
-
-makeSpark('spark1', [128, 134, 130, 138, 141, 137, 142], ACCENT);
-makeSpark('spark2', [180, 182, 185, 188, 187, 191, 189], ACCENT);
-makeSpark('spark3', [71, 73, 70, 72, 74, 73, 75], ACCENT);
-makeSpark('spark4', [4.4, 4.5, 4.55, 4.6, 4.7, 4.75, 4.82], ACCENT);
-makeSpark('aSpark1', [135,138,140,143,141,144,148], ACCENT);
-makeSpark('aSpark2', [171,173,175,177,176,178,182], ACCENT);
-makeSpark('aSpark3', [78,80,79,82,81,83,85], ACCENT);
-makeSpark('aSpark4', [510,520,530,545,550,556,562], ACCENT);
+// Sparklines removed — were hardcoded dummy data
 
 // STR Index chart — MPI / ARI / RGI switchable
 const STR_CHART_DATA = {
@@ -4348,10 +4294,6 @@ document.querySelectorAll('#periodSeg button').forEach(btn => {
         c.data.labels = [];
         c.data.datasets.forEach(ds => ds.data = []);
         c.update('none');
-      });
-      ['spark1','spark2','spark3','spark4'].forEach(id => {
-        const c = Chart.getChart(document.getElementById(id));
-        if (c) { c.data.labels = []; c.data.datasets.forEach(ds => ds.data = []); c.update('none'); }
       });
 
       const bar = document.createElement('div');
@@ -5469,4 +5411,3 @@ wRenderPortfolio();
 </script>
 </body>
 </html>
-
