@@ -1290,7 +1290,7 @@
     <span class="as-of" id="asOfWrapper">As of <strong id="asOfDateHeader">—</strong></span>
     <button class="btn btn-primary" id="insightsBtn">
       <svg class="ai-spark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 3v4M3 5h4M6 17v4M4 19h4M13 3l2.5 6L21 11l-5.5 2L13 19l-2.5-6L5 11l5.5-2L13 3z"/></svg>
-      Generate Insights
+      Daily Insights
     </button>
   </div>
 </header>
@@ -4352,14 +4352,7 @@ document.querySelectorAll('#periodSeg button').forEach(btn => {
 
       const bar = document.createElement('div');
       bar.id = '_3yrBar';
-      bar.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:6px;background:var(--accent);z-index:999;animation:_3yrPulse 0.8s ease-in-out infinite;';
-      // Inject a more dramatic pulse keyframe if not already present
-      if (!document.getElementById('_3yrPulseStyle')) {
-        const s = document.createElement('style');
-        s.id = '_3yrPulseStyle';
-        s.textContent = '@keyframes _3yrPulse { 0%,100%{opacity:0.4;transform:scaleX(1)} 50%{opacity:1;transform:scaleX(1.01)} }';
-        document.head.appendChild(s);
-      }
+      bar.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:4px;background:var(--accent);z-index:999;animation:shimmer 1.4s infinite;background-size:200% 100%;';
       document.body.prepend(bar);
       try {
         // Background job may have already finished — if so, just render
@@ -4839,13 +4832,23 @@ document.querySelectorAll('#lbPeriodSeg button').forEach(btn => {
 function switchTab(tab) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('hidden', p.id !== 'tab-' + tab));
-  if (tab === 'leaderboard' && typeof buildLeaderboard === 'function') {
-    if (window.LIVE_PROPERTY_DATA && Object.keys(window.LIVE_PROPERTY_DATA).length > 0) {
+  if (tab === 'leaderboard') {
+    // Sync period to whatever the main dashboard is showing
+    if (window.currentPeriod && window.currentPeriod !== '3yr') {
+      lbPeriod = window.currentPeriod;
+      document.querySelectorAll('#lbPeriodSeg button').forEach(b => {
+        b.classList.toggle('active', b.dataset.lbp === lbPeriod);
+      });
+    }
+    const dataReady = () =>
+      window.LIVE_PROPERTY_DATA &&
+      Object.keys(window.LIVE_PROPERTY_DATA).length > 0 &&
+      window.LIVE_PORTFOLIO_DATA?.[lbPeriod];
+    if (dataReady()) {
       buildLeaderboard(lbPeriod, lbMetric);
     } else {
-      // Data not ready yet — poll until it is
       const poll = setInterval(() => {
-        if (window.LIVE_PROPERTY_DATA && Object.keys(window.LIVE_PROPERTY_DATA).length > 0) {
+        if (dataReady()) {
           clearInterval(poll);
           buildLeaderboard(lbPeriod, lbMetric);
         }
