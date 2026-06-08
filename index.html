@@ -399,6 +399,13 @@
   .delta-up { color: var(--positive); background: var(--positive-soft); }
   .delta-down { color: var(--negative); background: var(--negative-soft); }
   .delta-flat { color: var(--text-subtle); background: rgba(155, 165, 184, 0.08); }
+  .kpi-spark {
+    position: absolute;
+    bottom: 0; right: 0;
+    width: 90px; height: 36px;
+    opacity: 0.55;
+    pointer-events: none;
+  }
 
   /* ========== PROFITABILITY STRIP ========== */
   .profit-section-header {
@@ -543,13 +550,6 @@
   }
 
   /* ========== CHART ========== */
-  .kpi-spark {
-    position: absolute;
-    bottom: 0; right: 0;
-    width: 90px; height: 36px;
-    opacity: 0.55;
-    pointer-events: none;
-  }
   .chart-wrap { height: 280px; margin-top: 8px; position: relative; }
   .chart-legend { display: flex; gap: 16px; font-size: 12px; color: var(--text-muted); align-items: center; }
   .legend-toggle {
@@ -1536,7 +1536,7 @@
             <button data-tm="revpar" class="active">RevPAR</button>
             <button data-tm="adr">ADR</button>
             <button data-tm="totalrev">Total Rev</button>
-            <button data-tm="gop">GOP</button>
+            <button data-tm="ebitda">EBITDA</button>
           </div>
           <div class="chart-legend">
             <span><span class="legend-dot" style="background: var(--accent)"></span>Actuals</span>
@@ -1681,6 +1681,7 @@
         <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="a.revpar.budget"></span></div>
         <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="a.revpar.ly"></span></div>
       </div>
+      <canvas class="kpi-spark" id="aSpark1"></canvas>
     </div>
     <div class="kpi">
       <div class="kpi-label">ADR</div>
@@ -1689,6 +1690,7 @@
         <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="a.adr.budget"></span></div>
         <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="a.adr.ly"></span></div>
       </div>
+      <canvas class="kpi-spark" id="aSpark2"></canvas>
     </div>
     <div class="kpi">
       <div class="kpi-label">Occupancy</div>
@@ -1697,6 +1699,7 @@
         <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="a.occ.budget"></span></div>
         <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="a.occ.ly"></span></div>
       </div>
+      <canvas class="kpi-spark" id="aSpark3"></canvas>
     </div>
     <div class="kpi">
       <div class="kpi-label" data-bind="a.totalrev.label">Total Revenue (MTD)</div>
@@ -1705,6 +1708,7 @@
         <div class="kpi-delta"><span class="kpi-delta-label">vs Budget</span><span class="delta-pill" data-bind="a.totalrev.budget"></span></div>
         <div class="kpi-delta"><span class="kpi-delta-label">vs Last Year</span><span class="delta-pill" data-bind="a.totalrev.ly"></span></div>
       </div>
+      <canvas class="kpi-spark" id="aSpark4"></canvas>
     </div>
   </div>
 
@@ -1795,7 +1799,7 @@
           <button data-ptm="revpar" class="active">RevPAR</button>
           <button data-ptm="adr">ADR</button>
           <button data-ptm="totalrev">Total Rev</button>
-          <button data-ptm="gop">GOP</button>
+          <button data-ptm="ebitda">EBITDA</button>
         </div>
         <div class="chart-legend">
           <span><span class="legend-dot" style="background:var(--accent)"></span>Actuals</span>
@@ -1989,13 +1993,28 @@
     </div>
     <button class="drawer-close" id="chatClose">✕</button>
   </div>
+  <div class="chat-meta-bar">
+    <span>Scope: <strong style="color:var(--text-muted)" id="chatScope">Full Portfolio · MTD</strong></span>
+    <span class="mono">$0.012 this session</span>
+  </div>
   <div class="chat-body" id="chatBody">
-    <div class="empty-state">
-      <div class="empty-icon">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-      </div>
-      <div class="empty-title">Coming Soon</div>
-      <div class="empty-sub">AI-powered portfolio chat is on the roadmap. You'll be able to ask questions about any property or period directly from here.</div>
+    <div class="suggested-prompts">
+      <button class="prompt-chip" data-prompt="Why is RevPAR down vs. budget?">Why is RevPAR down vs. budget?</button>
+      <button class="prompt-chip" data-prompt="Which property is dragging?">Which property is dragging?</button>
+      <button class="prompt-chip" data-prompt="How does April look vs. forecast?">How does April look vs. forecast?</button>
+      <button class="prompt-chip" data-prompt="Forecast next 30 days">Forecast next 30 days</button>
+    </div>
+    <div class="msg msg-ai">
+      Hi Robert — I'm scoped to your portfolio data through Apr 28, 2026. Ask me anything, or pick a starter above.
+      <div class="msg-meta"><span>Just now</span></div>
+    </div>
+  </div>
+  <div class="chat-input-wrap">
+    <div class="chat-input-row">
+      <textarea class="chat-input" id="chatInput" rows="1" placeholder="Ask about the portfolio…"></textarea>
+      <button class="send-btn" id="sendBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
     </div>
   </div>
 </aside>
@@ -2269,7 +2288,7 @@ function aggregateBudgetRows(rows, fromDate, toDate) {
 
   let revenue = 0, departmentsales = 0, gop = 0, ebitda = 0, noi = 0;
   let totalRoomsSum = 0, occupiedRoomsSum = 0, availableRoomsSum = 0;
-  let occSum = 0, occCount = 0;
+  let revparSum = 0, revparCount = 0, occSum = 0, occCount = 0;
   for (const r of filtered) {
     revenue            += r.cr2cd_totalrevenue    || 0;
     departmentsales    += r.cr2cd_departmentsales || 0;
@@ -2279,13 +2298,13 @@ function aggregateBudgetRows(rows, fromDate, toDate) {
     totalRoomsSum      += r.cr2cd_totalrooms      || 0;
     occupiedRoomsSum   += r.cr2cd_occupiedrooms   || 0;
     availableRoomsSum  += r.cr2cd_availablerooms  || 0;
-    if (r.cr2cd_occupancy_percent != null) { occSum += r.cr2cd_occupancy_percent; occCount++; }
+    if (r.cr2cd_revparproperty    != null) { revparSum += r.cr2cd_revparproperty;    revparCount++; }
+    if (r.cr2cd_occupancy_percent != null) { occSum    += r.cr2cd_occupancy_percent; occCount++;    }
   }
-  // ADR    = sum(totalrooms) / sum(occupiedrooms)  — matches source system
-  // RevPAR = sum(totalrooms) / sum(availablerooms) — same logic as ADR but per available room
-  const adr    = occupiedRoomsSum  > 0 ? totalRoomsSum / occupiedRoomsSum  : 0;
-  const revpar = availableRoomsSum > 0 ? totalRoomsSum / availableRoomsSum : 0;
-  const occ    = occCount          > 0 ? occSum        / occCount          : 0;
+  // ADR = sum(totalrooms) / sum(occupiedrooms) — matches source system calculation
+  const adr    = occupiedRoomsSum > 0 ? totalRoomsSum / occupiedRoomsSum : 0;
+  const revpar = revparCount > 0 ? revparSum / revparCount : 0;
+  const occ    = occCount    > 0 ? occSum    / occCount    : 0;
   const ebitdaMgn = departmentsales > 0 ? ebitda / departmentsales : 0;
   const gopMgn    = departmentsales > 0 ? gop    / departmentsales : 0;
 
@@ -2522,13 +2541,13 @@ function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag
     const map = new Map();
     rows.forEach(r => {
       const key = groupFn(parseD(extractDate(r)));
-      if (!map.has(key)) map.set(key, { revenue: 0, deptSales: 0, rooms_occ: 0, rooms_avail: 0, gop: 0 });
+      if (!map.has(key)) map.set(key, { revenue: 0, deptSales: 0, rooms_occ: 0, rooms_avail: 0, ebitda: 0 });
       const g = map.get(key);
       g.revenue     += (r.cr2cd_total_rooms || 0);       // rooms revenue for ADR/RevPAR
       g.deptSales   += (r.cr2cd_departmentsales || 0);   // department sales for Total Rev chart
       g.rooms_occ   += (r.cr2cd_occupied_rooms || 0);
       g.rooms_avail += (r.cr2cd_available_rooms || 0);
-      g.gop         += (r.cr2cd_gop    || 0);
+      g.ebitda      += (r.cr2cd_ebitda || 0);
     });
     return map;
   }
@@ -2586,9 +2605,9 @@ function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag
     const g = actMap.get(k);
     return parseFloat((g.deptSales / 1000).toFixed(1));
   });
-  const actualsGOP = sortedKeys.map(k => {
+  const actualsEBITDA = sortedKeys.map(k => {
     const g = actMap.get(k);
-    return parseFloat((g.gop / 1000).toFixed(1));
+    return parseFloat((g.ebitda / 1000).toFixed(1));
   });
 
   // Match LY by bucket — shift LY keys forward to match current period keys
@@ -2612,18 +2631,18 @@ function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag
     const g = lyMap.get(lyKey);
     return g ? parseFloat((g.deptSales / 1000).toFixed(1)) : null;
   });
-  const lyGOP = sortedKeys.map((k, i) => {
+  const lyEBITDA = sortedKeys.map((k, i) => {
     const lyKey = lyKeysSorted[i];
     if (!lyKey) return null;
     const g = lyMap.get(lyKey);
-    return g ? parseFloat((g.gop / 1000).toFixed(1)) : null;
+    return g ? parseFloat((g.ebitda / 1000).toFixed(1)) : null;
   });
 
   // Build budget series from budget rows (same bucketing as actuals)
   let budRevpar = labels.map(() => null);
   let budADR    = labels.map(() => null);
   let budRev    = labels.map(() => null);
-  let budGOP = labels.map(() => null);
+  let budEBITDA = labels.map(() => null);
   if (budgetRows && budgetRows.length > 0) {
     const budFiltered = budgetRows.filter(r => {
       const d = parseD((r.cr2cd_date || '').slice(0, 10));
@@ -2641,7 +2660,7 @@ function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag
       g.occupied   += r.cr2cd_occupiedrooms   || 0;
       g.available  += r.cr2cd_availablerooms  || 0;
       g.deptSales  += r.cr2cd_departmentsales || 0;
-      g.gop        += r.cr2cd_gop             || 0;
+      g.ebitda     += r.cr2cd_ebitda          || 0;
     });
     budRevpar = sortedKeys.map(k => {
       const g = budMap.get(k);
@@ -2655,9 +2674,9 @@ function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag
       const g = budMap.get(k);
       return g ? parseFloat((g.deptSales / 1000).toFixed(1)) : null;
     });
-    budGOP = sortedKeys.map(k => {
+    budEBITDA = sortedKeys.map(k => {
       const g = budMap.get(k);
-      return g ? parseFloat((g.gop / 1000).toFixed(1)) : null;
+      return g ? parseFloat((g.ebitda / 1000).toFixed(1)) : null;
     });
   }
 
@@ -2665,7 +2684,7 @@ function buildChartData(allRows, fromDate, toDate, lyFromDate, lyToDate, siteTag
     revpar:   { labels, actuals, budget: budRevpar, ly: lyRevpar, prefix: '$', suffix: '', title: 'RevPAR Trend' },
     adr:      { labels, actuals: actualsADR, budget: budADR, ly: lyADR, prefix: '$', suffix: '', title: 'ADR Trend' },
     totalrev: { labels, actuals: actualsRev, budget: budRev, ly: lyRev, prefix: '$', suffix: 'K', title: 'Total Revenue Trend' },
-    gop:      { labels, actuals: actualsGOP,    budget: budGOP,    ly: lyGOP,    prefix: '$', suffix: 'K', title: 'GOP Trend' },
+    ebitda:   { labels, actuals: actualsEBITDA, budget: budEBITDA, ly: lyEBITDA, prefix: '$', suffix: 'K', title: 'EBITDA Trend' },
   };
 }
 
@@ -2756,7 +2775,7 @@ function buildPeriodData(label, propsSub, trendSub, totalRevLabel, agg, lyAgg, f
     revpar:   { labels: [], actuals: [], budget: [], ly: [], prefix: '$', title: 'RevPAR Trend' },
     adr:      { labels: [], actuals: [], budget: [], ly: [], prefix: '$', title: 'ADR Trend' },
     totalrev: { labels: [], actuals: [], budget: [], ly: [], prefix: '$', suffix: 'K', title: 'Total Revenue Trend' },
-    gop:      { labels: [], actuals: [], budget: [], ly: [], prefix: '$', suffix: 'K', title: 'GOP Trend' },
+    ebitda:   { labels: [], actuals: [], budget: [], ly: [], prefix: '$', suffix: 'K', title: 'EBITDA Trend' },
   };
 
   // Portfolio ARI: sum(CS1 prp rev) / sum(CS1 prp occ) / sum(CS1 cs rev) / sum(CS1 cs occ) * 100
@@ -3553,12 +3572,6 @@ function renderPropRows(rows) {
 function applyPortfolioPeriod(p) {
   const d = (window.LIVE_PORTFOLIO_DATA || {})[p] || PORTFOLIO_DATA[p];
   if (!d) return;
-  // Always clear any loading pulse animations before rendering
-  document.querySelectorAll('#portfolioView [data-bind], #portfolioView .kpi-delta-label').forEach(el => {
-    el.style.animation = '';
-  });
-  // Update sparklines for this period
-  if (window.buildAndRenderSparks) window.buildAndRenderSparks(p);
 
   // Helper: set delta pill + its sibling label text
   // label is passed directly — caller decides whether it's a budgetLabel or lyLabel
@@ -3846,9 +3859,21 @@ function applyPropertyPeriod(p) {
     if (!d.ariChartData && d._ariTag) {
       d.ariChartData = buildPropertyARIChartData(d._ariTag, d._ariFrom, d._ariTo);
     }
+    // Generate actual date labels for the ARI range
+    const ariDateLabels = (() => {
+      if (!d._ariFrom || !d._ariTo) return [];
+      const from = d._ariFrom instanceof Date ? d._ariFrom : new Date(d._ariFrom + 'T00:00:00');
+      const to   = d._ariTo   instanceof Date ? d._ariTo   : new Date(d._ariTo   + 'T00:00:00');
+      const labels = [];
+      const cur = new Date(from);
+      while (cur <= to) {
+        labels.push(cur.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+        cur.setDate(cur.getDate() + 1);
+      }
+      return labels;
+    })();
     if (d.ariChartData && d.ariChartData.length > 0) {
-      const labels = d.ariChartData.map((_, i) => i === 0 ? 'Start' : i === d.ariChartData.length - 1 ? 'End' : `D${i+1}`);
-      propSTRChart.data.labels = labels;
+      propSTRChart.data.labels = ariDateLabels;
       PROP_STR_DATA.ARI.data = d.ariChartData;
       const validVals = d.ariChartData.filter(v => v !== null);
       if (validVals.length > 0) {
@@ -3857,6 +3882,15 @@ function applyPropertyPeriod(p) {
         PROP_STR_DATA.ARI.max = Math.ceil(avg + 8);
       }
       switchPropSTR('ARI');
+    } else {
+      // No data for this period — clear the chart instead of leaving stale data
+      PROP_STR_DATA.ARI.data = [];
+      propSTRChart.data.labels = [];
+      propSTRChart.data.datasets[0].data = [];
+      propSTRChart.data.datasets[1].data = [];
+      propSTRChart.update();
+      const labelEl = document.getElementById('propSTRChartLabel');
+      if (labelEl) labelEl.textContent = 'ARI — No data for this period';
     }
     // Comp set — show ARI if available
     updatePropCompSet(d, p);
@@ -3921,6 +3955,7 @@ window.applyPeriod = function applyPeriod(p) {
   } else {
     applyPropertyPeriod(p);
   }
+  updateChatScope();
 }
 
 // Static metadata for all 26 properties — keyed by actual propRow codes
@@ -3964,23 +3999,30 @@ window.switchView = function(v) {
 
     applyPropertyPeriod(currentPeriod);
   }
+  updateChatScope();
 }
 
+function updateChatScope() {
+  const periodLabel = { yesterday: 'Yesterday', wtd: 'WTD', t30: 'T30D', mtd: 'MTD', ytd: 'YTD', '3yr': '3YR' }[currentPeriod];
+  const scope = currentView === 'portfolio'
+    ? `Full Portfolio · ${periodLabel}`
+    : `ASTOR · ${periodLabel}`;
+  const el = document.getElementById('chatScope');
+  if (el) el.textContent = scope;
+}
 
 // ========== CHARTS ==========
-// ========== SPARKLINES (real data) ==========
 function makeSpark(id, data, color) {
   const ctx = document.getElementById(id);
   if (!ctx) return;
   const existing = Chart.getChart(ctx);
   if (existing) existing.destroy();
-  if (!data || !data.length) return;
   new Chart(ctx, {
     type: 'line',
     data: {
-      labels: data.map((_, i) => i),
+      labels: data.map((_,i) => i),
       datasets: [{
-        data,
+        data: data,
         borderColor: color,
         borderWidth: 1.5,
         tension: 0.4,
@@ -4002,80 +4044,14 @@ function makeSpark(id, data, color) {
   });
 }
 
-function buildAndRenderSparks(period) {
-  const rows = window.ALL_ROWS || [];
-  if (!rows.length) return;
-  const p = period || window.currentPeriod || 'mtd';
-  const yd = yesterday();
-  const buckets = new Map();
-
-  // Determine from/to and bucket key function based on period
-  let fromDate, bucketFn;
-  if (p === 'yesterday') {
-    // Hourly doesn't make sense for a sparkline — show last 14 days daily instead
-    fromDate = new Date(yd); fromDate.setDate(fromDate.getDate() - 13);
-    bucketFn = r => (r.cr2cd_date || '').slice(0, 10);
-  } else if (p === 'wtd') {
-    fromDate = new Date(yd); fromDate.setDate(fromDate.getDate() - 6);
-    bucketFn = r => (r.cr2cd_date || '').slice(0, 10); // daily
-  } else if (p === 't30') {
-    fromDate = new Date(yd); fromDate.setDate(fromDate.getDate() - 29);
-    bucketFn = r => (r.cr2cd_date || '').slice(0, 10); // daily
-  } else if (p === 'mtd') {
-    fromDate = startOfMonth();
-    bucketFn = r => (r.cr2cd_date || '').slice(0, 10); // daily
-  } else if (p === 'ytd') {
-    fromDate = startOfYear();
-    // Weekly buckets — Sunday-keyed
-    bucketFn = r => {
-      const d = new Date((r.cr2cd_date || '').slice(0, 10) + 'T00:00:00');
-      d.setDate(d.getDate() - d.getDay());
-      return toDateStr(d);
-    };
-  } else if (p === '3yr') {
-    fromDate = threeYearsAgo();
-    // Monthly buckets
-    bucketFn = r => (r.cr2cd_date || '').slice(0, 7);
-  } else {
-    fromDate = new Date(yd); fromDate.setDate(fromDate.getDate() - 13);
-    bucketFn = r => (r.cr2cd_date || '').slice(0, 10);
-  }
-
-  const fromStr = toDateStr(fromDate);
-  const toStr   = toDateStr(yd);
-
-  // Filter and bucket
-  rows.filter(r => {
-    const d = (r.cr2cd_date || '').slice(0, 10);
-    return d >= fromStr && d <= toStr;
-  }).forEach(r => {
-    const key = bucketFn(r);
-    if (!buckets.has(key)) buckets.set(key, { occ: 0, avail: 0, rev: 0, deptS: 0 });
-    const g = buckets.get(key);
-    g.occ   += r.cr2cd_occupied_rooms  || 0;
-    g.avail += r.cr2cd_available_rooms || 0;
-    g.rev   += r.cr2cd_total_rooms     || 0;
-    g.deptS += r.cr2cd_departmentsales || 0;
-  });
-
-  const sorted = [...buckets.entries()].sort((a, b) => a[0] < b[0] ? -1 : 1);
-  const sparkData = sorted.map(([, g]) => g.avail > 0 ? {
-    revpar:   parseFloat((g.rev / g.avail).toFixed(2)),
-    adr:      g.occ > 0 ? parseFloat((g.rev / g.occ).toFixed(2)) : null,
-    occ:      parseFloat(((g.occ / g.avail) * 100).toFixed(1)),
-    totalrev: parseFloat((g.deptS / 1000).toFixed(1)),
-  } : null).filter(Boolean);
-
-  if (!sparkData.length) return;
-  const vals = key => sparkData.map(d => d[key]);
-  makeSpark('spark1', vals('revpar'),   '#D4A574');
-  makeSpark('spark2', vals('adr'),      '#D4A574');
-  makeSpark('spark3', vals('occ'),      '#D4A574');
-  makeSpark('spark4', vals('totalrev'), '#D4A574');
-}
-
-// Called after data loads and on period change
-window.buildAndRenderSparks = buildAndRenderSparks;
+makeSpark('spark1', [128, 134, 130, 138, 141, 137, 142], ACCENT);
+makeSpark('spark2', [180, 182, 185, 188, 187, 191, 189], ACCENT);
+makeSpark('spark3', [71, 73, 70, 72, 74, 73, 75], ACCENT);
+makeSpark('spark4', [4.4, 4.5, 4.55, 4.6, 4.7, 4.75, 4.82], ACCENT);
+makeSpark('aSpark1', [135,138,140,143,141,144,148], ACCENT);
+makeSpark('aSpark2', [171,173,175,177,176,178,182], ACCENT);
+makeSpark('aSpark3', [78,80,79,82,81,83,85], ACCENT);
+makeSpark('aSpark4', [510,520,530,545,550,556,562], ACCENT);
 
 // STR Index chart — MPI / ARI / RGI switchable
 const STR_CHART_DATA = {
@@ -4241,9 +4217,21 @@ const propSTRChart = (() => { const _c = Chart.getChart(document.getElementById(
   },
   options: {
     responsive: true, maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
     plugins: {
       legend: { display: false },
-      tooltip: { backgroundColor: '#18202B', borderColor: '#232E3D', borderWidth: 1, padding: 10, titleColor: '#ECEFF4', bodyColor: '#9AA5B8', usePointStyle: true, boxWidth: 8, boxHeight: 8 }
+      tooltip: {
+        backgroundColor: '#18202B', borderColor: '#232E3D', borderWidth: 1, padding: 10,
+        titleColor: '#ECEFF4', bodyColor: '#9AA5B8', usePointStyle: true, boxWidth: 8, boxHeight: 8,
+        filter: item => item.datasetIndex === 0,
+        callbacks: {
+          label: ctx => {
+            const v = ctx.parsed.y;
+            if (v === null || v === undefined) return null;
+            return `${activePropSTR}: ${v.toFixed(1)}`;
+          }
+        }
+      }
     },
     scales: {
       x: { grid: { display: false }, ticks: { font: { size: 10 } } },
@@ -4389,6 +4377,10 @@ document.querySelectorAll('#periodSeg button').forEach(btn => {
         c.data.labels = [];
         c.data.datasets.forEach(ds => ds.data = []);
         c.update('none');
+      });
+      ['spark1','spark2','spark3','spark4'].forEach(id => {
+        const c = Chart.getChart(document.getElementById(id));
+        if (c) { c.data.labels = []; c.data.datasets.forEach(ds => ds.data = []); c.update('none'); }
       });
 
       const bar = document.createElement('div');
@@ -4602,62 +4594,6 @@ function computeInsights() {
     });
   }
 
-  // ---- SECTION 4: ADR erosion — high occ but ADR sliding week-over-week ----
-  const adrErosion = withMomentum
-    .filter(p => p.t7d.occ >= 0.75 && p.p7d && p.t7d.adr < p.p7d.adr)
-    .map(p => ({ ...p, adrDelta: p.t7d.adr - p.p7d.adr }))
-    .sort((a, b) => a.adrDelta - b.adrDelta) // most negative first
-    .slice(0, 3);
-  if (adrErosion.length) {
-    const aeLines = adrErosion.map(p =>
-      `<strong>${p.name.split(' ').slice(0,4).join(' ')}</strong> — ADR ${n(fmtR(p.p7d.adr))} → ${n(fmtR(p.t7d.adr))} (${n('$' + p.adrDelta.toFixed(2))}), Occ ${n(fmtOcc(p.t7d.occ))}`
-    ).join('<br>');
-    insights.push({
-      tag: 'RATE EROSION', type: 'warn',
-      text: `High-occupancy properties where ADR declined vs prior 7 days — rooms are filling but at lower rates:<br><br>${aeLines}`
-    });
-  }
-
-  // ---- SECTION 5: MTD GOP top & bottom 3 ----
-  const mtdStart = startOfMonth();
-  const mtdEnd   = yd;
-  const mtdStartStr = toDateStr(mtdStart);
-  const mtdEndStr   = toDateStr(mtdEnd);
-
-  const mtdGopData = tags.map(tag => {
-    const propRows = rows.filter(r => {
-      const d = (r.cr2cd_date || '').slice(0, 10);
-      return d >= mtdStartStr && d <= mtdEndStr && extractTag(r) === tag;
-    });
-    if (!propRows.length) return null;
-    const gop  = propRows.reduce((a, r) => a + (r.cr2cd_gop  || 0), 0);
-    const rev  = propRows.reduce((a, r) => a + (r.cr2cd_departmentsales || 0), 0);
-    const gopMgn = rev > 0 ? gop / rev : 0;
-    return { tag, name: PROPERTY_META[tag].name, gop, gopMgn };
-  }).filter(p => p !== null && p.gop !== 0);
-
-  if (mtdGopData.length >= 3) {
-    const gopRanked = [...mtdGopData].sort((a, b) => b.gopMgn - a.gopMgn);
-    const gopTop3 = gopRanked.slice(0, 3);
-    const gopBot3 = gopRanked.slice(-3).reverse();
-
-    const gopTopLines = gopTop3.map((p, i) =>
-      `${i+1}. <strong>${p.name.split(' ').slice(0,4).join(' ')}</strong> — GOP ${n(fmtCurrency(p.gop))}, Margin ${n((p.gopMgn*100).toFixed(1)+'%')}`
-    ).join('<br>');
-    insights.push({
-      tag: 'MTD GOP ↑', type: 'positive',
-      text: `Top 3 properties by GOP margin month-to-date:<br><br>${gopTopLines}`
-    });
-
-    const gopBotLines = gopBot3.map((p, i) =>
-      `${i+1}. <strong>${p.name.split(' ').slice(0,4).join(' ')}</strong> — GOP ${n(fmtCurrency(p.gop))}, Margin ${n((p.gopMgn*100).toFixed(1)+'%')}`
-    ).join('<br>');
-    insights.push({
-      tag: 'MTD GOP ↓', type: 'negative',
-      text: `Bottom 3 properties by GOP margin month-to-date:<br><br>${gopBotLines}`
-    });
-  }
-
   // ---- Portfolio summary line ----
   const portAvail  = propData.reduce((a, p) => a + p.t7d.available, 0);
   const portOcc    = propData.reduce((a, p) => a + p.t7d.occupied, 0);
@@ -4723,15 +4659,76 @@ generateBtn.addEventListener('click', () => {
 const chatFab = document.getElementById('chatFab');
 const chatDrawer = document.getElementById('chatDrawer');
 const chatClose = document.getElementById('chatClose');
+const chatBody = document.getElementById('chatBody');
+const chatInput = document.getElementById('chatInput');
+const sendBtn = document.getElementById('sendBtn');
 
 chatFab.addEventListener('click', () => {
   chatDrawer.classList.add('open');
   chatFab.classList.add('hidden');
+  setTimeout(() => chatInput.focus(), 100);
 });
 chatClose.addEventListener('click', () => {
   chatDrawer.classList.remove('open');
   chatFab.classList.remove('hidden');
 });
+document.querySelectorAll('.prompt-chip').forEach(chip => {
+  chip.addEventListener('click', () => { chatInput.value = chip.dataset.prompt; sendMessage(); });
+});
+chatInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+sendBtn.addEventListener('click', sendMessage);
+
+const PORTFOLIO_RESPONSES = {
+  default: `Looking at the portfolio MTD: RevPAR is <span class="num">$142.18</span>, down <span class="num">1.4%</span> vs. budget but up <span class="num">8.2%</span> YoY. The drag is primarily Springhill Suites Boise (<span class="num">-2.8% YoY</span>). Want me to dig in?`,
+  revpar: `RevPAR is short of budget by <span class="num">$2.02</span> (<span class="num">-1.4%</span>) MTD. Two drivers: OOO rooms (<span class="num">142</span> vs. budgeted <span class="num">90</span>) and BOISH losing comp set share. ADR is actually beating budget — this is an occupancy story.`,
+  property: `<strong>Springhill Suites Boise West Eagle</strong> is the biggest drag — RGI <span class="num">96.7</span>, YoY <span class="num">-2.8%</span>. Bright spot: <strong>Residence Inn</strong> with RGI <span class="num">110.6</span>, RevPAR <span class="num">+12.4%</span> YoY.`,
+  forecast: `April is tracking <span class="num">~$0.03M</span> below budget on rooms revenue, ahead on total revenue (<span class="num">+0.8%</span>). May pace is <span class="num">+5.1%</span> YoY at the portfolio level.`
+};
+const ASTOR_RESPONSES = {
+  default: `ASTOR is having a strong month: RevPAR <span class="num">$143.55</span> (<span class="num">+9.4%</span> YoY, <span class="num">+1.4%</span> vs. budget), RGI <span class="num">108.0</span>, occupancy <span class="num">81.1%</span>. Strong weekday business pattern; Saturday is the soft spot at <span class="num">68%</span>.`,
+  revpar: `RevPAR is <span class="num">$143.55</span>, beating budget by <span class="num">+1.4%</span> and up <span class="num">+9.4%</span> YoY. The drivers are higher occupancy (<span class="num">81.1%</span> vs. budget <span class="num">80.5%</span>) and a slight ADR lift. Comp set is up <span class="num">+4.0%</span> — ASTOR is outpacing.`,
+  forecast: `ASTOR's forward pace looks healthy: 30-day on-the-books at <span class="num">1,805</span> rooms (<span class="num">+10.6%</span> vs. STLY) with <span class="num">+217</span> rooms picked up in the last 7 days. Forecast for May is <span class="num">$598K</span> total revenue (<span class="num">+7.2%</span> YoY).`,
+  weekend: `Saturday averages <span class="num">68%</span> occupancy vs. Wednesday peak of <span class="num">91%</span>. ASTOR is a weekday business hotel (LGA traffic). A leisure rate test on Friday/Saturday could lift weekend RevPAR by <span class="num">$15–25</span> — Astoria is increasingly a Manhattan-spillover leisure submarket.`,
+  channel: `OTA mix is <span class="num">38%</span>, Direct <span class="num">22%</span>, Corporate <span class="num">18%</span>. Direct gained <span class="num">+2.1 pts</span> YoY. Annualized OTA commissions are roughly <span class="num">$80K</span> — meaningful enough to justify a direct-booking incentive program.`
+};
+
+function pickResponse(q) {
+  const responses = currentView === 'portfolio' ? PORTFOLIO_RESPONSES : ASTOR_RESPONSES;
+  const ql = q.toLowerCase();
+  if (ql.includes('weekend') || ql.includes('saturday') || ql.includes('sunday')) return responses.weekend || responses.default;
+  if (ql.includes('channel') || ql.includes('ota') || ql.includes('direct')) return responses.channel || responses.default;
+  if (ql.includes('revpar') && (ql.includes('down') || ql.includes('budget') || ql.includes('why'))) return responses.revpar;
+  if (ql.includes('property') || ql.includes('drag')) return responses.property || responses.default;
+  if (ql.includes('forecast') || ql.includes('pace') || ql.includes('30')) return responses.forecast;
+  return responses.default;
+}
+
+function sendMessage() {
+  const text = chatInput.value.trim();
+  if (!text) return;
+  const sp = chatBody.querySelector('.suggested-prompts');
+  if (sp) sp.remove();
+
+  const userMsg = document.createElement('div');
+  userMsg.className = 'msg msg-user';
+  userMsg.textContent = text;
+  chatBody.appendChild(userMsg);
+  chatInput.value = '';
+  chatBody.scrollTop = chatBody.scrollHeight;
+
+  const typing = document.createElement('div');
+  typing.className = 'msg msg-ai';
+  typing.innerHTML = `<span class="typing-dots"><span></span><span></span><span></span></span>`;
+  chatBody.appendChild(typing);
+  chatBody.scrollTop = chatBody.scrollHeight;
+
+  setTimeout(() => {
+    typing.innerHTML = pickResponse(text) + `<div class="msg-meta"><span>Just now</span><span class="mono">$0.0028</span></div>`;
+    chatBody.scrollTop = chatBody.scrollHeight;
+  }, 900);
+}
 
 // ========== OCCUPANCY DETAIL PANEL ==========
 const occKpiCard = document.getElementById('occKpiCard');
