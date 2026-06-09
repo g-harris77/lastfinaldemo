@@ -1748,74 +1748,67 @@
     </div>
   </div>
 
-  <!-- Comp Set + Trend — side by side, matching portfolio layout -->
-  <div class="grid grid-low">
-
-    <!-- Comp Set Performance -->
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <div class="section-title">Comp Set Performance</div>
-          <div class="section-sub" id="propSTRSub">STR Index · ASTOR</div>
-        </div>
-        <span class="card-action">STR detail →</span>
+  <!-- Comp Set (full width, with chart) -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header">
+      <div>
+        <div class="section-title">Comp Set Performance</div>
+        <div class="section-sub" id="propSTRSub">STR Index · ASTOR</div>
       </div>
-      <div class="index-grid" style="margin-bottom:18px;">
-        <div class="index-card" id="propStrCard-MPI" style="cursor:pointer;" onclick="switchPropSTR('MPI')">
-          <div class="index-label">MPI</div>
-          <div class="index-value" id="propStrVal-MPI">109.4</div>
-          <div class="delta-pill delta-up" id="propStrDelta-MPI">▲ 2.1</div>
-          <div class="index-help">Occupancy<br>Index</div>
-        </div>
-        <div class="index-card" id="propStrCard-ARI" style="cursor:pointer;" onclick="switchPropSTR('ARI')">
-          <div class="index-label">ARI</div>
-          <div class="index-value" id="propStrVal-ARI">98.7</div>
-          <div class="delta-pill delta-down" id="propStrDelta-ARI">▼ 0.4</div>
-          <div class="index-help">ADR<br>Index</div>
-        </div>
-        <div class="index-card" id="propStrCard-RGI" style="cursor:pointer;" onclick="switchPropSTR('RGI')">
-          <div class="index-label">RGI</div>
-          <div class="index-value" id="propStrVal-RGI">108.0</div>
-          <div class="delta-pill delta-up" id="propStrDelta-RGI">▲ 1.7</div>
-          <div class="index-help">RevPAR<br>Index</div>
-        </div>
+      <span class="card-action">STR detail →</span>
+    </div>
+    <div class="index-grid" style="margin-bottom:18px;">
+      <div class="index-card" id="propStrCard-MPI" style="cursor:pointer;" onclick="switchPropSTR('MPI')">
+        <div class="index-label">MPI</div>
+        <div class="index-value" id="propStrVal-MPI">109.4</div>
+        <div class="delta-pill delta-up" id="propStrDelta-MPI">▲ 2.1</div>
+        <div class="index-help">Occupancy<br>Index</div>
       </div>
-      <div style="margin-top:18px; padding-top:16px; border-top:1px solid var(--border-subtle);">
-        <div class="row between" style="margin-bottom:10px;">
-          <span class="section-sub" id="propSTRChartLabel" style="font-size:12px;">ARI</span>
-          <div class="chart-legend">
-            <span><span class="legend-dot" style="background:var(--accent)"></span>Index</span>
-            <span><span class="legend-dot" style="background:rgba(255,255,255,0.15)"></span>100 (parity)</span>
-          </div>
-        </div>
-        <div class="chart-wrap" style="height:220px;"><canvas id="propSTRChart"></canvas></div>
+      <div class="index-card" id="propStrCard-ARI" style="cursor:pointer;" onclick="switchPropSTR('ARI')">
+        <div class="index-label">ARI</div>
+        <div class="index-value" id="propStrVal-ARI">98.7</div>
+        <div class="delta-pill delta-down" id="propStrDelta-ARI">▼ 0.4</div>
+        <div class="index-help">ADR<br>Index</div>
+      </div>
+      <div class="index-card" id="propStrCard-RGI" style="cursor:pointer;" onclick="switchPropSTR('RGI')">
+        <div class="index-label">RGI</div>
+        <div class="index-value" id="propStrVal-RGI">108.0</div>
+        <div class="delta-pill delta-up" id="propStrDelta-RGI">▲ 1.7</div>
+        <div class="index-help">RevPAR<br>Index</div>
       </div>
     </div>
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+      <span class="section-sub" id="propSTRChartLabel" style="font-size:12px;">MPI</span>
+      <div class="chart-legend">
+        <span><span class="legend-dot" style="background:var(--accent)"></span>Index</span>
+        <span><span class="legend-dot" style="background:rgba(255,255,255,0.15)"></span>100 (parity)</span>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="propSTRChart"></canvas></div>
+  </div>
 
-    <!-- Metric Trend -->
-    <div class="card" id="propTrendCard">
-      <div class="card-header">
-        <div id="propTrendCardTitle">
-          <div class="section-title">RevPAR Trend</div>
-          <div class="section-sub" data-bind="a.trend.sub">Daily · Last 30 days · Actuals vs. Budget vs. Last Year</div>
+  <!-- Metric Trend (full width, multi-metric) -->
+  <div class="card" style="margin-bottom:16px;" id="propTrendCard">
+    <div class="card-header">
+      <div id="propTrendCardTitle">
+        <div class="section-title">RevPAR Trend</div>
+        <div class="section-sub" data-bind="a.trend.sub">Daily · Last 30 days · Actuals vs. Budget vs. Last Year</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="seg" id="propTrendMetricSeg">
+          <button data-ptm="revpar" class="active">RevPAR</button>
+          <button data-ptm="adr">ADR</button>
+          <button data-ptm="totalrev">Total Rev</button>
+          <button data-ptm="ebitda">EBITDA</button>
         </div>
-        <div style="display:flex; align-items:center; gap:12px;">
-          <div class="seg" id="propTrendMetricSeg">
-            <button data-ptm="revpar" class="active">RevPAR</button>
-            <button data-ptm="adr">ADR</button>
-            <button data-ptm="totalrev">Total Rev</button>
-            <button data-ptm="ebitda">EBITDA</button>
-          </div>
-          <div class="chart-legend">
-            <span><span class="legend-dot" style="background:var(--accent)"></span>Actuals</span>
-            <span class="legend-toggle" id="propertyLegendBudget" data-chart="property" data-ds="1"><span class="legend-dot" style="background:var(--info)"></span>Budget</span>
-            <span class="legend-toggle" id="propertyLegendLY" data-chart="property" data-ds="2"><span class="legend-dot" style="background:var(--text-subtle)"></span>LY</span>
-          </div>
+        <div class="chart-legend">
+          <span><span class="legend-dot" style="background:var(--accent)"></span>Actuals</span>
+          <span class="legend-toggle" id="propertyLegendBudget" data-chart="property" data-ds="1"><span class="legend-dot" style="background:var(--info)"></span>Budget</span>
+          <span class="legend-toggle" id="propertyLegendLY" data-chart="property" data-ds="2"><span class="legend-dot" style="background:var(--text-subtle)"></span>LY</span>
         </div>
       </div>
-      <div class="chart-wrap" style="height:330px;"><canvas id="aTrendChart"></canvas></div>
     </div>
-
+    <div class="chart-wrap"><canvas id="aTrendChart"></canvas></div>
   </div>
 
 
@@ -2725,40 +2718,6 @@ function buildPortfolioARIChartData(fromDate, toDate) {
   });
 }
 
-// ---- Build daily MPI chart data for portfolio ----
-function buildPortfolioMPIChartData(fromDate, toDate) {
-  if (!fromDate || !toDate) return [];
-  const fromStr = toDateStr(fromDate instanceof Date ? fromDate : new Date(fromDate + 'T00:00:00'));
-  const toStr   = toDateStr(toDate   instanceof Date ? toDate   : new Date(toDate   + 'T00:00:00'));
-  const dateIndex = window._dateIndex;
-  if (!dateIndex) return [];
-  const dates = [...dateIndex.keys()].filter(d => d >= fromStr && d <= toStr).sort();
-  return dates.map(date => {
-    const rows      = dateIndex.get(date) || [];
-    const propOcc   = rows.reduce((a, r) => a + (r.cr2cd_compprpoccupied       || 0), 0);
-    const csStatOcc = rows.reduce((a, r) => a + (r.cr2cd_compset_occupancy_pct || 0), 0);
-    if (propOcc === 0 || csStatOcc === 0) return null;
-    return parseFloat(((propOcc / csStatOcc) * 100).toFixed(1));
-  });
-}
-
-// ---- Build daily RGI chart data for portfolio ----
-function buildPortfolioRGIChartData(fromDate, toDate) {
-  if (!fromDate || !toDate) return [];
-  const fromStr = toDateStr(fromDate instanceof Date ? fromDate : new Date(fromDate + 'T00:00:00'));
-  const toStr   = toDateStr(toDate   instanceof Date ? toDate   : new Date(toDate   + 'T00:00:00'));
-  const dateIndex = window._dateIndex;
-  if (!dateIndex) return [];
-  const dates = [...dateIndex.keys()].filter(d => d >= fromStr && d <= toStr).sort();
-  return dates.map(date => {
-    const rows      = dateIndex.get(date) || [];
-    const propRev   = rows.reduce((a, r) => a + (r.cr2cd_compprproomsrevenue || 0), 0);
-    const csTotRev  = rows.reduce((a, r) => a + (r.cr2cd_compset_total_rooms  || 0), 0);
-    if (propRev === 0 || csTotRev === 0) return null;
-    return parseFloat(((propRev / csTotRev) * 100).toFixed(1));
-  });
-}
-
 // ---- Build daily ARI chart data for a single property ----
 function buildPropertyARIChartData(tag, fromDate, toDate) {
   if (!fromDate || !toDate) return [];
@@ -2785,41 +2744,6 @@ function buildPropertyARIChartData(tag, fromDate, toDate) {
     const hotelADR = hotelRev / hotelOcc;
 
     return parseFloat(((hotelADR / csADR) * 100).toFixed(1));
-  });
-}
-
-// ---- Build daily MPI chart data for a single property ----
-function buildPropertyMPIChartData(tag, fromDate, toDate) {
-  if (!fromDate || !toDate) return [];
-  const fromStr = toDateStr(fromDate instanceof Date ? fromDate : new Date(fromDate + 'T00:00:00'));
-  const toStr   = toDateStr(toDate   instanceof Date ? toDate   : new Date(toDate   + 'T00:00:00'));
-  const tagDateIndex = window._tagDateIndex;
-  if (!tagDateIndex) return [];
-  // Iterate over all dates in the main date index that fall in range
-  const allDates = (window._sortedDates || []).filter(d => d >= fromStr && d <= toStr);
-  return allDates.map(date => {
-    const rows      = tagDateIndex.get(tag + '|' + date) || [];
-    const propOcc   = rows.reduce((a, r) => a + (r.cr2cd_compprpoccupied       || 0), 0);
-    const csStatOcc = rows.reduce((a, r) => a + (r.cr2cd_compset_occupancy_pct || 0), 0);
-    if (propOcc === 0 || csStatOcc === 0) return null;
-    return parseFloat(((propOcc / csStatOcc) * 100).toFixed(1));
-  });
-}
-
-// ---- Build daily RGI chart data for a single property ----
-function buildPropertyRGIChartData(tag, fromDate, toDate) {
-  if (!fromDate || !toDate) return [];
-  const fromStr = toDateStr(fromDate instanceof Date ? fromDate : new Date(fromDate + 'T00:00:00'));
-  const toStr   = toDateStr(toDate   instanceof Date ? toDate   : new Date(toDate   + 'T00:00:00'));
-  const tagDateIndex = window._tagDateIndex;
-  if (!tagDateIndex) return [];
-  const allDates = (window._sortedDates || []).filter(d => d >= fromStr && d <= toStr);
-  return allDates.map(date => {
-    const rows     = tagDateIndex.get(tag + '|' + date) || [];
-    const propRev  = rows.reduce((a, r) => a + (r.cr2cd_compprproomsrevenue || 0), 0);
-    const csTotRev = rows.reduce((a, r) => a + (r.cr2cd_compset_total_rooms  || 0), 0);
-    if (propRev === 0 || csTotRev === 0) return null;
-    return parseFloat(((propRev / csTotRev) * 100).toFixed(1));
   });
 }
 
@@ -2854,52 +2778,43 @@ function buildPeriodData(label, propsSub, trendSub, totalRevLabel, agg, lyAgg, f
     ebitda:   { labels: [], actuals: [], budget: [], ly: [], prefix: '$', suffix: 'K', title: 'EBITDA Trend' },
   };
 
-  // Portfolio STR indices — sum numerator/denominator across all days before dividing (avoids averaging ratios)
-  // ARI uses CS1 rows; MPI and RGI use the compprp/compset fields in ALL_ROWS directly.
-  let portfolioARI = null, lyPortfolioARI = null;
-  let portfolioMPI = null, lyPortfolioMPI = null;
-  let portfolioRGI = null, lyPortfolioRGI = null;
-
-  function calcPortfolioSTR(fromDate, toDate) {
-    const allRows = window.ALL_ROWS || [];
-    const cs1     = window.CS1_ROWS || [];
+  // Portfolio ARI: sum(CS1 prp rev) / sum(CS1 prp occ) / sum(CS1 cs rev) / sum(CS1 cs occ) * 100
+  // Uses Competitive Set 1 data which matches ProfitSword's portfolio-level aggregation exactly.
+  let portfolioARI = null;
+  let lyPortfolioARI = null;
+  function calcCS1ARI(fromDate, toDate, aggRows) {
+    if (!aggRows) return null;
+    const cs1 = window.CS1_ROWS || [];
     const fromStr = toDateStr(fromDate instanceof Date ? fromDate : new Date(fromDate + 'T00:00:00'));
     const toStr   = toDateStr(toDate   instanceof Date ? toDate   : new Date(toDate   + 'T00:00:00'));
-
-    // ARI — CS1 dataset
-    const cs1Filtered  = cs1.filter(r => { const d = (r.cr2cd_date || '').slice(0,10); return d >= fromStr && d <= toStr; });
-    const cs1TotalOcc  = cs1Filtered.reduce((a, r) => a + (r.cr2cd_cs1occupied || 0), 0);
-    const cs1TotalRev  = cs1Filtered.reduce((a, r) => a + (r.cr2cd_cs1revenue  || 0), 0);
-
-    // MPI & RGI — daily extended dataset
-    const ext = allRows.filter(r => { const d = (r.cr2cd_date || '').slice(0,10); return d >= fromStr && d <= toStr; });
-    const propRev  = ext.reduce((a, r) => a + (r.cr2cd_compprproomsrevenue  || 0), 0);
-    const propOcc  = ext.reduce((a, r) => a + (r.cr2cd_compprpoccupied      || 0), 0);
-    const csStatOcc= ext.reduce((a, r) => a + (r.cr2cd_compset_occupancy_pct|| 0), 0);
-    const csTotalRev= ext.reduce((a, r) => a + (r.cr2cd_compset_total_rooms  || 0), 0);
-
-    const ari = (cs1TotalOcc > 0 && cs1TotalRev > 0 && propOcc > 0)
-      ? (propRev / propOcc) / (cs1TotalRev / cs1TotalOcc) * 100 : null;
-    const mpi = (propOcc > 0 && csStatOcc > 0)
-      ? (propOcc / csStatOcc) * 100 : null;
-    const rgi = (propRev > 0 && csTotalRev > 0)
-      ? (propRev / csTotalRev) * 100 : null;
-
-    return { ari, mpi, rgi };
+    // CS1 compset ADR: sum all cs1 rev / sum all cs1 occ for the period
+    const cs1Filtered = cs1.filter(r => {
+      const d = (r.cr2cd_date || '').slice(0, 10);
+      return d >= fromStr && d <= toStr;
+    });
+    const cs1TotalOcc = cs1Filtered.reduce((a, r) => a + (r.cr2cd_cs1occupied || 0), 0);
+    const cs1TotalRev = cs1Filtered.reduce((a, r) => a + (r.cr2cd_cs1revenue  || 0), 0);
+    if (cs1TotalOcc === 0 || cs1TotalRev === 0) return null;
+    const csADR = cs1TotalRev / cs1TotalOcc;
+    // Hotel ADR for ARI: sum(cr2cd_compprproomsrevenue) / sum(cr2cd_compprpoccupied) across all rows in period
+    const allRows = window.ALL_ROWS || [];
+    const hotelFiltered = allRows.filter(r => {
+      const d = (r.cr2cd_date || '').slice(0, 10);
+      return d >= fromStr && d <= toStr;
+    });
+    const hotelRev = hotelFiltered.reduce((a, r) => a + (r.cr2cd_compprproomsrevenue || 0), 0);
+    const hotelOcc = hotelFiltered.reduce((a, r) => a + (r.cr2cd_compprpoccupied     || 0), 0);
+    if (hotelOcc === 0 || hotelRev === 0) return null;
+    const hotelADR = hotelRev / hotelOcc;
+    return (hotelADR / csADR) * 100;
   }
-
   if (fromDate && toDate) {
-    try { const r = calcPortfolioSTR(fromDate, toDate); portfolioARI = r.ari; portfolioMPI = r.mpi; portfolioRGI = r.rgi; } catch(e) {}
-    try { const r = calcPortfolioSTR(oneYearAgo(fromDate), oneYearAgo(toDate)); lyPortfolioARI = r.ari; lyPortfolioMPI = r.mpi; lyPortfolioRGI = r.rgi; } catch(e) {}
+    try { portfolioARI   = calcCS1ARI(fromDate, toDate, agg); } catch(e) { portfolioARI = null; }
+    try { lyPortfolioARI = calcCS1ARI(oneYearAgo(fromDate), oneYearAgo(toDate), lyAgg); } catch(e) { lyPortfolioARI = null; }
   }
-
-  function strDelta(cur, ly) {
-    if (cur === null || ly === null) return { text: '—', up: true };
-    return { text: (cur >= ly ? '+' : '') + (cur - ly).toFixed(1) + 'pts', up: cur >= ly };
-  }
-  const ariDelta = strDelta(portfolioARI, lyPortfolioARI);
-  const mpiDelta = strDelta(portfolioMPI, lyPortfolioMPI);
-  const rgiDelta = strDelta(portfolioRGI, lyPortfolioRGI);
+    const ariDelta = (portfolioARI !== null && lyPortfolioARI !== null)
+      ? { text: (portfolioARI >= lyPortfolioARI ? '+' : '') + (portfolioARI - lyPortfolioARI).toFixed(1) + 'pts', up: portfolioARI >= lyPortfolioARI }
+      : { text: '—', up: true };
 
     return {
     label, propsSub, trendSub, totalRevLabel,
@@ -2929,10 +2844,14 @@ function buildPeriodData(label, propsSub, trendSub, totalRevLabel, agg, lyAgg, f
       })(),
     },
     str: {
-      MPI: { value: portfolioMPI !== null ? portfolioMPI.toFixed(1) : '—', delta: mpiDelta.text, up: mpiDelta.up },
-      ARI: { value: portfolioARI !== null ? portfolioARI.toFixed(1) : '—', delta: ariDelta.text, up: ariDelta.up },
-      RGI: { value: portfolioRGI !== null ? portfolioRGI.toFixed(1) : '—', delta: rgiDelta.text, up: rgiDelta.up },
-      chartData: { MPI: [], ARI: [], RGI: [], _from: fromDate, _to: toDate },
+      MPI: { value: '—', delta: '—', up: true },
+      ARI: {
+        value: portfolioARI !== null ? portfolioARI.toFixed(1) : '—',
+        delta: ariDelta.text,
+        up: ariDelta.up,
+      },
+      RGI: { value: '—', delta: '—', up: true },
+      chartData: { MPI: [], ARI: [], RGI: [], _ariFrom: fromDate, _ariTo: toDate },
     },
     perfRows: [],
     propRows: buildPropRows(agg, lyAgg),
@@ -2985,25 +2904,21 @@ function buildPropertyLiveData(tag, allRows, ranges) {
       const occ       = available       > 0 ? occupied        / available       : 0;
       const ebitdaMgn = departmentsales > 0 ? ebitda          / departmentsales : 0;
       const gopMgn    = departmentsales > 0 ? gop             / departmentsales : 0;
-      // STR indices — sum num/denom before dividing (avoids averaging ratios)
-      // ARI: property ADR / compset ADR, using CS1 rows for the compset side
-      // Build a Set of dates present in this property's rows for fast CS1 filtering
-      const rowDates = new Set(rows.map(r => (r.cr2cd_date || '').slice(0,10)).filter(Boolean));
-      const cs1 = window.CS1_ROWS || [];
-      const cs1Filtered = cs1.filter(r => rowDates.has((r.cr2cd_date || '').slice(0,10)));
-      const cs1TotalOcc = cs1Filtered.reduce((a, r) => a + (r.cr2cd_cs1occupied || 0), 0);
-      const cs1TotalRev = cs1Filtered.reduce((a, r) => a + (r.cr2cd_cs1revenue  || 0), 0);
-      const propCompRev = sum('cr2cd_compprproomsrevenue');
-      const propCompOcc = sum('cr2cd_compprpoccupied');
-      const ari = (propCompOcc > 0 && cs1TotalOcc > 0 && cs1TotalRev > 0)
-        ? (propCompRev / propCompOcc) / (cs1TotalRev / cs1TotalOcc) * 100 : null;
-      // MPI: our occupied / compset stat (cr2cd_compset_occupancy_pct) × 100
-      const csStatOcc  = sum('cr2cd_compset_occupancy_pct');
-      const mpi = (propCompOcc > 0 && csStatOcc > 0) ? (propCompOcc / csStatOcc) * 100 : null;
-      // RGI: our rooms revenue / compset total rooms revenue (cr2cd_compset_total_rooms) × 100
-      const csTotalRooms = sum('cr2cd_compset_total_rooms');
-      const rgi = (propCompRev > 0 && csTotalRooms > 0) ? (propCompRev / csTotalRooms) * 100 : null;
-      return { occupied, available, revenue: departmentsales, roomsRevenue, gop, ebitda, noi, adr, revpar, occ, ebitdaMgn, gopMgn, ari, mpi, rgi };
+      // ARI: use cr2cd_aricalculated (computed in Dataverse from COMPPRP/COMPSET) — average over days where it exists
+      const propAriRows = rows.filter(r => r.cr2cd_compprproomsrevenue != null && r.cr2cd_compprpoccupied > 0);
+      const csAriRows   = rows.filter(r => r.cr2cd_compset_total_rooms  != null && r.cr2cd_compset_occupancy_pct > 0);
+      let csADR = 0, ari = null;
+      if (propAriRows.length > 0 && csAriRows.length > 0) {
+        const totalPropRev = propAriRows.reduce((a, r) => a + (r.cr2cd_compprproomsrevenue || 0), 0);
+        const totalPropOcc = propAriRows.reduce((a, r) => a + (r.cr2cd_compprpoccupied || 0), 0);
+        const totalCsRev = csAriRows.reduce((a, r) => a + (r.cr2cd_compset_total_rooms || 0), 0);
+        const totalCsOcc = csAriRows.reduce((a, r) => a + (r.cr2cd_compset_occupancy_pct || 0), 0);
+        csADR = totalCsOcc > 0 ? totalCsRev / totalCsOcc : 0;
+        ari = (totalPropOcc > 0 && totalCsOcc > 0)
+          ? (totalPropRev / totalPropOcc) / (totalCsRev / totalCsOcc) * 100
+          : null;
+      }
+      return { occupied, available, revenue: departmentsales, roomsRevenue, gop, ebitda, noi, adr, revpar, occ, ebitdaMgn, gopMgn, csADR, ari };
     }
 
     const p  = agg(filtered);
@@ -3069,16 +2984,12 @@ function buildPropertyLiveData(tag, allRows, ranges) {
         })(),
       },
       charts,
+      csADR: p.csADR,
       ari: p.ari,
-      mpi: p.mpi,
-      rgi: p.rgi,
-      lyAri: ly?.ari ?? null,
-      lyMpi: ly?.mpi ?? null,
-      lyRgi: ly?.rgi ?? null,
-      _strFrom: from,
-      _strTo: to,
-      _strTag: tag,
-      strChartData: null, // built lazily when STR chart is viewed
+      _ariFrom: from,
+      _ariTo: to,
+      _ariTag: tag,
+      ariChartData: null, // built lazily when STR chart is viewed
     };
   }
   return result;
@@ -3732,58 +3643,31 @@ function applyPortfolioPeriod(p) {
         vals[1].className = 'delta-pill ' + (d.str[m].up ? 'delta-up' : 'delta-down');
       }
     });
-    // Build all three STR chart series lazily on first view for this period
-    const strFrom = d.str.chartData._from;
-    const strTo   = d.str.chartData._to;
-    if (d.str.chartData.ARI.length === 0 && strFrom) {
-      d.str.chartData.ARI = buildPortfolioARIChartData(strFrom, strTo);
+    // Update STR chart data and x-axis labels for the period
+    // For ARI, build lazily on first view
+    if (d.str.chartData.ARI.length === 0 && d.str.chartData._ariFrom) {
+      d.str.chartData.ARI = buildPortfolioARIChartData(d.str.chartData._ariFrom, d.str.chartData._ariTo);
     }
-    if (d.str.chartData.MPI.length === 0 && strFrom) {
-      d.str.chartData.MPI = buildPortfolioMPIChartData(strFrom, strTo);
-    }
-    if (d.str.chartData.RGI.length === 0 && strFrom) {
-      d.str.chartData.RGI = buildPortfolioRGIChartData(strFrom, strTo);
-    }
-
-    // Build actual-date x-axis labels from the period range
-    const strDateLabels = (() => {
-      if (!strFrom || !strTo) return null;
-      const from = strFrom instanceof Date ? strFrom : new Date(strFrom + 'T00:00:00');
-      const to   = strTo   instanceof Date ? strTo   : new Date(strTo   + 'T00:00:00');
-      const labels = [];
-      const cur = new Date(from);
-      while (cur <= to) {
-        labels.push(cur.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-        cur.setDate(cur.getDate() + 1);
-      }
-      return labels;
-    })();
-
     const ariData = d.str.chartData.ARI || [];
-    const mpiData = d.str.chartData.MPI || [];
-    const rgiData = d.str.chartData.RGI || [];
-    const anyData = ariData.length > 0 || mpiData.length > 0 || rgiData.length > 0;
-    if (anyData && strDateLabels) {
-      strChart.data.labels = strDateLabels;
+    if (ariData.length > 0) {
+      strChart.data.labels = ariData.map((_, i) => `D${i+1}`);
     } else {
       const strLabels = { yesterday: ['12a','3a','6a','9a','12p','3p','6p','9p','11p'], wtd: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], t30: Array.from({length:30},(_,i)=>`D${i+1}`), mtd: Array.from({length:13},(_,i)=>`W${i+1}`), ytd: ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13'], '3yr': ["Q1'24","Q2'24","Q3'24","Q4'24","Q1'25","Q2'25","Q3'25","Q4'25","Q1'26"] };
       strChart.data.labels = strLabels[p] || strLabels.ytd;
     }
-
-    // Mutate arrays in place so Chart.js detects the change
-    STR_CHART_DATA.MPI.data.splice(0, STR_CHART_DATA.MPI.data.length, ...mpiData);
+    // Mutate the arrays in place using splice so Chart.js detects the change (same pattern as property view)
+    STR_CHART_DATA.MPI.data.splice(0, STR_CHART_DATA.MPI.data.length, ...d.str.chartData.MPI);
     STR_CHART_DATA.ARI.data.splice(0, STR_CHART_DATA.ARI.data.length, ...ariData);
-    STR_CHART_DATA.RGI.data.splice(0, STR_CHART_DATA.RGI.data.length, ...rgiData);
-
-    // Update y-axis ranges for all three based on actual data
-    ['MPI', 'ARI', 'RGI'].forEach(m => {
-      const vals = STR_CHART_DATA[m].data.filter(v => v !== null);
-      if (vals.length > 0) {
-        const avg = vals.reduce((a, v) => a + v, 0) / vals.length;
-        STR_CHART_DATA[m].min = Math.floor(avg - 8);
-        STR_CHART_DATA[m].max = Math.ceil(avg + 8);
+    STR_CHART_DATA.RGI.data.splice(0, STR_CHART_DATA.RGI.data.length, ...d.str.chartData.RGI);
+    // Update ARI y-axis range based on actual data
+    if (ariData.length > 0) {
+      const validVals = ariData.filter(v => v !== null);
+      if (validVals.length > 0) {
+        const avg = validVals.reduce((a,v) => a+v, 0) / validVals.length;
+        STR_CHART_DATA.ARI.min = Math.floor(avg - 8);
+        STR_CHART_DATA.ARI.max = Math.ceil(avg + 8);
       }
-    });
+    }
     switchSTRChart(activeSTR);
   }
 
@@ -3947,90 +3831,47 @@ function applyPropertyPeriod(p) {
       const titleEl = document.querySelector('#propTrendCardTitle .section-title');
       if (titleEl) titleEl.textContent = d.charts[currentPropTrendMetric]?.title || 'Trend';
     }
-    // STR KPI cards — populate MPI, ARI, RGI from live data
-    function setPropSTRCard(metric, val, lyVal) {
-      const valEl   = document.getElementById('propStrVal-'   + metric);
-      const deltaEl = document.getElementById('propStrDelta-' + metric);
-      if (val !== null && val !== undefined) {
-        if (valEl) valEl.textContent = val.toFixed(1);
-        if (deltaEl) {
-          if (lyVal !== null && lyVal !== undefined) {
-            const diff = val - lyVal;
-            const up = diff >= 0;
-            deltaEl.textContent = (up ? '▲ ' : '▼ ') + Math.abs(diff).toFixed(1) + 'pts';
-            deltaEl.className = 'delta-pill ' + (up ? 'delta-up' : 'delta-down');
-          } else {
-            // Fallback: show distance from parity (100)
-            const diff = (val - 100).toFixed(1);
-            const up = val >= 100;
-            deltaEl.textContent = (up ? '▲ ' : '▼ ') + Math.abs(diff);
-            deltaEl.className = 'delta-pill ' + (up ? 'delta-up' : 'delta-down');
-          }
-        }
-      } else {
-        if (valEl) valEl.textContent = '—';
-        if (deltaEl) { deltaEl.textContent = '—'; deltaEl.className = 'delta-pill delta-flat'; }
+    // STR — show ARI from live data, MPI/RGI remain dashes
+    ['MPI','RGI'].forEach(m => {
+      const valEl = document.getElementById('propStrVal-' + m);
+      const deltaEl = document.getElementById('propStrDelta-' + m);
+      if (valEl) valEl.textContent = '—';
+      if (deltaEl) { deltaEl.textContent = '—'; deltaEl.className = 'delta-pill delta-flat'; }
+    });
+    // ARI — populate from live data
+    if (d.ari !== null && d.ari !== undefined) {
+      const ariEl = document.getElementById('propStrVal-ARI');
+      const ariDeltaEl = document.getElementById('propStrDelta-ARI');
+      if (ariEl) ariEl.textContent = d.ari.toFixed(1);
+      if (ariDeltaEl) {
+        const diff = (d.ari - 100).toFixed(1);
+        const up = d.ari >= 100;
+        ariDeltaEl.textContent = (up ? '▲ ' : '▼ ') + Math.abs(diff);
+        ariDeltaEl.className = 'delta-pill ' + (up ? 'delta-up' : 'delta-down');
       }
-    }
-    setPropSTRCard('MPI', d.mpi, d.lyMpi);
-    setPropSTRCard('ARI', d.ari, d.lyAri);
-    setPropSTRCard('RGI', d.rgi, d.lyRgi);
-
-    // STR chart — build all three lazily on first view
-    if (!d.strChartData && d._strTag) {
-      d.strChartData = {
-        ARI: buildPropertyARIChartData(d._strTag, d._strFrom, d._strTo),
-        MPI: buildPropertyMPIChartData(d._strTag, d._strFrom, d._strTo),
-        RGI: buildPropertyRGIChartData(d._strTag, d._strFrom, d._strTo),
-      };
-    }
-
-    // Build actual-date x-axis labels from the period range
-    const strDateLabels = (() => {
-      if (!d._strFrom || !d._strTo) return [];
-      const from = d._strFrom instanceof Date ? d._strFrom : new Date(d._strFrom + 'T00:00:00');
-      const to   = d._strTo   instanceof Date ? d._strTo   : new Date(d._strTo   + 'T00:00:00');
-      const labels = [];
-      const cur = new Date(from);
-      while (cur <= to) {
-        labels.push(cur.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-        cur.setDate(cur.getDate() + 1);
-      }
-      return labels;
-    })();
-
-    const anyStrData = d.strChartData && (
-      (d.strChartData.ARI && d.strChartData.ARI.length > 0) ||
-      (d.strChartData.MPI && d.strChartData.MPI.length > 0) ||
-      (d.strChartData.RGI && d.strChartData.RGI.length > 0)
-    );
-
-    if (anyStrData) {
-      propSTRChart.data.labels = strDateLabels;
-      PROP_STR_DATA.ARI.data = d.strChartData.ARI || [];
-      PROP_STR_DATA.MPI.data = d.strChartData.MPI || [];
-      PROP_STR_DATA.RGI.data = d.strChartData.RGI || [];
-      // Update y-axis range per metric
-      ['MPI','ARI','RGI'].forEach(m => {
-        const vals = PROP_STR_DATA[m].data.filter(v => v !== null);
-        if (vals.length > 0) {
-          const avg = vals.reduce((a,v) => a+v, 0) / vals.length;
-          PROP_STR_DATA[m].min = Math.floor(avg - 8);
-          PROP_STR_DATA[m].max = Math.ceil(avg + 8);
-        }
-      });
-      switchPropSTR(activePropSTR);
     } else {
-      // No data for this period — clear the chart
-      ['MPI','ARI','RGI'].forEach(m => { PROP_STR_DATA[m].data = []; });
-      propSTRChart.data.labels = [];
-      propSTRChart.data.datasets[0].data = [];
-      propSTRChart.data.datasets[1].data = [];
-      propSTRChart.update();
-      const labelEl = document.getElementById('propSTRChartLabel');
-      if (labelEl) labelEl.textContent = 'STR — No data for this period';
+      const ariEl = document.getElementById('propStrVal-ARI');
+      const ariDeltaEl = document.getElementById('propStrDelta-ARI');
+      if (ariEl) ariEl.textContent = '—';
+      if (ariDeltaEl) { ariDeltaEl.textContent = '—'; ariDeltaEl.className = 'delta-pill delta-flat'; }
     }
-    // Comp set note
+    // ARI chart — build lazily on first view
+    if (!d.ariChartData && d._ariTag) {
+      d.ariChartData = buildPropertyARIChartData(d._ariTag, d._ariFrom, d._ariTo);
+    }
+    if (d.ariChartData && d.ariChartData.length > 0) {
+      const labels = d.ariChartData.map((_, i) => i === 0 ? 'Start' : i === d.ariChartData.length - 1 ? 'End' : `D${i+1}`);
+      propSTRChart.data.labels = labels;
+      PROP_STR_DATA.ARI.data = d.ariChartData;
+      const validVals = d.ariChartData.filter(v => v !== null);
+      if (validVals.length > 0) {
+        const avg = validVals.reduce((a,v) => a+v, 0) / validVals.length;
+        PROP_STR_DATA.ARI.min = Math.floor(avg - 8);
+        PROP_STR_DATA.ARI.max = Math.ceil(avg + 8);
+      }
+      switchPropSTR('ARI');
+    }
+    // Comp set — show ARI if available
     updatePropCompSet(d, p);
     return;
   }
@@ -4355,21 +4196,9 @@ const propSTRChart = (() => { const _c = Chart.getChart(document.getElementById(
   },
   options: {
     responsive: true, maintainAspectRatio: false,
-    interaction: { mode: 'index', intersect: false },
     plugins: {
       legend: { display: false },
-      tooltip: {
-        backgroundColor: '#18202B', borderColor: '#232E3D', borderWidth: 1, padding: 10,
-        titleColor: '#ECEFF4', bodyColor: '#9AA5B8', usePointStyle: true, boxWidth: 8, boxHeight: 8,
-        filter: item => item.datasetIndex === 0,
-        callbacks: {
-          label: ctx => {
-            const v = ctx.parsed.y;
-            if (v === null || v === undefined) return null;
-            return `${activePropSTR}: ${v.toFixed(1)}`;
-          }
-        }
-      }
+      tooltip: { backgroundColor: '#18202B', borderColor: '#232E3D', borderWidth: 1, padding: 10, titleColor: '#ECEFF4', bodyColor: '#9AA5B8', usePointStyle: true, boxWidth: 8, boxHeight: 8 }
     },
     scales: {
       x: { grid: { display: false }, ticks: { font: { size: 10 } } },
