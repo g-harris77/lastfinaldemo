@@ -1933,7 +1933,7 @@
       </div>
       <div class="control-group" style="position:relative;">
         <span class="control-label">As of</span>
-        <button class="as-of-btn" id="lbAsOfLabel" style="background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:6px 12px;font-size:13px;font-weight:500;" onclick="document.getElementById('lbDatePickerDropdown').classList.toggle('open')">
+        <button class="as-of-btn" id="lbAsOfLabel" style="background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:6px 12px;font-size:13px;font-weight:500;">
           <strong id="lbAsOfDate">—</strong>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left:4px;opacity:0.5;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         </button>
@@ -3431,6 +3431,7 @@ async function loadDataAndRun() {
     }
     window._dateIndex = dateIndex;
     window._sortedDates = [...dateIndex.keys()].sort();
+    window._latestDataDate = toDateStr(window._anchorDate);
 
     // Build tag+date index for property lookups — Map<tag|dateStr, row>
     const tagDateIndex = new Map();
@@ -5330,56 +5331,74 @@ document.querySelectorAll('#lbPeriodSeg button').forEach(btn => {
   });
 });
 
-// Leaderboard "As of" date picker — mirrors main dashboard logic
+// Leaderboard "As of" date picker — exact mirror of the main dashboard's date picker
+// (see "DATE PICKER" IIFE above), operating on the same window._anchorDate / recompute().
 (function() {
-  const lbAnchorInput = document.getElementById('lbAnchorDateInput');
-  const lbAsOfDate    = document.getElementById('lbAsOfDate');
-  const lbDropdown    = document.getElementById('lbDatePickerDropdown');
-  const lbApplyBtn    = document.getElementById('lbDpApplyBtn');
-  const lbTodayBtn    = document.getElementById('lbDpTodayBtn');
+  const btn      = document.getElementById('lbAsOfLabel');
+  const dropdown = document.getElementById('lbDatePickerDropdown');
+  const input    = document.getElementById('lbAnchorDateInput');
+  const applyBtn = document.getElementById('lbDpApplyBtn');
+  const todayBtn = document.getElementById('lbDpTodayBtn');
+  const lbAsOfDate = document.getElementById('lbAsOfDate');
+  if (!btn || !dropdown || !input) return;
+
+  // Cap at yesterday — most recent complete data
+  const yd = new Date(); yd.setDate(yd.getDate() - 1);
+  const ydStr = toDateStr(yd);
+  input.max = ydStr;
+  input.value = toDateStr(window._anchorDate || yd);
 
   function syncLbDateLabel() {
-    const d = window.anchorDate || window._latestDataDate;
-    if (d && lbAsOfDate) lbAsOfDate.textContent = d;
+    if (lbAsOfDate) lbAsOfDate.textContent = toDateStr(window._anchorDate);
   }
   syncLbDateLabel();
 
-  // Close dropdown on outside click
-  document.addEventListener('click', e => {
-    if (lbDropdown && !lbDropdown.contains(e.target) && !document.getElementById('lbAsOfLabel')?.contains(e.target)) {
-      lbDropdown.classList.remove('open');
+  // Toggle dropdown
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle('open');
+    if (dropdown.classList.contains('open')) {
+      input.value = toDateStr(window._anchorDate);
     }
   });
 
-  if (lbApplyBtn) {
-    lbApplyBtn.addEventListener('click', () => {
-      const val = lbAnchorInput?.value;
-      if (val) {
-        window.anchorDate = val;
-        if (lbAsOfDate) lbAsOfDate.textContent = val;
-        // Also sync main as-of date
-        const mainAsOf = document.getElementById('asOfDate');
-        if (mainAsOf) mainAsOf.textContent = val;
-        if (window.applyPeriod) window.applyPeriod(window.currentPeriod || 'mtd');
-        lbDropdown.classList.remove('open');
-        buildLeaderboard(window.lbPeriod, window.lbMetric);
-      }
-    });
-  }
+  // Close on outside click
+  document.addEventListener('click', (e) => {
+    if (!btn.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.classList.remove('open');
+    }
+  });
 
-  if (lbTodayBtn) {
-    lbTodayBtn.addEventListener('click', () => {
-      window.anchorDate = null;
-      const latestDate = window._latestDataDate;
-      if (lbAsOfDate) lbAsOfDate.textContent = latestDate || '—';
-      if (lbAnchorInput) lbAnchorInput.value = '';
-      const mainAsOf = document.getElementById('asOfDate');
-      if (mainAsOf) mainAsOf.textContent = latestDate || '—';
-      if (window.applyPeriod) window.applyPeriod(window.currentPeriod || 'mtd');
-      lbDropdown.classList.remove('open');
-      buildLeaderboard(window.lbPeriod, window.lbMetric);
-    });
-  }
+  // Apply button
+  applyBtn.addEventListener('click', () => {
+    const val = input.value;
+    if (!val) return;
+    // Parse as local date
+    const [y, m, d] = val.split('-').map(Number);
+    window._anchorDate = new Date(y, m - 1, d);
+    dropdown.classList.remove('open');
+    if (window.recompute) window.recompute();
+    if (window.applyPeriod) window.applyPeriod(window.currentPeriod || 'mtd');
+    syncLbDateLabel();
+    buildLeaderboard(window.lbPeriod, window.lbMetric);
+  });
+
+  // Reset to most recent (yesterday)
+  todayBtn.addEventListener('click', () => {
+    const d = new Date(); d.setDate(d.getDate() - 1);
+    window._anchorDate = d;
+    input.value = toDateStr(d);
+    dropdown.classList.remove('open');
+    if (window.recompute) window.recompute();
+    if (window.applyPeriod) window.applyPeriod(window.currentPeriod || 'mtd');
+    syncLbDateLabel();
+    buildLeaderboard(window.lbPeriod, window.lbMetric);
+  });
+
+  // Also apply on Enter key in input
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') applyBtn.click();
+  });
 
   // Keep lb date label in sync when main date changes
   const origApplyPeriod = window.applyPeriod;
@@ -5387,6 +5406,7 @@ document.querySelectorAll('#lbPeriodSeg button').forEach(btn => {
     window.applyPeriod = function(period) {
       const r = origApplyPeriod.apply(this, arguments);
       syncLbDateLabel();
+      if (input) input.value = toDateStr(window._anchorDate);
       return r;
     };
   }
@@ -5406,11 +5426,11 @@ function switchTab(tab) {
         b.classList.toggle('active', b.dataset.lbp === window.lbPeriod);
       });
     }
-    // Sync "As of" date label
+    // Sync "As of" date label and input to the shared anchor date
     const lbAsOfDate = document.getElementById('lbAsOfDate');
-    if (lbAsOfDate) lbAsOfDate.textContent = window.anchorDate || window._latestDataDate || '—';
+    if (lbAsOfDate) lbAsOfDate.textContent = toDateStr(window._anchorDate);
     const lbAnchorInput = document.getElementById('lbAnchorDateInput');
-    if (lbAnchorInput && window.anchorDate) lbAnchorInput.value = window.anchorDate;
+    if (lbAnchorInput) lbAnchorInput.value = toDateStr(window._anchorDate);
     const dataReady = () =>
       window.LIVE_PROPERTY_DATA &&
       Object.keys(window.LIVE_PROPERTY_DATA).length > 0 &&
