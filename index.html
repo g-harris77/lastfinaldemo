@@ -5349,7 +5349,7 @@ document.querySelectorAll('#lbPeriodSeg button').forEach(btn => {
   input.value = toDateStr(window._anchorDate || yd);
 
   function syncLbDateLabel() {
-    if (lbAsOfDate) lbAsOfDate.textContent = toDateStr(window._anchorDate);
+    if (lbAsOfDate) lbAsOfDate.textContent = window._anchorDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
   syncLbDateLabel();
 
@@ -5428,7 +5428,7 @@ function switchTab(tab) {
     }
     // Sync "As of" date label and input to the shared anchor date
     const lbAsOfDate = document.getElementById('lbAsOfDate');
-    if (lbAsOfDate) lbAsOfDate.textContent = toDateStr(window._anchorDate);
+    if (lbAsOfDate) lbAsOfDate.textContent = window._anchorDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     const lbAnchorInput = document.getElementById('lbAnchorDateInput');
     if (lbAnchorInput) lbAnchorInput.value = toDateStr(window._anchorDate);
     const dataReady = () =>
